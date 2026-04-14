@@ -81,7 +81,11 @@ export async function startAllPublishedBots(): Promise<void> {
 }
 
 export function getWebhookSecret(guruId: number): string {
-  return `guru_${guruId}_${process.env.SESSION_SECRET || "default"}`;
+  const secret = process.env.SESSION_SECRET;
+  if (!secret) {
+    throw new Error("SESSION_SECRET must be set for webhook verification");
+  }
+  return `guru_${guruId}_${secret}`;
 }
 
 export async function setupWebhook(guruId: number, webhookUrl: string): Promise<boolean> {

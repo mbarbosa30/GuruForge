@@ -1,7 +1,7 @@
 import { useState, useEffect } from "react";
 import { Link, useLocation } from "wouter";
 import { Show, useAuth } from "@clerk/react";
-import { useCreateGuru, useListCategories } from "@workspace/api-client-react";
+import { useCreateGuru, useListCategories, useUpdateTelegramBotToken } from "@workspace/api-client-react";
 import type { Category, CreateGuruInput } from "@workspace/api-client-react";
 import Layout from "@/components/layout";
 
@@ -587,20 +587,7 @@ function CreateGuruWizard() {
 
   if (createMutation.isSuccess) {
     const guru = createMutation.data;
-    return (
-      <div className="px-6 md:px-10 py-16 max-w-[560px] mx-auto text-center">
-        <p className="text-[11px] font-medium tracking-[0.12em] uppercase text-[#888] mb-3">Published</p>
-        <h2 className="text-[32px] font-light tracking-[-0.03em] text-[#111] mb-3">{guru.name} is live</h2>
-        <p className="text-[15px] text-[#777] mb-8">Your Guru is now on the marketplace. Share the link or view the profile.</p>
-        <Link
-          href={`/guru/${guru.slug}`}
-          className="text-[13px] font-medium tracking-[0.04em] uppercase text-white bg-[#111] px-7 py-3 no-underline inline-block hover:bg-[#333] transition-colors"
-          data-testid="link-view-guru"
-        >
-          View Guru Profile
-        </Link>
-      </div>
-    );
+    return <PostPublishPage guru={guru} />;
   }
 
   return (
@@ -660,6 +647,103 @@ function CreateGuruWizard() {
           >
             {createMutation.isPending ? "Publishing..." : "Publish Guru"}
           </button>
+        )}
+      </div>
+    </div>
+  );
+}
+
+function PostPublishPage({ guru }: { guru: { id: number; name: string; slug: string } }) {
+  const [botToken, setBotToken] = useState("");
+  const [tokenSaved, setTokenSaved] = useState(false);
+  const [tokenError, setTokenError] = useState<string | null>(null);
+  const [botUsername, setBotUsername] = useState<string | null>(null);
+  const tokenMutation = useUpdateTelegramBotToken();
+
+  const handleSaveToken = async () => {
+    if (!botToken.trim()) return;
+    setTokenError(null);
+    try {
+      const result = await tokenMutation.mutateAsync({
+        guruId: guru.id,
+        data: { botToken: botToken.trim() },
+      });
+      if (result.success) {
+        setTokenSaved(true);
+        setBotUsername(result.botUsername ?? null);
+      }
+    } catch {
+      setTokenError("Invalid bot token. Please check the token from BotFather.");
+    }
+  };
+
+  return (
+    <div className="px-6 md:px-10 py-16 max-w-[560px] mx-auto">
+      <div className="text-center mb-10">
+        <p className="text-[11px] font-medium tracking-[0.12em] uppercase text-[#888] mb-3">Published</p>
+        <h2 className="text-[32px] font-light tracking-[-0.03em] text-[#111] mb-3">{guru.name} is live</h2>
+        <p className="text-[15px] text-[#777] mb-6">Your Guru is now on the marketplace.</p>
+        <Link
+          href={`/guru/${guru.slug}`}
+          className="text-[13px] font-medium tracking-[0.04em] uppercase text-white bg-[#111] px-7 py-3 no-underline inline-block hover:bg-[#333] transition-colors"
+          data-testid="link-view-guru"
+        >
+          View Guru Profile
+        </Link>
+      </div>
+
+      <div className="border-t border-[#e0e0e0] pt-8">
+        <p className="text-[11px] font-medium tracking-[0.12em] uppercase text-[#888] mb-2">Connect Telegram</p>
+        <p className="text-[15px] text-[#777] mb-6 leading-[1.6]">
+          To enable conversations, connect a Telegram bot. Create one via{" "}
+          <a href="https://t.me/BotFather" target="_blank" rel="noopener noreferrer" className="text-[#111] underline">
+            @BotFather
+          </a>{" "}
+          on Telegram and paste the token below.
+        </p>
+
+        {tokenSaved ? (
+          <div className="border border-[#c8e0c8] bg-[#f0f8f0] p-5">
+            <div className="flex items-center gap-2 mb-2">
+              <span className="text-[#2a7a2a] text-[16px]">&#10003;</span>
+              <span className="text-[13px] font-medium text-[#2a7a2a]">Bot connected</span>
+            </div>
+            {botUsername && (
+              <p className="text-[13px] text-[#555]">
+                @{botUsername} is ready to receive messages.
+              </p>
+            )}
+          </div>
+        ) : (
+          <div className="space-y-3">
+            <div>
+              <label className="text-[11px] font-medium tracking-[0.08em] uppercase text-[#888] block mb-1.5">
+                Bot Token
+              </label>
+              <input
+                type="text"
+                value={botToken}
+                onChange={(e) => setBotToken(e.target.value)}
+                placeholder="123456:ABC-DEF1234..."
+                className="w-full h-10 px-4 border border-[#ddd] bg-white text-sm text-[#111] font-mono outline-none focus:border-[#999] transition-colors"
+                data-testid="input-bot-token"
+              />
+            </div>
+            {tokenError && (
+              <p className="text-[12px] text-[#c44]">{tokenError}</p>
+            )}
+            <button
+              onClick={handleSaveToken}
+              disabled={!botToken.trim() || tokenMutation.isPending}
+              className="text-[13px] font-medium tracking-[0.04em] uppercase text-white bg-[#111] px-7 py-3 border border-[#111] hover:bg-[#333] transition-colors cursor-pointer disabled:opacity-50"
+              data-testid="button-save-token"
+            >
+              {tokenMutation.isPending ? "Verifying..." : "Connect Bot"}
+            </button>
+            <p className="text-[11px] text-[#bbb]">
+              You can also configure this later from your Guru's settings.
+            </p>
+          </div>
         )}
       </div>
     </div>
