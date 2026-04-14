@@ -6,7 +6,7 @@ export const userRoleEnum = ["user", "creator", "admin"] as const;
 
 export const usersTable = pgTable("users", {
   id: serial("id").primaryKey(),
-  clerkId: varchar("clerk_id", { length: 255 }).notNull().unique(),
+  privyId: varchar("privy_id", { length: 255 }).notNull().unique(),
   email: varchar("email", { length: 255 }).notNull(),
   name: varchar("name", { length: 255 }),
   avatarUrl: text("avatar_url"),

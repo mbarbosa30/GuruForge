@@ -36,7 +36,7 @@ pnpm workspace monorepo using TypeScript. Each package manages its own dependenc
 - `lib/integrations-xai-server` — xAI/Grok client (OpenAI-compatible, reads XAI_API_KEY + XAI_BASE_URL env vars)
 
 ### Database Schema
-- `users` — id, clerk_id, email, name, avatar_url, role (user/creator/admin), stripe_customer_id
+- `users` — id, privy_id, email, name, avatar_url, role (user/creator/admin), stripe_customer_id
 - `categories` — id, name, slug, description, icon, display_order
 - `gurus` — id, creator_id (FK users), name, slug, tagline, description, category_id (FK categories), avatar_url, status, price_cents, price_interval, topics, personality_style, model_tier, memory_policy, intro_enabled, wisdom_score, satisfaction_score, user_count, stripe_product_id, stripe_price_id, telegram_bot_token
 - `subscriptions` — id, user_id, guru_id, status, started_at, expires_at, stripe_subscription_id

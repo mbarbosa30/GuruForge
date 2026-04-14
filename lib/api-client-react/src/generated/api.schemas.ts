@@ -222,7 +222,7 @@ export interface UpdateGuruInput {
 
 export interface User {
   id: number;
-  clerkId: string;
+  privyId: string;
   email: string;
   name?: string | null;
   avatarUrl?: string | null;

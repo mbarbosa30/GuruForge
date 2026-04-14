@@ -224,7 +224,7 @@ export const CreateGuruRatingResponse = zod.object({
  */
 export const GetMeResponse = zod.object({
   id: zod.number(),
-  clerkId: zod.string(),
+  privyId: zod.string(),
   email: zod.string(),
   name: zod.string().nullish(),
   avatarUrl: zod.string().nullish(),
@@ -243,7 +243,7 @@ export const UpdateMeBody = zod.object({
 
 export const UpdateMeResponse = zod.object({
   id: zod.number(),
-  clerkId: zod.string(),
+  privyId: zod.string(),
   email: zod.string(),
   name: zod.string().nullish(),
   avatarUrl: zod.string().nullish(),

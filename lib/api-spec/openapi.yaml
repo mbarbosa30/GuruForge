@@ -987,7 +987,7 @@ components:
       properties:
         id:
           type: integer
-        clerkId:
+        privyId:
           type: string
         email:
           type: string
@@ -1007,7 +1007,7 @@ components:
           format: date-time
       required:
         - id
-        - clerkId
+        - privyId
         - email
         - role
         - createdAt

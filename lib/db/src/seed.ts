@@ -20,7 +20,7 @@ async function seed() {
   ]).returning();
 
   const [seedUser] = await db.insert(usersTable).values({
-    clerkId: "seed_system_user",
+    privyId: "seed_system_user",
     email: "system@guruforge.ai",
     name: "GuruForge Team",
     role: "admin",

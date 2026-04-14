@@ -58,7 +58,7 @@ async function resolveOrCreateUser(privyUserId: string) {
   const [existing] = await db
     .select()
     .from(usersTable)
-    .where(eq(usersTable.clerkId, privyUserId))
+    .where(eq(usersTable.privyId, privyUserId))
     .limit(1);
 
   if (existing) {
@@ -97,7 +97,7 @@ async function resolveOrCreateUser(privyUserId: string) {
   const [created] = await db
     .insert(usersTable)
     .values({
-      clerkId: privyUserId,
+      privyId: privyUserId,
       email,
       name,
     })

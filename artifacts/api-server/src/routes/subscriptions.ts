@@ -65,7 +65,7 @@ router.post("/subscriptions/checkout", requireAuth, async (req: AuthRequest, res
     if (!customerId) {
       const customer = await stripe.customers.create({
         email: user.email,
-        metadata: { userId: String(user.id), privyId: user.clerkId },
+        metadata: { userId: String(user.id), privyId: user.privyId },
       });
       customerId = customer.id;
       await db
