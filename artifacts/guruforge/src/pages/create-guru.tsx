@@ -1,6 +1,6 @@
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import { Link, useLocation } from "wouter";
-import { Show } from "@clerk/react";
+import { Show, useAuth } from "@clerk/react";
 import { useCreateGuru, useListCategories } from "@workspace/api-client-react";
 import type { Category, CreateGuruInput } from "@workspace/api-client-react";
 import Layout from "@/components/layout";
@@ -29,12 +29,16 @@ interface FormData {
   avatarUrl: string;
   topics: string[];
   topicInput: string;
+  targetUsers: string;
+  notFor: string;
+  languagePreference: string;
   personalityStyle: "professional" | "friendly" | "direct" | "academic";
   modelTier: "basic" | "pro" | "enterprise";
   memoryPersonal: boolean;
   memoryShared: boolean;
   introEnabled: boolean;
   priceCents: number;
+  freeTrial: boolean;
 }
 
 const INITIAL: FormData = {
@@ -45,12 +49,16 @@ const INITIAL: FormData = {
   avatarUrl: "",
   topics: [],
   topicInput: "",
+  targetUsers: "",
+  notFor: "",
+  languagePreference: "English",
   personalityStyle: "friendly",
   modelTier: "pro",
   memoryPersonal: true,
   memoryShared: true,
   introEnabled: false,
   priceCents: 2900,
+  freeTrial: false,
 };
 
 function StepIndicator({ current, onJump }: { current: number; onJump: (i: number) => void }) {
@@ -225,6 +233,14 @@ function StepPurpose({ data, onChange }: { data: FormData; onChange: (d: Partial
           </div>
         )}
       </div>
+      <div>
+        <FieldLabel htmlFor="targetUsers">Target users</FieldLabel>
+        <TextArea id="targetUsers" value={data.targetUsers} onChange={(v) => onChange({ targetUsers: v })} placeholder="Who is this Guru for? What kind of users benefit most?" />
+      </div>
+      <div>
+        <FieldLabel htmlFor="notFor">What it's NOT for</FieldLabel>
+        <TextArea id="notFor" value={data.notFor} onChange={(v) => onChange({ notFor: v })} placeholder="What should users NOT expect from this Guru?" />
+      </div>
     </div>
   );
 }
@@ -281,6 +297,16 @@ function StepIntelligence({ data, onChange }: { data: FormData; onChange: (d: Pa
             />
           ))}
         </div>
+      </div>
+      <div>
+        <FieldLabel htmlFor="languagePreference">Language preference</FieldLabel>
+        <TextInput
+          id="languagePreference"
+          value={data.languagePreference}
+          onChange={(v) => onChange({ languagePreference: v })}
+          placeholder="e.g. English, Spanish, Multilingual"
+        />
+        <p className="text-[12px] text-[#888] mt-2">Primary language your Guru communicates in.</p>
       </div>
     </div>
   );
@@ -379,6 +405,15 @@ function StepPricing({ data, onChange }: { data: FormData; onChange: (d: Partial
           <p className="text-[12px] text-[#888] mt-2">Free Gurus are available to all users at no cost.</p>
         )}
       </div>
+      {data.priceCents > 0 && (
+        <Toggle
+          checked={data.freeTrial}
+          onChange={(v) => onChange({ freeTrial: v })}
+          label="Free trial"
+          desc="Let new users try your Guru before committing to a subscription."
+          testId="toggle-free-trial"
+        />
+      )}
     </div>
   );
 }
@@ -405,13 +440,17 @@ function StepReview({ data, categories }: { data: FormData; categories: Category
         <ReviewRow label="Tagline" value={data.tagline} />
         <ReviewRow label="Category" value={catName} />
         <ReviewRow label="Description" value={data.description ? <span className="line-clamp-3">{data.description}</span> : null} />
+        <ReviewRow label="Target users" value={data.targetUsers} />
+        <ReviewRow label="Not for" value={data.notFor} />
         <ReviewRow label="Topics" value={data.topics.length > 0 ? data.topics.join(", ") : null} />
         <ReviewRow label="Model tier" value={<span className="capitalize">{data.modelTier}</span>} />
         <ReviewRow label="Personality" value={<span className="capitalize">{data.personalityStyle}</span>} />
+        <ReviewRow label="Language" value={data.languagePreference} />
         <ReviewRow label="Personal memory" value={data.memoryPersonal ? "On" : "Off"} />
         <ReviewRow label="Shared learning" value={data.memoryShared ? "On" : "Off"} />
         <ReviewRow label="Introductions" value={data.introEnabled ? "Enabled" : "Disabled"} />
         <ReviewRow label="Price" value={data.priceCents === 0 ? "Free" : `$${(data.priceCents / 100).toFixed(2)}/month`} />
+        {data.priceCents > 0 && <ReviewRow label="Free trial" value={data.freeTrial ? "Enabled" : "Disabled"} />}
       </div>
     </div>
   );
@@ -421,26 +460,57 @@ function buildMemoryPolicy(data: FormData): string {
   const parts: string[] = [];
   if (data.memoryPersonal) parts.push("Personal memory enabled");
   if (data.memoryShared) parts.push("Shared pattern learning enabled");
+  if (data.languagePreference.trim()) parts.push(`Language: ${data.languagePreference.trim()}`);
   if (parts.length === 0) return "No memory retention";
   return parts.join(". ") + ".";
+}
+
+function buildDescription(data: FormData): string {
+  const parts: string[] = [];
+  if (data.description.trim()) parts.push(data.description.trim());
+  if (data.targetUsers.trim()) parts.push(`Target users: ${data.targetUsers.trim()}`);
+  if (data.notFor.trim()) parts.push(`Not for: ${data.notFor.trim()}`);
+  return parts.join("\n\n");
 }
 
 function validateStep(step: number, data: FormData): string | null {
   switch (step) {
     case 0:
       if (!data.name.trim()) return "Name is required.";
+      if (data.name.trim().length < 2) return "Name must be at least 2 characters.";
       return null;
     case 1:
+      if (data.topics.length === 0) return "Add at least one topic.";
+      return null;
     case 2:
+      if (!data.languagePreference.trim()) return "Language preference is required.";
+      return null;
     case 3:
+      return null;
     case 4:
+      if (isNaN(data.priceCents) || data.priceCents < 0) return "Enter a valid price.";
       return null;
     case 5:
       if (!data.name.trim()) return "Name is required.";
+      if (data.topics.length === 0) return "At least one topic is required.";
+      if (isNaN(data.priceCents) || data.priceCents < 0) return "Enter a valid price.";
       return null;
     default:
       return null;
   }
+}
+
+function AuthRedirect() {
+  const { isSignedIn, isLoaded } = useAuth();
+  const [, navigate] = useLocation();
+
+  useEffect(() => {
+    if (isLoaded && !isSignedIn) {
+      navigate("/sign-in");
+    }
+  }, [isLoaded, isSignedIn, navigate]);
+
+  return null;
 }
 
 export default function CreateGuru() {
@@ -450,17 +520,11 @@ export default function CreateGuru() {
         <CreateGuruWizard />
       </Show>
       <Show when="signed-out">
+        <AuthRedirect />
         <div className="px-6 md:px-10 py-16 text-center max-w-[500px] mx-auto">
-          <p className="text-[11px] font-medium tracking-[0.12em] uppercase text-[#888] mb-3">Authentication required</p>
+          <p className="text-[11px] font-medium tracking-[0.12em] uppercase text-[#888] mb-3">Redirecting to sign in</p>
           <h1 className="text-[32px] font-light tracking-[-0.03em] text-[#111] mb-3">Create a Guru</h1>
-          <p className="text-[15px] text-[#777] mb-8">Sign in to start forging your Guru.</p>
-          <Link
-            href="/sign-in"
-            className="text-[13px] font-medium tracking-[0.04em] uppercase text-white bg-[#111] px-7 py-3 no-underline inline-block hover:bg-[#333] transition-colors"
-            data-testid="button-sign-in"
-          >
-            Sign in
-          </Link>
+          <p className="text-[15px] text-[#777] mb-8">You need to sign in to create a Guru.</p>
         </div>
       </Show>
     </Layout>
@@ -471,7 +535,6 @@ function CreateGuruWizard() {
   const [step, setStep] = useState(0);
   const [data, setData] = useState<FormData>(INITIAL);
   const [error, setError] = useState<string | null>(null);
-  const [, navigate] = useLocation();
 
   const { data: categories = [] } = useListCategories();
   const createMutation = useCreateGuru();
@@ -500,7 +563,7 @@ function CreateGuruWizard() {
     const body: CreateGuruInput = {
       name: data.name.trim(),
       tagline: data.tagline.trim() || undefined,
-      description: data.description.trim() || undefined,
+      description: buildDescription(data) || undefined,
       categoryId: data.categoryId ?? undefined,
       avatarUrl: data.avatarUrl.trim() || undefined,
       priceCents: data.priceCents,
@@ -512,11 +575,7 @@ function CreateGuruWizard() {
       introEnabled: data.introEnabled,
     };
 
-    createMutation.mutate({ data: body }, {
-      onSuccess: (guru) => {
-        navigate(`/guru/${guru.slug}`);
-      },
-    });
+    createMutation.mutate({ data: body });
   };
 
   if (createMutation.isSuccess) {
