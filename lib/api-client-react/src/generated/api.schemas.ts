@@ -297,6 +297,13 @@ export interface WisdomToggleResponse {
   contributesToWisdom: boolean;
 }
 
+export interface ContributionScoreResponse {
+  score: number;
+  conversationCount: number;
+  patternsContributed: number;
+  lastUpdatedAt?: string | null;
+}
+
 export interface UpdateBotTokenInput {
   botToken: string;
 }

@@ -9,6 +9,7 @@
 export * from "./category";
 export * from "./checkoutInput";
 export * from "./checkoutSession";
+export * from "./contributionScoreResponse";
 export * from "./createGuruInput";
 export * from "./createGuruInputModelTier";
 export * from "./createGuruInputPersonalityStyle";

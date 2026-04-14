@@ -8,6 +8,7 @@ import {
   useCreateCheckoutSession,
   useGetTelegramStatus,
   useToggleWisdomContribution,
+  useGetContributionScore,
   getGetGuruQueryOptions,
   getListGuruRatingsQueryOptions,
   getCheckSubscriptionQueryOptions,
@@ -127,6 +128,11 @@ export default function GuruProfile() {
   const isTelegramConnected = telegramStatus?.connected === true;
   const [wisdomEnabled, setWisdomEnabled] = useState(true);
   const wisdomToggleMutation = useToggleWisdomContribution();
+
+  const { data: contributionScore } = useGetContributionScore(guruId, {
+    query: { enabled: !!guru?.id && !!isSignedIn && isSubscribed },
+  });
+
 
   useEffect(() => {
     if (telegramStatus?.contributesToWisdom !== undefined) {
@@ -306,6 +312,26 @@ export default function GuruProfile() {
           </div>
         </div>
       </section>
+
+      {isSubscribed && contributionScore && (contributionScore.score > 0 || contributionScore.conversationCount > 0) && (
+        <section className="mb-10">
+          <p className="text-[11px] font-medium tracking-[0.12em] uppercase text-[#888] mb-4">Your contribution</p>
+          <div className="grid grid-cols-1 sm:grid-cols-3 gap-px bg-[#e0e0e0]">
+            <div className="bg-white px-5 py-4">
+              <span className="text-[11px] font-medium tracking-[0.04em] uppercase text-[#888] block mb-1">Contribution score</span>
+              <span className="text-[14px] text-[#333]">{Math.round(contributionScore.score)}</span>
+            </div>
+            <div className="bg-white px-5 py-4">
+              <span className="text-[11px] font-medium tracking-[0.04em] uppercase text-[#888] block mb-1">Conversations</span>
+              <span className="text-[14px] text-[#333]">{contributionScore.conversationCount}</span>
+            </div>
+            <div className="bg-white px-5 py-4">
+              <span className="text-[11px] font-medium tracking-[0.04em] uppercase text-[#888] block mb-1">Patterns contributed</span>
+              <span className="text-[14px] text-[#333]">{contributionScore.patternsContributed}</span>
+            </div>
+          </div>
+        </section>
+      )}
 
       <section className="mb-10">
         <div className="flex flex-col sm:flex-row gap-3">

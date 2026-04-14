@@ -435,6 +435,30 @@ paths:
             application/json:
               schema:
                 $ref: "#/components/schemas/ErrorResponse"
+  /gurus/{guruId}/contribution-score:
+    get:
+      operationId: getContributionScore
+      tags: [gurus]
+      summary: Get the current user's contribution score for a guru
+      parameters:
+        - name: guruId
+          in: path
+          required: true
+          schema:
+            type: integer
+      responses:
+        "200":
+          description: Contribution score
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ContributionScoreResponse"
+        "401":
+          description: Unauthorized
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ErrorResponse"
   /telegram/bot-info/{guruId}:
     get:
       operationId: getTelegramBotInfo
@@ -1049,6 +1073,23 @@ components:
           type: boolean
       required:
         - contributesToWisdom
+    ContributionScoreResponse:
+      type: object
+      properties:
+        score:
+          type: number
+        conversationCount:
+          type: integer
+        patternsContributed:
+          type: integer
+        lastUpdatedAt:
+          type: string
+          format: date-time
+          nullable: true
+      required:
+        - score
+        - conversationCount
+        - patternsContributed
     UpdateBotTokenInput:
       type: object
       properties:

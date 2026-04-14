@@ -1,6 +1,6 @@
 import { Router, type IRouter } from "express";
 import { db } from "@workspace/db";
-import { gurusTable, usersTable, categoriesTable, guruRatingsTable } from "@workspace/db/schema";
+import { gurusTable, usersTable, categoriesTable, guruRatingsTable, contributionScoresTable } from "@workspace/db/schema";
 import { eq, desc, asc, and, sql, avg, count, or } from "drizzle-orm";
 import { requireAuth, optionalAuth, type AuthRequest } from "../middlewares/auth";
 import { CreateGuruBody, UpdateGuruBody, UpdateGuruParams, ListGurusQueryParams } from "@workspace/api-zod";
@@ -285,6 +285,41 @@ router.patch("/gurus/:id", requireAuth, async (req: AuthRequest, res) => {
     res.json(updated);
   } catch (err) {
     res.status(500).json({ error: "Failed to update guru" });
+  }
+});
+
+router.get("/gurus/:guruId/contribution-score", requireAuth, async (req: AuthRequest, res) => {
+  try {
+    if (!req.dbUserId) {
+      res.status(401).json({ error: "Unauthorized" });
+      return;
+    }
+
+    const guruId = parseInt(req.params.guruId, 10);
+    if (isNaN(guruId)) {
+      res.status(400).json({ error: "Invalid guru ID" });
+      return;
+    }
+
+    const [score] = await db
+      .select()
+      .from(contributionScoresTable)
+      .where(
+        and(
+          eq(contributionScoresTable.userId, req.dbUserId),
+          eq(contributionScoresTable.guruId, guruId),
+        ),
+      )
+      .limit(1);
+
+    res.json({
+      score: score?.score ?? 0,
+      conversationCount: score?.conversationCount ?? 0,
+      patternsContributed: score?.patternsContributed ?? 0,
+      lastUpdatedAt: score?.lastUpdatedAt ?? null,
+    });
+  } catch (err) {
+    res.status(500).json({ error: "Failed to fetch contribution score" });
   }
 });
 

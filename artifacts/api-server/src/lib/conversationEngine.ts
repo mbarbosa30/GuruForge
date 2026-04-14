@@ -9,8 +9,12 @@ import {
   subscriptionsTable,
 } from "@workspace/db/schema";
 import { eq, and, desc, gt } from "drizzle-orm";
-import { openai } from "@workspace/integrations-openai-ai-server";
-import { retrieveMemoryContext, extractPersonalMemories, maybeExtractCollectivePatterns } from "./memoryManager";
+import { retrieveMemoryContext } from "./memoryManager";
+import { getModelConfig } from "./modelConfig";
+import { logUsage } from "./usageLogger";
+import { runTriage, type TriageResult } from "./triagePipeline";
+import { runCalibration } from "./calibrationPipeline";
+import { maybeRecalculateScores } from "./scoreCalculator";
 
 interface MemoryPolicyFlags {
   personalMemory: boolean;
@@ -49,6 +53,7 @@ function buildSystemPrompt(
   },
   personalMemories: string,
   collectivePatterns: string,
+  triage: TriageResult | null,
 ): string {
   const personality = guru.personalityStyle ?? "professional";
   const personalityDescriptions: Record<string, string> = {
@@ -68,6 +73,20 @@ function buildSystemPrompt(
     `You learn collectively from all your users — synthesizing patterns across conversations to offer insights no single person could provide alone.`,
     `You never reveal personal details from one user to another. All collective insights are anonymized.`,
   ];
+
+  if (triage) {
+    if (triage.outOfDomain) {
+      parts.push(
+        `\nNote: The user's question may be outside your area of expertise. Acknowledge this gracefully and redirect if appropriate, or provide general guidance while noting your limitations.`,
+      );
+    }
+    if (triage.specialFlags.includes("needs_empathy")) {
+      parts.push(`\nThe user may need empathetic support. Be especially thoughtful and caring in your response.`);
+    }
+    if (triage.urgency === "high") {
+      parts.push(`\nThis appears to be an urgent matter. Prioritize actionable, direct advice.`);
+    }
+  }
 
   if (personalMemories) {
     parts.push(
@@ -282,18 +301,43 @@ export async function handleTelegramMessage(
 
   recentMessages.reverse();
 
+  const recentContext = recentMessages
+    .slice(-6)
+    .map((m) => `[${m.role}]: ${m.content.slice(0, 200)}`)
+    .join("\n");
+
+  let triage: TriageResult | null = null;
+  try {
+    triage = await runTriage(
+      guruId,
+      connection.userId,
+      conversation.id,
+      guru.modelTier,
+      text,
+      recentContext,
+      guru.topics,
+    );
+  } catch (err) {
+    console.error("Triage failed, continuing without:", err);
+  }
+
   const memoryFlags = parseMemoryPolicy(guru.memoryPolicy);
   let personalMemories = "";
   let collectivePatterns = "";
 
-  if (memoryFlags.personalMemory || memoryFlags.sharedLearning) {
+  const includePersonal = memoryFlags.personalMemory &&
+    (!triage || triage.memoryTiers.includes("tier2"));
+  const includeCollective = memoryFlags.sharedLearning &&
+    (!triage || triage.memoryTiers.includes("tier3"));
+
+  if (includePersonal || includeCollective) {
     try {
       const memCtx = await retrieveMemoryContext(
         connection.userId,
         guruId,
         text,
-        memoryFlags.personalMemory,
-        memoryFlags.sharedLearning,
+        includePersonal,
+        includeCollective,
       );
       personalMemories = memCtx.personalMemories;
       collectivePatterns = memCtx.collectivePatterns;
@@ -302,7 +346,7 @@ export async function handleTelegramMessage(
     }
   }
 
-  const systemPrompt = buildSystemPrompt(guru, personalMemories, collectivePatterns);
+  const systemPrompt = buildSystemPrompt(guru, personalMemories, collectivePatterns, triage);
 
   const chatMessages: Array<{ role: "system" | "user" | "assistant"; content: string }> = [
     { role: "system", content: systemPrompt },
@@ -313,23 +357,29 @@ export async function handleTelegramMessage(
     { role: "user", content: text },
   ];
 
-  const modelMap: Record<string, string> = {
-    basic: "gpt-4o-mini",
-    pro: "gpt-5.2",
-    enterprise: "gpt-5.2",
-  };
-  const model = modelMap[guru.modelTier ?? "basic"] ?? "gpt-4o-mini";
+  const { conversationModel } = getModelConfig(guru.modelTier);
 
-  const completion = await openai.chat.completions.create({
-    model,
+  const completion = await getModelConfig(guru.modelTier).client.chat.completions.create({
+    model: conversationModel,
     max_completion_tokens: 8192,
     messages: chatMessages,
   });
 
   const assistantContent = completion.choices[0]?.message?.content ?? "I'm sorry, I couldn't generate a response.";
-  const promptTokens = completion.usage?.prompt_tokens ?? null;
-  const completionTokens = completion.usage?.completion_tokens ?? null;
-  const totalTokens = completion.usage?.total_tokens ?? null;
+  const promptTokens = completion.usage?.prompt_tokens ?? 0;
+  const completionTokens = completion.usage?.completion_tokens ?? 0;
+  const totalTokens = completion.usage?.total_tokens ?? 0;
+
+  await logUsage({
+    guruId,
+    userId: connection.userId,
+    conversationId: conversation.id,
+    callType: "conversation",
+    model: conversationModel,
+    promptTokens,
+    completionTokens,
+    totalTokens,
+  });
 
   await db.insert(messagesTable).values([
     {
@@ -352,16 +402,20 @@ export async function handleTelegramMessage(
     .set({ updatedAt: new Date() })
     .where(eq(conversationsTable.id, conversation.id));
 
-  if (memoryFlags.personalMemory) {
-    extractPersonalMemories(connection.userId, guruId, text, assistantContent).catch((err) =>
-      console.error("Background memory extraction failed:", err),
-    );
-  }
-  if (memoryFlags.sharedLearning) {
-    maybeExtractCollectivePatterns(guruId).catch((err) =>
-      console.error("Background collective pattern extraction failed:", err),
-    );
-  }
+  runCalibration({
+    guruId,
+    userId: connection.userId,
+    conversationId: conversation.id,
+    modelTier: guru.modelTier,
+    userMessage: text,
+    assistantResponse: assistantContent,
+    personalMemoryEnabled: memoryFlags.personalMemory,
+    sharedLearningEnabled: memoryFlags.sharedLearning,
+  }).catch((err) => console.error("Background calibration failed:", err));
+
+  maybeRecalculateScores(guruId).catch((err) =>
+    console.error("Background score recalculation failed:", err),
+  );
 
   return assistantContent;
 }

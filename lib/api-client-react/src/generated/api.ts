@@ -20,6 +20,7 @@ import type {
   Category,
   CheckoutInput,
   CheckoutSession,
+  ContributionScoreResponse,
   CreateGuruInput,
   CreateRatingInput,
   ErrorResponse,
@@ -1466,6 +1467,98 @@ export const useToggleWisdomContribution = <
 > => {
   return useMutation(getToggleWisdomContributionMutationOptions(options));
 };
+
+/**
+ * @summary Get the current user's contribution score for a guru
+ */
+export const getGetContributionScoreUrl = (guruId: number) => {
+  return `/api/gurus/${guruId}/contribution-score`;
+};
+
+export const getContributionScore = async (
+  guruId: number,
+  options?: RequestInit,
+): Promise<ContributionScoreResponse> => {
+  return customFetch<ContributionScoreResponse>(
+    getGetContributionScoreUrl(guruId),
+    {
+      ...options,
+      method: "GET",
+    },
+  );
+};
+
+export const getGetContributionScoreQueryKey = (guruId: number) => {
+  return [`/api/gurus/${guruId}/contribution-score`] as const;
+};
+
+export const getGetContributionScoreQueryOptions = <
+  TData = Awaited<ReturnType<typeof getContributionScore>>,
+  TError = ErrorType<ErrorResponse>,
+>(
+  guruId: number,
+  options?: {
+    query?: UseQueryOptions<
+      Awaited<ReturnType<typeof getContributionScore>>,
+      TError,
+      TData
+    >;
+    request?: SecondParameter<typeof customFetch>;
+  },
+) => {
+  const { query: queryOptions, request: requestOptions } = options ?? {};
+
+  const queryKey =
+    queryOptions?.queryKey ?? getGetContributionScoreQueryKey(guruId);
+
+  const queryFn: QueryFunction<
+    Awaited<ReturnType<typeof getContributionScore>>
+  > = ({ signal }) =>
+    getContributionScore(guruId, { signal, ...requestOptions });
+
+  return {
+    queryKey,
+    queryFn,
+    enabled: !!guruId,
+    ...queryOptions,
+  } as UseQueryOptions<
+    Awaited<ReturnType<typeof getContributionScore>>,
+    TError,
+    TData
+  > & { queryKey: QueryKey };
+};
+
+export type GetContributionScoreQueryResult = NonNullable<
+  Awaited<ReturnType<typeof getContributionScore>>
+>;
+export type GetContributionScoreQueryError = ErrorType<ErrorResponse>;
+
+/**
+ * @summary Get the current user's contribution score for a guru
+ */
+
+export function useGetContributionScore<
+  TData = Awaited<ReturnType<typeof getContributionScore>>,
+  TError = ErrorType<ErrorResponse>,
+>(
+  guruId: number,
+  options?: {
+    query?: UseQueryOptions<
+      Awaited<ReturnType<typeof getContributionScore>>,
+      TError,
+      TData
+    >;
+    request?: SecondParameter<typeof customFetch>;
+  },
+): UseQueryResult<TData, TError> & { queryKey: QueryKey } {
+  const queryOptions = getGetContributionScoreQueryOptions(guruId, options);
+
+  const query = useQuery(queryOptions) as UseQueryResult<TData, TError> & {
+    queryKey: QueryKey;
+  };
+
+  return { ...query, queryKey: queryOptions.queryKey };
+}
 
 /**
  * @summary Get Telegram bot info for a guru

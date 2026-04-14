@@ -9,3 +9,5 @@ export * from "./telegram-connections";
 export * from "./connection-codes";
 export * from "./user-memories";
 export * from "./collective-patterns";
+export * from "./contribution-scores";
+export * from "./usage-logs";

@@ -347,6 +347,20 @@ export const ToggleWisdomContributionResponse = zod.object({
 });
 
 /**
+ * @summary Get the current user's contribution score for a guru
+ */
+export const GetContributionScoreParams = zod.object({
+  guruId: zod.coerce.number(),
+});
+
+export const GetContributionScoreResponse = zod.object({
+  score: zod.number(),
+  conversationCount: zod.number(),
+  patternsContributed: zod.number(),
+  lastUpdatedAt: zod.coerce.date().nullish(),
+});
+
+/**
  * @summary Get Telegram bot info for a guru
  */
 export const GetTelegramBotInfoParams = zod.object({
