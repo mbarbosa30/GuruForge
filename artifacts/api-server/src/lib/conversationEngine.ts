@@ -72,7 +72,7 @@ export async function handleCodeVerification(
     .set({ used: true })
     .where(eq(connectionCodesTable.id, codeEntry.id));
 
-  const existing = await db
+  const existingByUser = await db
     .select()
     .from(telegramConnectionsTable)
     .where(
@@ -83,7 +83,7 @@ export async function handleCodeVerification(
     )
     .limit(1);
 
-  if (existing.length > 0) {
+  if (existingByUser.length > 0) {
     await db
       .update(telegramConnectionsTable)
       .set({
@@ -92,15 +92,38 @@ export async function handleCodeVerification(
         status: "active",
         connectedAt: now,
       })
-      .where(eq(telegramConnectionsTable.id, existing[0].id));
+      .where(eq(telegramConnectionsTable.id, existingByUser[0].id));
   } else {
-    await db.insert(telegramConnectionsTable).values({
-      userId: codeEntry.userId,
-      guruId,
-      telegramUserId,
-      telegramChatId: chatId,
-      status: "active",
-    });
+    const existingByTelegram = await db
+      .select()
+      .from(telegramConnectionsTable)
+      .where(
+        and(
+          eq(telegramConnectionsTable.guruId, guruId),
+          eq(telegramConnectionsTable.telegramUserId, telegramUserId),
+        ),
+      )
+      .limit(1);
+
+    if (existingByTelegram.length > 0) {
+      await db
+        .update(telegramConnectionsTable)
+        .set({
+          userId: codeEntry.userId,
+          telegramChatId: chatId,
+          status: "active",
+          connectedAt: now,
+        })
+        .where(eq(telegramConnectionsTable.id, existingByTelegram[0].id));
+    } else {
+      await db.insert(telegramConnectionsTable).values({
+        userId: codeEntry.userId,
+        guruId,
+        telegramUserId,
+        telegramChatId: chatId,
+        status: "active",
+      });
+    }
   }
 
   const [guru] = await db
@@ -127,7 +150,7 @@ export async function handleTelegramMessage(
     if (result.success) return result.message;
   }
 
-  const [connection] = await db
+  const connections = await db
     .select()
     .from(telegramConnectionsTable)
     .where(
@@ -136,12 +159,18 @@ export async function handleTelegramMessage(
         eq(telegramConnectionsTable.guruId, guruId),
         eq(telegramConnectionsTable.status, "active"),
       ),
-    )
-    .limit(1);
+    );
 
-  if (!connection) {
+  if (connections.length === 0) {
     return "Please connect your GuruForge account first. Go to the Guru's profile page on GuruForge and click 'Connect on Telegram' to get your connection code.";
   }
+
+  if (connections.length > 1) {
+    console.error(`Integrity error: multiple active connections for telegramUserId=${telegramUserId}, guruId=${guruId}`);
+    return "There's a configuration issue with your account. Please contact support.";
+  }
+
+  const connection = connections[0];
 
   const [activeSub] = await db
     .select()

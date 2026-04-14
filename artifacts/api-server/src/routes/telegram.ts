@@ -8,7 +8,7 @@ import {
   subscriptionsTable,
 } from "@workspace/db/schema";
 import { eq, and } from "drizzle-orm";
-import { getBotHandler, startBot, setupWebhook, isBotActive, getWebhookSecret } from "../lib/botManager";
+import { getBotHandler, startBot, stopBot, setupWebhook, isBotActive, getWebhookSecret } from "../lib/botManager";
 import crypto from "crypto";
 
 const router: IRouter = Router();
@@ -281,6 +281,10 @@ router.patch("/telegram/bot-token/:guruId", requireAuth, async (req: AuthRequest
         .update(gurusTable)
         .set({ telegramBotToken: botToken, updatedAt: new Date() })
         .where(eq(gurusTable.id, guruId));
+
+      if (isBotActive(guruId)) {
+        stopBot(guruId);
+      }
 
       const started = await startBot(guruId);
       if (started) {

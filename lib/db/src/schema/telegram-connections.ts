@@ -16,6 +16,7 @@ export const telegramConnectionsTable = pgTable("telegram_connections", {
   connectedAt: timestamp("connected_at", { withTimezone: true }).defaultNow().notNull(),
 }, (table) => [
   uniqueIndex("telegram_conn_user_guru_idx").on(table.userId, table.guruId),
+  uniqueIndex("telegram_conn_tg_guru_idx").on(table.guruId, table.telegramUserId),
 ]);
 
 export const insertTelegramConnectionSchema = createInsertSchema(telegramConnectionsTable).omit({
