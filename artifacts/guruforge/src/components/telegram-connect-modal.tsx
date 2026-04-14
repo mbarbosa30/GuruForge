@@ -191,15 +191,17 @@ export default function TelegramConnectModal({
             <p className="text-[11px] font-medium tracking-[0.12em] uppercase text-[#888] mb-4">
               Your Connection Code
             </p>
-            <div className="flex justify-center gap-1.5 mb-4">
-              {code.split("").map((char, i) => (
-                <div
-                  key={i}
-                  className="w-10 h-12 border border-[#ddd] flex items-center justify-center text-[20px] font-mono font-medium text-[#111]"
-                >
-                  {char}
-                </div>
-              ))}
+            <div className="flex justify-center items-center gap-0 mb-4">
+              <div className="flex items-center">
+                {code.split("").map((char, i) => (
+                  <div
+                    key={i}
+                    className="relative flex h-9 w-9 items-center justify-center border-y border-r border-[#ddd] text-sm font-mono font-medium text-[#111] first:rounded-l-md first:border-l last:rounded-r-md shadow-sm"
+                  >
+                    {char}
+                  </div>
+                ))}
+              </div>
             </div>
             {countdown > 0 && (
               <p className="text-[11px] text-[#999] mb-4">
