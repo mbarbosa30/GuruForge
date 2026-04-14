@@ -997,6 +997,9 @@ components:
         avatarUrl:
           type: string
           nullable: true
+        walletAddress:
+          type: string
+          nullable: true
         role:
           type: string
         createdAt:

@@ -10,6 +10,7 @@ export const usersTable = pgTable("users", {
   email: varchar("email", { length: 255 }).notNull(),
   name: varchar("name", { length: 255 }),
   avatarUrl: text("avatar_url"),
+  walletAddress: varchar("wallet_address", { length: 255 }),
   role: varchar("role", { length: 20 }).notNull().default("user"),
   stripeCustomerId: varchar("stripe_customer_id", { length: 255 }),
   createdAt: timestamp("created_at").defaultNow().notNull(),

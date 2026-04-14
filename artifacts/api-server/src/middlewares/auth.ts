@@ -30,6 +30,7 @@ function extractBearerToken(req: Request): string | null {
 interface PrivyProfile {
   name: string;
   email: string;
+  walletAddress: string | null;
 }
 
 function extractProfileFromPrivyUser(user: PrivyUser): PrivyProfile {
@@ -47,7 +48,12 @@ function extractProfileFromPrivyUser(user: PrivyUser): PrivyProfile {
     user.discord?.email ||
     "unknown@example.com";
 
-  return { name, email };
+  const walletAddress =
+    user.smartWallet?.address ||
+    user.wallet?.address ||
+    null;
+
+  return { name, email, walletAddress };
 }
 
 async function fetchPrivyProfile(privyUserId: string): Promise<PrivyProfile> {
@@ -63,14 +69,22 @@ async function resolveOrCreateUser(privyUserId: string) {
     .limit(1);
 
   if (existingByPrivyId) {
-    if (!existingByPrivyId.name || existingByPrivyId.name.trim() === "") {
+    const needsName = !existingByPrivyId.name || existingByPrivyId.name.trim() === "";
+    const needsWallet = !existingByPrivyId.walletAddress;
+    if (needsName || needsWallet) {
       try {
         const profile = await fetchPrivyProfile(privyUserId);
-        if (profile.name.trim()) {
-          const updates: Record<string, string> = { name: profile.name };
-          if (!existingByPrivyId.email || existingByPrivyId.email === "unknown@example.com") {
-            updates.email = profile.email;
-          }
+        const updates: Record<string, string> = {};
+        if (needsName && profile.name.trim()) {
+          updates.name = profile.name;
+        }
+        if (!existingByPrivyId.email || existingByPrivyId.email === "unknown@example.com") {
+          updates.email = profile.email;
+        }
+        if (needsWallet && profile.walletAddress) {
+          updates.walletAddress = profile.walletAddress;
+        }
+        if (Object.keys(updates).length > 0) {
           const [updated] = await db
             .update(usersTable)
             .set(updates)
@@ -85,7 +99,7 @@ async function resolveOrCreateUser(privyUserId: string) {
     return existingByPrivyId;
   }
 
-  let profile: PrivyProfile = { name: "", email: "unknown@example.com" };
+  let profile: PrivyProfile = { name: "", email: "unknown@example.com", walletAddress: null };
   try {
     profile = await fetchPrivyProfile(privyUserId);
   } catch (err) {
@@ -104,6 +118,9 @@ async function resolveOrCreateUser(privyUserId: string) {
       if (profile.name.trim() && (!existingByEmail.name || existingByEmail.name.trim() === "")) {
         updates.name = profile.name;
       }
+      if (profile.walletAddress) {
+        updates.walletAddress = profile.walletAddress;
+      }
       const [migrated] = await db
         .update(usersTable)
         .set(updates)
@@ -119,6 +136,7 @@ async function resolveOrCreateUser(privyUserId: string) {
       privyId: privyUserId,
       email: profile.email,
       name: profile.name.trim() || null,
+      walletAddress: profile.walletAddress,
     })
     .returning();
   return created;
