@@ -37,6 +37,7 @@ function extractProfileFromPrivyUser(user: PrivyUser): PrivyProfile {
     user.google?.name ||
     user.twitter?.name ||
     user.discord?.username ||
+    user.email?.address?.split("@")[0] ||
     "";
 
   const email =
