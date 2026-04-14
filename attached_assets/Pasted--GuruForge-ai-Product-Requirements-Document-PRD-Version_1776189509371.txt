@@ -1,0 +1,190 @@
+**✅ GuruForge.ai – Product Requirements Document (PRD)**  
+**Version 1.0 – April 2026**  
+**Author: Grok (collaborating with the founder)**  
+**Status: Vision + Detailed Requirements (ready for design & engineering)**
+
+---
+
+### 1. Vision & Mission
+
+**GuruForge.ai** is the first decentralized **wisdom economy** platform — a marketplace where specialized AI Gurus are forged inside Telegram.
+
+While most AI products compete on intelligence, GuruForge competes on **wisdom, community, and real human connection**.
+
+Each Guru is a living entity that:
+- Remembers every user’s personal journey (privately)
+- Learns collectively from hundreds of similar users (anonymously and securely)
+- Synthesizes real patterns (“what actually works and why not”)
+- Makes safe, consent-based connections between people
+- Rewards its earliest and most valuable contributors with royalties and token incentives
+
+**Core promise:**  
+The more people use a Guru, the wiser it becomes — and the more everyone who helped forge it benefits.
+
+We are not building smarter chatbots.  
+We are forging wiser companions that belong to their communities.
+
+---
+
+### 2. Objectives & Success Criteria
+
+**Primary Objectives**
+- Create the most valuable specialized AI Gurus in the world by leveraging collective human experience
+- Build a self-sustaining wisdom economy where users are co-owners, not just customers
+- Achieve strong network effects through memory + contribution + token incentives
+- Deliver recurring revenue for creators and meaningful passive income for early contributors
+
+**Key Success Metrics (first 12 months)**
+- 50+ live Gurus
+- 5,000+ monthly active paying users
+- Average Guru retention > 65% after 90 days
+- Average user Contribution Score correlation with royalty/token earnings > 0.7
+- At least 8 Gurus successfully launch their own per-Guru token
+
+---
+
+### 3. Target Users & Personas
+
+**Primary Users**
+- **Pioneers / Power Users** (founders, operators, creators, thinkers) – want deep, contextual, community-validated advice + ownership upside
+- **Creators / Domain Experts** – want to productize their expertise into a living, revenue-generating AI Guru
+- **Community Members** – want to contribute to something meaningful and earn from their insights
+
+**Secondary**
+- Teams / small organizations looking for specialized “AI co-founders”
+
+---
+
+### 4. Core Product Pillars
+
+**1. Wisdom of the Crowd**  
+- Gurus continuously improve through real conversations  
+- 3-Tier Intelligence System (Triage → Conversation → Calibration) + 3-Tier Memory  
+- Strict privacy: personal data never leaves Tier 2; only anonymized, redacted patterns enter Tier 3
+
+**2. Real Human Connection**  
+- Safe, consent-based warm intros (“I know someone who just solved this exact problem”)  
+- Cross-user pattern synthesis without ever exposing identities
+
+**3. Shared Ownership & Incentives**  
+- Wisdom Royalties for early users  
+- Contribution Score that measures real influence on the Guru’s wisdom  
+- Automatic per-Guru token launches at maturity (via Bankr) with fees flowing back as rewards to contributors
+
+---
+
+### 5. Key Features & User Stories
+
+**5.1 Guru Creation (Creator Flow)**
+- Creator fills simple form: name, avatar, category, topics of interest, base model, starting price
+- Optional toggle: “Enable automatic token launch at maturity”
+- Creator provides their own LLM API keys (they pay all inference costs)
+- Guru goes live in marketplace instantly
+
+**5.2 Discovery & Marketplace**
+- Clean, elegant directory with filters (category, Wisdom Score, Satisfaction Score, token status, etc.)
+- Each Guru card shows: Wisdom Score, Satisfaction Score, number of users, current price, token status
+- Public Guru profile page with transparent metrics and contribution leaderboard (anonymized)
+
+**5.3 Onboarding & Connection**
+- One-click “Connect to Telegram” → secure one-time code + QR
+- Instant handshake inside Telegram → Guru activates with full memory
+
+**5.4 The Living Guru Experience (inside Telegram)**
+- Feels like talking to a wise, long-term companion that knows you deeply
+- Uses Triage → Conversation → Calibration on every message
+- Can execute real actions through creator-configured tools
+- Occasionally surfaces collective wisdom and safe intros
+- Users can toggle contribution to Tier 3 at any time
+
+**5.5 Wisdom Portfolio Dashboard**
+- Shows all Gurus the user is part of
+- Personal Contribution Score per Guru + impact summary
+- Wisdom Royalties earned
+- Token rewards received
+- Projected future earnings
+
+**5.6 Contribution & Reward System**
+- Every Calibration step quietly calculates user contribution
+- Score = Insight Quality × Adoption Rate × Engagement
+- Higher contributors get larger share of royalties and per-Guru token rewards
+- Fully transparent and private to each user
+
+**5.7 Per-Guru Token Economy (Innovative Heart)**
+- When a Guru reaches maturity thresholds (configurable: e.g. 200+ paying users + Wisdom Score ≥ 75), the platform automatically:
+  - Launches a dedicated ERC-20 token (name derived from Guru’s name + topics)
+  - Registers the Guru as an official ERC-8004 Trustless Agent (on-chain identity)
+- Trading fees (or configured platform fee) flow into the Guru’s Treasury
+- Treasury tokens are distributed automatically to users proportional to their Contribution Score
+- Creates powerful incentive alignment: contribute more → Guru gets wiser → token gains value → you earn more
+
+**5.8 Platform Token (optional future layer)**
+- GuruForge will have its own native token for governance, fee discounts, and staking
+
+---
+
+### 6. Monetization Model
+
+- Monthly subscription per Guru (dynamic pricing based on Wisdom Score)
+- Revenue split: 70% creator / 20% platform / 10% Wisdom Royalty pool
+- Creator pays 100% of LLM inference costs
+- Future revenue from per-Guru token fees and platform token utility
+
+---
+
+### 7. Phased Roadmap
+
+**Phase 0 – MVP (8–10 weeks)**
+- Elegant light/minimalistic landing page (teaser)
+- Creator publishing flow
+- Telegram secure connection
+- Basic 3-tier intelligence + memory
+- Contribution Score calculation
+- Wisdom Royalties
+- Stripe billing + cost dashboard
+- Waitlist + early access
+
+**Phase 1 – Wisdom Economy (next 8 weeks)**
+- Full Contribution Score + dashboard
+- Per-Guru token launch automation (Bankr)
+- ERC-8004 registration
+- Treasury distribution engine
+- Public Guru token profiles
+
+**Phase 2 – Scale & Network Effects**
+- Advanced pattern synthesis
+- Inter-Guru connections
+- Governance via platform token
+- Mobile web + deeper Telegram integration
+
+---
+
+### 8. Risks & Mitigations
+
+| Risk | Mitigation |
+|------|------------|
+| Privacy leaks in Tier 3 | Automatic PII redaction + user opt-in toggles + regular audits |
+| Low-quality contributions | Contribution Score quality filter + minimum engagement for royalties |
+| Creator cost sensitivity | Clear cost dashboard + optimization recommendations |
+| Token regulatory complexity | Start with simple fair-launch mechanics + legal review before any launch |
+| Slow initial adoption | Seed with 3–5 high-quality founder-controlled Gurus |
+
+---
+
+### 9. Non-Goals (what we will NOT do)
+- Replace general-purpose AIs (Grok, Claude, etc.)
+- Build another generic agent directory
+- Compete on raw speed or cost — we compete on depth and community wisdom
+
+---
+
+This PRD captures the complete innovative vision we’ve built together: a platform that turns collective human experience into living, rewarding AI wisdom — with real ownership for users and creators.
+
+It is honest, ambitious, and designed to feel meaningful from day one.
+
+Would you like me to:
+1. Expand any section (especially the token mechanics or user flows)?
+2. Turn this into a shorter executive summary version?
+3. Add wireframe-style descriptions for key screens?
+
+Just tell me how you want to evolve it. We now have a solid foundation to start building from.
