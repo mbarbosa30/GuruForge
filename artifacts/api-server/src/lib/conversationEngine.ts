@@ -243,22 +243,6 @@ export async function handleTelegramMessage(
 
   const connection = connections[0];
 
-  const [activeSub] = await db
-    .select()
-    .from(subscriptionsTable)
-    .where(
-      and(
-        eq(subscriptionsTable.userId, connection.userId),
-        eq(subscriptionsTable.guruId, guruId),
-        eq(subscriptionsTable.status, "active"),
-      ),
-    )
-    .limit(1);
-
-  if (!activeSub) {
-    return "Your subscription to this Guru is not active. Please visit GuruForge to resubscribe.";
-  }
-
   const [guru] = await db
     .select()
     .from(gurusTable)
@@ -267,6 +251,26 @@ export async function handleTelegramMessage(
 
   if (!guru) {
     return "This Guru is no longer available.";
+  }
+
+  const isCreator = guru.creatorId === connection.userId;
+
+  if (!isCreator) {
+    const [activeSub] = await db
+      .select()
+      .from(subscriptionsTable)
+      .where(
+        and(
+          eq(subscriptionsTable.userId, connection.userId),
+          eq(subscriptionsTable.guruId, guruId),
+          eq(subscriptionsTable.status, "active"),
+        ),
+      )
+      .limit(1);
+
+    if (!activeSub) {
+      return "Your subscription to this Guru is not active. Please visit GuruForge to resubscribe.";
+    }
   }
 
   let [conversation] = await db

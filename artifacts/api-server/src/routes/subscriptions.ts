@@ -214,6 +214,17 @@ router.get("/subscriptions/check/:guruId", requireAuth, async (req: AuthRequest,
       return;
     }
 
+    const [guru] = await db
+      .select({ creatorId: gurusTable.creatorId })
+      .from(gurusTable)
+      .where(eq(gurusTable.id, guruId))
+      .limit(1);
+
+    if (guru && guru.creatorId === req.dbUserId) {
+      res.json({ subscribed: true });
+      return;
+    }
+
     const [sub] = await db
       .select()
       .from(subscriptionsTable)

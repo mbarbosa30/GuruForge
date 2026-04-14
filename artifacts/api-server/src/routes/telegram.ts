@@ -40,6 +40,7 @@ router.post("/telegram/connect/:guruId", requireAuth, async (req: AuthRequest, r
       .select({
         id: gurusTable.id,
         name: gurusTable.name,
+        creatorId: gurusTable.creatorId,
         telegramBotToken: gurusTable.telegramBotToken,
       })
       .from(gurusTable)
@@ -56,21 +57,25 @@ router.post("/telegram/connect/:guruId", requireAuth, async (req: AuthRequest, r
       return;
     }
 
-    const [activeSub] = await db
-      .select()
-      .from(subscriptionsTable)
-      .where(
-        and(
-          eq(subscriptionsTable.userId, req.dbUserId),
-          eq(subscriptionsTable.guruId, guruId),
-          eq(subscriptionsTable.status, "active"),
-        ),
-      )
-      .limit(1);
+    const isCreator = guru.creatorId === req.dbUserId;
 
-    if (!activeSub) {
-      res.status(403).json({ error: "You need an active subscription to connect on Telegram." });
-      return;
+    if (!isCreator) {
+      const [activeSub] = await db
+        .select()
+        .from(subscriptionsTable)
+        .where(
+          and(
+            eq(subscriptionsTable.userId, req.dbUserId),
+            eq(subscriptionsTable.guruId, guruId),
+            eq(subscriptionsTable.status, "active"),
+          ),
+        )
+        .limit(1);
+
+      if (!activeSub) {
+        res.status(403).json({ error: "You need an active subscription to connect on Telegram." });
+        return;
+      }
     }
 
     const existingConnection = await db
