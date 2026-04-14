@@ -16,6 +16,21 @@ import {
 import type { Rating } from "@workspace/api-client-react";
 import TelegramConnectModal from "@/components/telegram-connect-modal";
 
+function formatMemoryPolicy(policy: string | null | undefined): string {
+  if (!policy) return "Standard";
+  try {
+    const parsed = JSON.parse(policy);
+    const parts: string[] = [];
+    if (parsed.personalMemory) parts.push("Personal");
+    if (parsed.sharedLearning) parts.push("Shared");
+    if (parts.length === 0) return "None";
+    return parts.join(" + ");
+  } catch {
+    if (policy.toLowerCase().includes("no memory")) return "None";
+    return policy;
+  }
+}
+
 function formatPrice(cents: number, interval: string) {
   const dollars = (cents / 100).toFixed(cents % 100 === 0 ? 0 : 2);
   return `$${dollars}/${interval === "yearly" ? "year" : "month"}`;
@@ -279,7 +294,7 @@ export default function GuruProfile() {
         <div className="grid grid-cols-1 sm:grid-cols-3 gap-px bg-[#e0e0e0]">
           <div className="bg-white px-5 py-4">
             <span className="text-[11px] font-medium tracking-[0.04em] uppercase text-[#888] block mb-1">Memory policy</span>
-            <span className="text-[14px] text-[#333] capitalize">{guru.memoryPolicy ?? "Standard"}</span>
+            <span className="text-[14px] text-[#333] capitalize">{formatMemoryPolicy(guru.memoryPolicy)}</span>
           </div>
           <div className="bg-white px-5 py-4">
             <span className="text-[11px] font-medium tracking-[0.04em] uppercase text-[#888] block mb-1">Introductions</span>

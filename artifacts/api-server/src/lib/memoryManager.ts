@@ -8,7 +8,7 @@ import {
 } from "@workspace/db/schema";
 import { eq, and, desc, sql } from "drizzle-orm";
 import { openai } from "@workspace/integrations-openai-ai-server";
-import { redactPII } from "./piiRedactor";
+import { redactPIIWithLLM, logRedaction } from "./piiRedactor";
 
 interface MemoryContext {
   personalMemories: string;
@@ -19,6 +19,8 @@ export async function retrieveMemoryContext(
   userId: number,
   guruId: number,
   currentMessage: string,
+  includePersonal: boolean = true,
+  includeCollective: boolean = true,
 ): Promise<MemoryContext> {
   const keywords = currentMessage
     .toLowerCase()
@@ -26,72 +28,74 @@ export async function retrieveMemoryContext(
     .split(/\s+/)
     .filter((w) => w.length > 3);
 
-  const allMemories = await db
-    .select()
-    .from(userMemoriesTable)
-    .where(and(eq(userMemoriesTable.userId, userId), eq(userMemoriesTable.guruId, guruId)))
-    .orderBy(desc(userMemoriesTable.importance), desc(userMemoriesTable.updatedAt))
-    .limit(30);
-
-  const scored = allMemories.map((m) => {
-    const summaryLower = m.summary.toLowerCase();
-    let keywordScore = 0;
-    for (const kw of keywords) {
-      if (summaryLower.includes(kw)) keywordScore += 1;
-    }
-    const recencyMs = Date.now() - m.updatedAt.getTime();
-    const recencyDays = recencyMs / (1000 * 60 * 60 * 24);
-    const recencyScore = Math.max(0, 1 - recencyDays / 90);
-    const totalScore = keywordScore * 2 + m.importance + recencyScore;
-    return { ...m, totalScore };
-  });
-
-  scored.sort((a, b) => b.totalScore - a.totalScore);
-  const topMemories = scored.slice(0, 8);
-
-  if (topMemories.length > 0) {
-    const memoryIds = topMemories.map((m) => m.id);
-    await db
-      .update(userMemoriesTable)
-      .set({ lastAccessedAt: new Date() })
-      .where(sql`${userMemoriesTable.id} IN (${sql.join(memoryIds.map(id => sql`${id}`), sql`, `)})`);
-  }
-
   let personalMemories = "";
-  if (topMemories.length > 0) {
-    const lines = topMemories.map(
-      (m) => `- [${m.category}] ${m.summary}`,
-    );
-    personalMemories = lines.join("\n");
-  }
+  if (includePersonal) {
+    const allMemories = await db
+      .select()
+      .from(userMemoriesTable)
+      .where(and(eq(userMemoriesTable.userId, userId), eq(userMemoriesTable.guruId, guruId)))
+      .orderBy(desc(userMemoriesTable.importance), desc(userMemoriesTable.updatedAt))
+      .limit(30);
 
-  const patterns = await db
-    .select()
-    .from(collectivePatternsTable)
-    .where(eq(collectivePatternsTable.guruId, guruId))
-    .orderBy(desc(collectivePatternsTable.confidence), desc(collectivePatternsTable.frequency))
-    .limit(10);
-
-  let relevantPatterns = patterns;
-  if (keywords.length > 0 && patterns.length > 5) {
-    const patternScored = patterns.map((p) => {
-      const summaryLower = p.summary.toLowerCase();
-      let score = 0;
+    const scored = allMemories.map((m) => {
+      const summaryLower = m.summary.toLowerCase();
+      let keywordScore = 0;
       for (const kw of keywords) {
-        if (summaryLower.includes(kw)) score += 1;
+        if (summaryLower.includes(kw)) keywordScore += 1;
       }
-      return { ...p, score };
+      const recencyMs = Date.now() - m.updatedAt.getTime();
+      const recencyDays = recencyMs / (1000 * 60 * 60 * 24);
+      const recencyScore = Math.max(0, 1 - recencyDays / 90);
+      const totalScore = keywordScore * 2 + m.importance + recencyScore;
+      return { ...m, totalScore };
     });
-    patternScored.sort((a, b) => b.score - a.score);
-    relevantPatterns = patternScored.slice(0, 5);
+
+    scored.sort((a, b) => b.totalScore - a.totalScore);
+    const topMemories = scored.slice(0, 8);
+
+    if (topMemories.length > 0) {
+      const memoryIds = topMemories.map((m) => m.id);
+      await db
+        .update(userMemoriesTable)
+        .set({ lastAccessedAt: new Date() })
+        .where(sql`${userMemoriesTable.id} IN (${sql.join(memoryIds.map(id => sql`${id}`), sql`, `)})`);
+
+      const lines = topMemories.map(
+        (m) => `- [${m.category}] ${m.summary}`,
+      );
+      personalMemories = lines.join("\n");
+    }
   }
 
   let collectivePatternsText = "";
-  if (relevantPatterns.length > 0) {
-    const lines = relevantPatterns.map(
-      (p) => `- [${p.patternType}] ${p.summary} (confidence: ${(p.confidence * 100).toFixed(0)}%, sources: ${p.sourceCount})`,
-    );
-    collectivePatternsText = lines.join("\n");
+  if (includeCollective) {
+    const patterns = await db
+      .select()
+      .from(collectivePatternsTable)
+      .where(eq(collectivePatternsTable.guruId, guruId))
+      .orderBy(desc(collectivePatternsTable.confidence), desc(collectivePatternsTable.frequency))
+      .limit(10);
+
+    let relevantPatterns = patterns;
+    if (keywords.length > 0 && patterns.length > 5) {
+      const patternScored = patterns.map((p) => {
+        const summaryLower = p.summary.toLowerCase();
+        let score = 0;
+        for (const kw of keywords) {
+          if (summaryLower.includes(kw)) score += 1;
+        }
+        return { ...p, score };
+      });
+      patternScored.sort((a, b) => b.score - a.score);
+      relevantPatterns = patternScored.slice(0, 5);
+    }
+
+    if (relevantPatterns.length > 0) {
+      const lines = relevantPatterns.map(
+        (p) => `- [${p.patternType}] ${p.summary} (confidence: ${(p.confidence * 100).toFixed(0)}%, sources: ${p.sourceCount})`,
+      );
+      collectivePatternsText = lines.join("\n");
+    }
   }
 
   return { personalMemories, collectivePatterns: collectivePatternsText };
@@ -243,10 +247,12 @@ async function extractCollectivePatterns(guruId: number): Promise<void> {
     .orderBy(desc(messagesTable.createdAt))
     .limit(100);
 
-  const redactedExchanges = recentMessages.map((m) => {
-    const { redacted } = redactPII(m.content);
-    return `[${m.role}]: ${redacted}`;
-  });
+  const redactedExchanges: string[] = [];
+  for (const m of recentMessages) {
+    const result = await redactPIIWithLLM(m.content);
+    logRedaction(`collective_extraction:guru_${guruId}`, result);
+    redactedExchanges.push(`[${m.role}]: ${result.redacted}`);
+  }
 
   const uniqueUserCount = new Set(recentConversations.map((c) => c.userId)).size;
 

@@ -12,6 +12,32 @@ import { eq, and, desc, gt } from "drizzle-orm";
 import { openai } from "@workspace/integrations-openai-ai-server";
 import { retrieveMemoryContext, extractPersonalMemories, maybeExtractCollectivePatterns } from "./memoryManager";
 
+interface MemoryPolicyFlags {
+  personalMemory: boolean;
+  sharedLearning: boolean;
+}
+
+function parseMemoryPolicy(memoryPolicy: string | null): MemoryPolicyFlags {
+  if (!memoryPolicy) return { personalMemory: true, sharedLearning: true };
+
+  try {
+    const parsed = JSON.parse(memoryPolicy);
+    return {
+      personalMemory: parsed.personalMemory !== false,
+      sharedLearning: parsed.sharedLearning !== false,
+    };
+  } catch {
+    const lower = (memoryPolicy ?? "").toLowerCase();
+    if (lower === "none" || lower.includes("no memory")) {
+      return { personalMemory: false, sharedLearning: false };
+    }
+    return {
+      personalMemory: lower.includes("personal"),
+      sharedLearning: lower.includes("shared") || lower.includes("pattern"),
+    };
+  }
+}
+
 function buildSystemPrompt(
   guru: {
     name: string;
@@ -256,13 +282,19 @@ export async function handleTelegramMessage(
 
   recentMessages.reverse();
 
-  const memoryEnabled = guru.memoryPolicy !== "none";
+  const memoryFlags = parseMemoryPolicy(guru.memoryPolicy);
   let personalMemories = "";
   let collectivePatterns = "";
 
-  if (memoryEnabled) {
+  if (memoryFlags.personalMemory || memoryFlags.sharedLearning) {
     try {
-      const memCtx = await retrieveMemoryContext(connection.userId, guruId, text);
+      const memCtx = await retrieveMemoryContext(
+        connection.userId,
+        guruId,
+        text,
+        memoryFlags.personalMemory,
+        memoryFlags.sharedLearning,
+      );
       personalMemories = memCtx.personalMemories;
       collectivePatterns = memCtx.collectivePatterns;
     } catch (err) {
@@ -320,10 +352,12 @@ export async function handleTelegramMessage(
     .set({ updatedAt: new Date() })
     .where(eq(conversationsTable.id, conversation.id));
 
-  if (memoryEnabled) {
+  if (memoryFlags.personalMemory) {
     extractPersonalMemories(connection.userId, guruId, text, assistantContent).catch((err) =>
       console.error("Background memory extraction failed:", err),
     );
+  }
+  if (memoryFlags.sharedLearning) {
     maybeExtractCollectivePatterns(guruId).catch((err) =>
       console.error("Background collective pattern extraction failed:", err),
     );

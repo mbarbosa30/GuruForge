@@ -460,12 +460,11 @@ function StepReview({ data, categories }: { data: FormData; categories: Category
 }
 
 function buildMemoryPolicy(data: FormData): string {
-  const parts: string[] = [];
-  if (data.memoryPersonal) parts.push("Personal memory enabled");
-  if (data.memoryShared) parts.push("Shared pattern learning enabled");
-  if (data.languagePreference.trim()) parts.push(`Language: ${data.languagePreference.trim()}`);
-  if (parts.length === 0) return "No memory retention";
-  return parts.join(". ") + ".";
+  return JSON.stringify({
+    personalMemory: data.memoryPersonal,
+    sharedLearning: data.memoryShared,
+    language: data.languagePreference.trim() || undefined,
+  });
 }
 
 function buildDescription(data: FormData): string {
