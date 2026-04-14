@@ -9,6 +9,7 @@ import {
 import { eq, and, desc, sql } from "drizzle-orm";
 import { openai } from "@workspace/integrations-openai-ai-server";
 import { redactPIIWithLLM, logRedaction } from "./piiRedactor";
+import { logUsage } from "./usageLogger";
 
 interface MemoryContext {
   personalMemories: string;
@@ -120,11 +121,22 @@ Assistant response: ${assistantResponse}
 
 Respond ONLY with a valid JSON array, no other text.`;
 
+    const model = "gpt-4o-mini";
     const completion = await openai.chat.completions.create({
-      model: "gpt-4o-mini",
+      model,
       max_completion_tokens: 1024,
       messages: [{ role: "user", content: prompt }],
       temperature: 0.3,
+    });
+
+    await logUsage({
+      guruId,
+      userId,
+      callType: "memory_extraction",
+      model,
+      promptTokens: completion.usage?.prompt_tokens ?? 0,
+      completionTokens: completion.usage?.completion_tokens ?? 0,
+      totalTokens: completion.usage?.total_tokens ?? 0,
     });
 
     const content = completion.choices[0]?.message?.content?.trim() ?? "[]";
@@ -253,6 +265,16 @@ async function extractCollectivePatterns(guruId: number): Promise<void> {
   for (const m of recentMessages) {
     const result = await redactPIIWithLLM(m.content);
     logRedaction(`collective_extraction:guru_${guruId}`, result);
+    if (result.usage) {
+      await logUsage({
+        guruId,
+        callType: "pii_redaction",
+        model: result.usage.model,
+        promptTokens: result.usage.promptTokens,
+        completionTokens: result.usage.completionTokens,
+        totalTokens: result.usage.totalTokens,
+      });
+    }
     redactedExchanges.push(`[${m.role}]: ${result.redacted}`);
   }
 
@@ -270,11 +292,21 @@ ${redactedExchanges.slice(0, 50).join("\n")}
 
 Respond ONLY with a valid JSON array, no other text.`;
 
+  const patternModel = "gpt-4o-mini";
   const completion = await openai.chat.completions.create({
-    model: "gpt-4o-mini",
+    model: patternModel,
     max_completion_tokens: 1024,
     messages: [{ role: "user", content: prompt }],
     temperature: 0.3,
+  });
+
+  await logUsage({
+    guruId,
+    callType: "pattern_extraction",
+    model: patternModel,
+    promptTokens: completion.usage?.prompt_tokens ?? 0,
+    completionTokens: completion.usage?.completion_tokens ?? 0,
+    totalTokens: completion.usage?.total_tokens ?? 0,
   });
 
   const content = completion.choices[0]?.message?.content?.trim() ?? "[]";

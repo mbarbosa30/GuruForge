@@ -15,6 +15,7 @@ export interface RedactionResult {
   redacted: string;
   redactionCount: number;
   redactedTypes: string[];
+  usage?: { model: string; promptTokens: number; completionTokens: number; totalTokens: number };
 }
 
 export function redactPIIRegex(text: string): RedactionResult {
@@ -53,8 +54,9 @@ export async function redactPIIWithLLM(text: string): Promise<RedactionResult> {
   const regexResult = redactPIIRegex(text);
 
   try {
+    const model = "gpt-4o-mini";
     const completion = await openai.chat.completions.create({
-      model: "gpt-4o-mini",
+      model,
       max_completion_tokens: 2048,
       temperature: 0,
       messages: [
@@ -97,6 +99,12 @@ Return ONLY the redacted text with no explanation. If no additional PII is found
       redacted: llmRedacted,
       redactionCount: regexResult.redactionCount + llmRedactionCount,
       redactedTypes: [...regexResult.redactedTypes, ...llmTypes],
+      usage: {
+        model,
+        promptTokens: completion.usage?.prompt_tokens ?? 0,
+        completionTokens: completion.usage?.completion_tokens ?? 0,
+        totalTokens: completion.usage?.total_tokens ?? 0,
+      },
     };
   } catch (err) {
     console.error("LLM PII redaction failed, using regex-only result:", err);

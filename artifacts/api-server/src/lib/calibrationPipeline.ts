@@ -166,6 +166,17 @@ async function upsertCollectiveInsights(
     const redactionResult = await redactPIIWithLLM(p.summary);
     logRedaction(`calibration_collective:guru_${guruId}`, redactionResult);
 
+    if (redactionResult.usage) {
+      await logUsage({
+        guruId,
+        callType: "pii_redaction",
+        model: redactionResult.usage.model,
+        promptTokens: redactionResult.usage.promptTokens,
+        completionTokens: redactionResult.usage.completionTokens,
+        totalTokens: redactionResult.usage.totalTokens,
+      });
+    }
+
     const confidence = typeof p.confidence === "number" ? Math.min(1, Math.max(0, p.confidence)) : 0.5;
 
     const existing = await db
