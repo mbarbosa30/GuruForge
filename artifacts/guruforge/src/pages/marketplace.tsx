@@ -46,7 +46,7 @@ export default function Marketplace() {
           Discover Gurus
         </h1>
         <p className="text-[15px] text-[#777] max-w-[480px]">
-          Browse specialized AI Gurus forged by real experts. Find the one that fits your journey.
+          Specialized AI agents that grow wiser from their community. Find the one that fits your journey.
         </p>
       </div>
 

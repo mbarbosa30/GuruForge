@@ -13,7 +13,7 @@ export default function Home() {
     document.title = "GuruForge — Wisdom. Community. Connection.";
     const meta = document.querySelector('meta[name="description"]');
     const content =
-      "A marketplace where specialized AI Gurus, forged by real experts inside Telegram, learn from human experience and get wiser every day.";
+      "A marketplace of specialized AI agents that live inside Telegram. Each Guru learns collectively from every user's experience, growing wiser without ever exposing personal data.";
     if (meta) {
       meta.setAttribute("content", content);
     } else {
@@ -28,17 +28,17 @@ export default function Home() {
     {
       num: "01",
       title: "Collective Wisdom",
-      desc: "Every Guru quietly learns real patterns from hundreds of users, surfacing insights no single person could see — without ever leaking personal data.",
+      desc: "Every conversation is private, but the Guru quietly synthesizes anonymous patterns across all its users — surfacing insights no single person could see alone.",
     },
     {
       num: "02",
       title: "Real Human Connection",
-      desc: "Safe, consent-based warm introductions inside Telegram connect you with the right people at the right moment.",
+      desc: "When the Guru senses two users could genuinely help each other, it proposes a warm introduction — but only if both independently consent.",
     },
     {
       num: "03",
       title: "Shared Ownership",
-      desc: "Pioneer users earn a real slice of their Guru's growth through Pioneer Wisdom Royalties, rewarding the earliest believers.",
+      desc: "Pioneer users earn a real slice of their Guru's growth through Wisdom Royalties, rewarding those who helped forge its intelligence early.",
     },
   ];
 
@@ -46,17 +46,17 @@ export default function Home() {
     {
       num: "01",
       title: "Discover",
-      desc: "Browse the marketplace and find a Guru whose expertise matches your goals.",
+      desc: "Find a Guru focused on the domain you care about — from DeFi strategy to fundraising to leadership.",
     },
     {
       num: "02",
       title: "Subscribe",
-      desc: "Choose a plan and unlock ongoing access to your Guru's evolving knowledge.",
+      desc: "Join a private wisdom community. Your subscription gives you ongoing access to an agent that grows smarter from everyone in it.",
     },
     {
       num: "03",
       title: "Connect via Telegram",
-      desc: "Chat with your Guru inside Telegram — it remembers your journey and grows wiser with every conversation.",
+      desc: "Talk privately with your Guru inside Telegram. It remembers your journey, learns from the collective, and gets wiser with every conversation.",
     },
   ];
 
@@ -72,9 +72,9 @@ export default function Home() {
           every conversation.
         </h1>
         <p className="text-base font-normal leading-[1.7] text-[#666] max-w-[620px] mb-12">
-          GuruForge is a marketplace of specialized AI Gurus forged by real
-          experts inside Telegram. They learn from human experience, remember
-          your journey, and get wiser every day.
+          Each Guru is a specialized AI agent that lives inside Telegram.
+          It learns collectively from every user who engages with it — compounding
+          real human experience into wisdom that no single person could build alone.
         </p>
         <div className="flex gap-4 items-center flex-wrap">
           <Link
@@ -103,7 +103,7 @@ export default function Home() {
               Featured Gurus
             </p>
             <p className="text-[15px] text-[#777] max-w-[420px]">
-              Top-rated Gurus sorted by wisdom score. Real experts, real knowledge.
+              The highest-rated Gurus, ranked by community-driven wisdom score.
             </p>
           </div>
           <Link
@@ -171,14 +171,14 @@ export default function Home() {
           For creators
         </p>
         <h2 className="text-[28px] md:text-[32px] font-light tracking-[-0.02em] leading-[1.15] mb-4 text-[#111]">
-          Turn your expertise<br />
-          into a living Guru.
+          Architect a domain.<br />
+          Let the community forge it.
         </h2>
         <p className="text-[15px] leading-[1.7] text-[#666] mb-8 max-w-[480px]">
-          You have years of hard-won knowledge. GuruForge lets you forge it into
-          a specialized AI that serves subscribers 24/7 inside Telegram — while
-          you earn recurring revenue and watch your Guru grow wiser with every
-          conversation.
+          Define the focus, personality, and boundaries of a specialized AI agent.
+          As subscribers engage with it inside Telegram, the Guru compounds their
+          collective experience into living wisdom — and you earn recurring revenue
+          from the community it builds.
         </p>
         <Link
           href="/create"
