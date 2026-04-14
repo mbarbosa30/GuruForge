@@ -27,7 +27,7 @@ async function initStripe() {
     stripeSync
       .syncBackfill()
       .then(() => logger.info("Stripe data synced"))
-      .catch((err: any) => logger.error({ err }, "Error syncing Stripe data"));
+      .catch((err: unknown) => logger.error({ err }, "Error syncing Stripe data"));
   } catch (error) {
     logger.error({ error }, "Failed to initialize Stripe — continuing without it");
   }

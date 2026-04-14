@@ -1,6 +1,11 @@
 import Stripe from "stripe";
 
-async function getCredentials() {
+interface StripeCredentials {
+  publishableKey: string;
+  secretKey: string;
+}
+
+async function getCredentials(): Promise<StripeCredentials> {
   const hostname = process.env.REPLIT_CONNECTORS_HOSTNAME;
   const xReplitToken = process.env.REPL_IDENTITY
     ? "repl " + process.env.REPL_IDENTITY
@@ -44,31 +49,35 @@ async function getCredentials() {
   }
 
   return {
-    publishableKey: connectionSettings.settings.publishable as string,
-    secretKey: connectionSettings.settings.secret as string,
+    publishableKey: String(connectionSettings.settings.publishable),
+    secretKey: String(connectionSettings.settings.secret),
   };
 }
 
-export async function getUncachableStripeClient() {
+export async function getUncachableStripeClient(): Promise<Stripe> {
   const { secretKey } = await getCredentials();
-  return new Stripe(secretKey, {
-    apiVersion: "2025-08-27.basil" as any,
-  });
+  return new Stripe(secretKey);
 }
 
-export async function getStripePublishableKey() {
+export async function getStripePublishableKey(): Promise<string> {
   const { publishableKey } = await getCredentials();
   return publishableKey;
 }
 
-export async function getStripeSecretKey() {
+export async function getStripeSecretKey(): Promise<string> {
   const { secretKey } = await getCredentials();
   return secretKey;
 }
 
-let stripeSync: any = null;
+interface StripeSyncInstance {
+  processWebhook(payload: Buffer, signature: string): Promise<void>;
+  findOrCreateManagedWebhook(url: string): Promise<void>;
+  syncBackfill(): Promise<void>;
+}
 
-export async function getStripeSync() {
+let stripeSync: StripeSyncInstance | null = null;
+
+export async function getStripeSync(): Promise<StripeSyncInstance> {
   if (!stripeSync) {
     const { StripeSync } = await import("stripe-replit-sync");
     const secretKey = await getStripeSecretKey();
@@ -79,7 +88,7 @@ export async function getStripeSync() {
         max: 2,
       },
       stripeSecretKey: secretKey,
-    });
+    }) as StripeSyncInstance;
   }
   return stripeSync;
 }

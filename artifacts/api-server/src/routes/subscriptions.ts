@@ -123,7 +123,7 @@ router.post("/subscriptions/checkout", requireAuth, async (req: AuthRequest, res
     });
 
     res.json({ url: session.url });
-  } catch (err: any) {
+  } catch (err) {
     console.error("Checkout error:", err);
     res.status(500).json({ error: "Failed to create checkout session." });
   }

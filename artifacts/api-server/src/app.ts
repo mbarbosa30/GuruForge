@@ -54,8 +54,8 @@ app.post(
       await WebhookHandlers.processWebhook(req.body as Buffer, sig);
 
       res.status(200).json({ received: true });
-    } catch (error: any) {
-      console.error("Webhook error:", error.message);
+    } catch (error) {
+      console.error("Webhook error:", error instanceof Error ? error.message : error);
       res.status(400).json({ error: "Webhook processing error" });
     }
   },
