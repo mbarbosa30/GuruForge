@@ -108,11 +108,9 @@ export default function Marketplace() {
       </div>
 
       {isLoading && (
-        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-px bg-[#e0e0e0]" data-testid="loading-skeleton">
+        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-5" data-testid="loading-skeleton">
           {Array.from({ length: 6 }).map((_, i) => (
-            <div key={i} className="bg-white">
-              <GuruCardSkeleton />
-            </div>
+            <GuruCardSkeleton key={i} />
           ))}
         </div>
       )}
@@ -135,11 +133,9 @@ export default function Marketplace() {
       )}
 
       {!isLoading && !isError && gurus && gurus.length > 0 && (
-        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-px bg-[#e0e0e0]" data-testid="guru-grid">
+        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-5" data-testid="guru-grid">
           {gurus.map((guru) => (
-            <div key={guru.id} className="bg-white">
-              <GuruCard guru={guru} />
-            </div>
+            <GuruCard key={guru.id} guru={guru} />
           ))}
         </div>
       )}

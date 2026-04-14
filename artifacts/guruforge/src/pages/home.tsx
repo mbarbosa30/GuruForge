@@ -119,24 +119,20 @@ export default function Home() {
         </div>
 
         {isLoading && (
-          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-px bg-[#e0e0e0]">
+          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-5">
             {Array.from({ length: 6 }).map((_, i) => (
-              <div key={i} className="bg-white">
-                <GuruCardSkeleton />
-              </div>
+              <GuruCardSkeleton key={i} />
             ))}
           </div>
         )}
 
         {!isLoading && featured && featured.length > 0 && (
           <div
-            className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-px bg-[#e0e0e0]"
+            className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-5"
             data-testid="featured-gurus"
           >
             {featured.map((guru) => (
-              <div key={guru.id} className="bg-white">
-                <GuruCard guru={guru} />
-              </div>
+              <GuruCard key={guru.id} guru={guru} />
             ))}
           </div>
         )}

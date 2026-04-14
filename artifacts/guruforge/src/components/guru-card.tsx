@@ -23,47 +23,47 @@ export default function GuruCard({ guru }: { guru: GuruListItem }) {
   return (
     <Link
       href={`/guru/${guru.slug}`}
-      className="group block border border-[#e0e0e0] bg-white p-6 hover:border-[#999] transition-colors no-underline text-[#111]"
+      className="group flex flex-col border border-[#e0e0e0] bg-white p-6 hover:border-[#999] transition-colors no-underline text-[#111]"
       data-testid={`guru-card-${guru.slug}`}
     >
       <div className="flex items-start justify-between mb-4">
         {guru.categoryName && (
-          <span className="text-[10px] font-medium tracking-[0.08em] uppercase text-[#999] border border-[#e0e0e0] px-2 py-0.5">
+          <span className="text-[10px] font-medium tracking-[0.08em] uppercase text-[#999] border border-[#e0e0e0] px-2 py-0.5 truncate max-w-[60%]">
             {guru.categoryName}
           </span>
         )}
-        <span className="text-[13px] font-semibold text-[#111]">
+        <span className="text-[13px] font-semibold text-[#111] shrink-0 ml-auto">
           {formatPrice(guru.priceCents, guru.priceInterval)}
         </span>
       </div>
 
-      <h3 className="text-[17px] font-semibold mb-1.5 text-[#111] group-hover:text-[#333]">
+      <h3 className="text-[17px] font-semibold mb-1.5 text-[#111] group-hover:text-[#333] line-clamp-1">
         {guru.name}
       </h3>
-      {guru.tagline && (
-        <p className="text-[13px] text-[#777] leading-[1.5] mb-4 line-clamp-2">
-          {guru.tagline}
-        </p>
-      )}
+      <p className="text-[13px] text-[#777] leading-[1.5] mb-4 line-clamp-2 min-h-[39px]">
+        {guru.tagline || "\u00A0"}
+      </p>
 
-      <WisdomBar score={guru.wisdomScore} />
+      <div className="mt-auto">
+        <WisdomBar score={guru.wisdomScore} />
 
-      <div className="flex items-center justify-between mt-4 pt-4 border-t border-[#f0f0f0]">
-        <div className="flex items-center gap-4">
-          {guru.userCount != null && (
-            <span className="text-[11px] text-[#888]">
-              <span className="font-semibold text-[#555]">{guru.userCount}</span> users
-            </span>
-          )}
-          {guru.satisfactionScore != null && (
-            <span className="text-[11px] text-[#888]">
-              <span className="font-semibold text-[#555]">{guru.satisfactionScore}%</span> satisfaction
-            </span>
+        <div className="flex items-center justify-between mt-4 pt-4 border-t border-[#f0f0f0]">
+          <div className="flex items-center gap-4">
+            {guru.userCount != null && (
+              <span className="text-[11px] text-[#888]">
+                <span className="font-semibold text-[#555]">{guru.userCount}</span> users
+              </span>
+            )}
+            {guru.satisfactionScore != null && (
+              <span className="text-[11px] text-[#888]">
+                <span className="font-semibold text-[#555]">{guru.satisfactionScore}%</span> satisfaction
+              </span>
+            )}
+          </div>
+          {guru.creatorName && (
+            <span className="text-[11px] text-[#aaa]">by {guru.creatorName}</span>
           )}
         </div>
-        {guru.creatorName && (
-          <span className="text-[11px] text-[#aaa]">by {guru.creatorName}</span>
-        )}
       </div>
     </Link>
   );
