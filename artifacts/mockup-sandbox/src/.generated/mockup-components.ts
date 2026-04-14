@@ -7,6 +7,7 @@ export const modules: ModuleMap = {
   "./components/mockups/guruforge/LandingCompact.tsx": () => import("../components/mockups/guruforge/LandingCompact.tsx"),
   "./components/mockups/guruforge/LandingEphemeral.tsx": () => import("../components/mockups/guruforge/LandingEphemeral.tsx"),
   "./components/mockups/guruforge/LandingFused.tsx": () => import("../components/mockups/guruforge/LandingFused.tsx"),
+  "./components/mockups/guruforge/LandingNeoMinimal.tsx": () => import("../components/mockups/guruforge/LandingNeoMinimal.tsx"),
   "./components/mockups/guruforge/LandingSplit.tsx": () => import("../components/mockups/guruforge/LandingSplit.tsx"),
   "./components/mockups/guruforge/LandingStagger.tsx": () => import("../components/mockups/guruforge/LandingStagger.tsx"),
   "./components/mockups/guruforge/Marketplace.tsx": () => import("../components/mockups/guruforge/Marketplace.tsx"),
