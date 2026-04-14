@@ -239,7 +239,7 @@ export default function Home() {
                   className="bg-[#1a1a1a] hover:bg-[#333] text-white font-medium px-8 h-12 rounded-full text-base transition-colors shrink-0"
                   data-testid="button-submit-waitlist"
                 >
-                  Reserve Your Spot
+                  Reserve Your Spot as a Founding Member
                 </button>
               </div>
 
