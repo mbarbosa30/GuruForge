@@ -1,3 +1,4 @@
+import crypto from "crypto";
 import { Bot, webhookCallback } from "grammy";
 import type { Request, Response } from "express";
 import { db } from "@workspace/db";
@@ -73,9 +74,18 @@ export async function startAllPublishedBots(): Promise<void> {
     .from(gurusTable)
     .where(eq(gurusTable.status, "published"));
 
+  const domain = process.env.REPLIT_DEV_DOMAIN || process.env.REPLIT_DOMAINS?.split(",")[0];
+
   for (const guru of publishedGurus) {
     if (guru.telegramBotToken) {
-      await startBot(guru.id);
+      const started = await startBot(guru.id);
+      if (started && domain) {
+        try {
+          await setupWebhook(guru.id, `https://${domain}/api/telegram/webhook/${guru.id}`);
+        } catch (err) {
+          console.error(`Failed to set webhook for guru ${guru.id}:`, err);
+        }
+      }
     }
   }
 }
@@ -85,7 +95,10 @@ export function getWebhookSecret(guruId: number): string {
   if (!secret) {
     throw new Error("SESSION_SECRET must be set for webhook verification");
   }
-  return `guru_${guruId}_${secret}`;
+  return crypto
+    .createHmac("sha256", secret)
+    .update(`guru_${guruId}`)
+    .digest("hex");
 }
 
 export async function setupWebhook(guruId: number, webhookUrl: string): Promise<boolean> {
