@@ -1,6 +1,6 @@
 import { useState, useEffect } from "react";
 import { Link } from "wouter";
-import { motion } from "framer-motion";
+import { motion, type Variants } from "framer-motion";
 import {
   BrainCircuit,
   Users,
@@ -8,14 +8,13 @@ import {
   ArrowRight,
   Mail,
 } from "lucide-react";
-import { Button } from "@/components/ui/button";
 
-const fade = {
+const fade: Variants = {
   hidden: { opacity: 0, y: 12 },
-  visible: { opacity: 1, y: 0, transition: { duration: 0.5, ease: "easeOut" } },
+  visible: { opacity: 1, y: 0, transition: { duration: 0.5, ease: [0.25, 0.1, 0.25, 1] } },
 };
 
-const stagger = {
+const stagger: Variants = {
   hidden: { opacity: 0 },
   visible: { opacity: 1, transition: { staggerChildren: 0.08 } },
 };
@@ -50,13 +49,15 @@ export default function Home() {
     <div className="min-h-[100dvh] bg-[#FAFAF7] text-[#1a1a1a] font-sans selection:bg-teal-100 overflow-x-hidden">
 
       <header className="w-full flex items-center justify-between px-6 md:px-12 py-6">
-        <Link href="/" className="flex items-center gap-2" data-testid="link-logo">
-          <span className="text-lg font-semibold tracking-tight text-[#1a1a1a]">GuruForge</span>
+        <Link href="/" className="text-lg font-semibold tracking-tight text-[#1a1a1a]" data-testid="link-logo">
+          GuruForge
         </Link>
-        <a href="#waitlist" data-testid="link-nav-waitlist">
-          <Button variant="outline" className="text-sm font-medium border-[#d4d0c8] text-[#555] hover:text-[#1a1a1a] hover:border-[#aaa] rounded-full px-5 h-9 transition-colors">
-            Join Waitlist
-          </Button>
+        <a
+          href="#waitlist"
+          className="text-sm font-medium border border-[#d4d0c8] text-[#555] hover:text-[#1a1a1a] hover:border-[#aaa] rounded-full px-5 py-2 transition-colors inline-flex items-center"
+          data-testid="link-nav-waitlist"
+        >
+          Join Waitlist
         </a>
       </header>
 
@@ -77,20 +78,24 @@ export default function Home() {
             and get wiser every day.
           </motion.p>
 
-          <motion.p variants={fade} className="text-sm text-[#999] mb-10">
+          <motion.p variants={fade} className="text-sm text-[#888] mb-10">
             Just an idea for now. Domain secured today. Private beta coming soon.
           </motion.p>
 
           <motion.div variants={fade} className="flex flex-col sm:flex-row gap-3">
-            <a href="#waitlist">
-              <Button className="bg-[#1a1a1a] hover:bg-[#333] text-white font-medium px-8 h-12 rounded-full text-base transition-colors" data-testid="button-join-waitlist">
-                Join the Founding Waitlist
-              </Button>
+            <a
+              href="#waitlist"
+              className="bg-[#1a1a1a] hover:bg-[#333] text-white font-medium px-8 h-12 rounded-full text-base transition-colors inline-flex items-center justify-center"
+              data-testid="button-join-waitlist"
+            >
+              Join the Founding Waitlist
             </a>
-            <a href="#waitlist">
-              <Button variant="ghost" className="text-[#777] hover:text-[#1a1a1a] font-medium px-6 h-12 rounded-full text-base transition-colors" data-testid="button-forge-guru">
-                I want to forge a Guru <ArrowRight className="w-4 h-4 ml-1" />
-              </Button>
+            <a
+              href="#waitlist"
+              className="text-[#666] hover:text-[#1a1a1a] font-medium px-6 h-12 rounded-full text-base transition-colors inline-flex items-center justify-center gap-1"
+              data-testid="button-forge-guru"
+            >
+              I want to forge a Guru <ArrowRight className="w-4 h-4" />
             </a>
           </motion.div>
         </motion.div>
@@ -127,7 +132,7 @@ export default function Home() {
               collective wisdom privately and securely, while protecting every
               user's personal information.
             </p>
-            <p className="text-[#888] text-base">
+            <p className="text-[#777] text-base">
               The earlier you join, the more you help shape them — and the more you
               may benefit as they grow.
             </p>
@@ -210,50 +215,54 @@ export default function Home() {
               className="py-8 text-center"
             >
               <p className="text-lg font-medium text-[#1a1a1a] mb-2">You're on the list.</p>
-              <p className="text-[#888] text-base">We'll be in touch when it's time.</p>
+              <p className="text-[#777] text-base">We'll be in touch when it's time.</p>
             </motion.div>
           ) : (
             <motion.form variants={fade} onSubmit={handleSubmit} className="space-y-5">
               <div className="flex flex-col sm:flex-row gap-3">
                 <div className="relative flex-1">
-                  <Mail className="absolute left-4 top-1/2 -translate-y-1/2 w-4 h-4 text-[#aaa]" />
+                  <label htmlFor="waitlist-email" className="sr-only">Email address</label>
+                  <Mail className="absolute left-4 top-1/2 -translate-y-1/2 w-4 h-4 text-[#999]" aria-hidden="true" />
                   <input
+                    id="waitlist-email"
                     type="email"
                     value={email}
                     onChange={(e) => setEmail(e.target.value)}
                     placeholder="your@email.com"
                     required
-                    className="w-full h-12 pl-11 pr-4 rounded-full border border-[#d4d0c8] bg-white text-[#1a1a1a] placeholder:text-[#bbb] focus:outline-none focus:border-[#999] transition-colors text-base"
+                    className="w-full h-12 pl-11 pr-4 rounded-full border border-[#d4d0c8] bg-white text-[#1a1a1a] placeholder:text-[#aaa] focus:outline-none focus:border-[#888] transition-colors text-base"
                     data-testid="input-email"
                   />
                 </div>
-                <Button
+                <button
                   type="submit"
                   className="bg-[#1a1a1a] hover:bg-[#333] text-white font-medium px-8 h-12 rounded-full text-base transition-colors shrink-0"
                   data-testid="button-submit-waitlist"
                 >
                   Reserve Your Spot
-                </Button>
+                </button>
               </div>
 
-              <div className="flex items-center gap-1">
-                <span className="text-sm text-[#999] mr-2">I am a</span>
+              <fieldset className="flex items-center gap-1 border-0 p-0 m-0">
+                <legend className="sr-only">I am a</legend>
+                <span className="text-sm text-[#888] mr-2" aria-hidden="true">I am a</span>
                 {(["user", "creator", "both"] as const).map((r) => (
                   <button
                     key={r}
                     type="button"
                     onClick={() => setRole(r)}
+                    aria-pressed={role === r}
                     className={`text-sm px-4 py-1.5 rounded-full transition-colors ${
                       role === r
                         ? "bg-[#1a1a1a] text-white"
-                        : "bg-[#f0eeea] text-[#777] hover:text-[#1a1a1a]"
+                        : "bg-[#f0eeea] text-[#666] hover:text-[#1a1a1a]"
                     }`}
                     data-testid={`button-role-${r}`}
                   >
                     {r === "both" ? "Both" : r === "user" ? "User" : "Creator"}
                   </button>
                 ))}
-              </div>
+              </fieldset>
             </motion.form>
           )}
         </motion.div>
@@ -262,10 +271,10 @@ export default function Home() {
       <div className="w-full border-t border-[#e8e5dd]" />
 
       <footer className="px-6 md:px-12 py-12 max-w-4xl mx-auto flex flex-col md:flex-row items-center justify-between gap-4">
-        <span className="text-sm text-[#999]">
+        <span className="text-sm text-[#888]">
           Built on the proven 3-tier intelligence system from selfclaw.ai & teli.gent
         </span>
-        <span className="text-sm text-[#bbb]">guruforge.ai</span>
+        <span className="text-sm text-[#aaa]">guruforge.ai</span>
       </footer>
 
     </div>
