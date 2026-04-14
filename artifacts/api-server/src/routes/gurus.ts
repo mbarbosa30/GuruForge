@@ -1,8 +1,9 @@
 import { Router, type IRouter } from "express";
 import { db } from "@workspace/db";
 import { gurusTable, usersTable, categoriesTable, guruRatingsTable } from "@workspace/db/schema";
-import { eq, ilike, desc, asc, and, sql, avg, count } from "drizzle-orm";
-import { requireAuth, type AuthRequest } from "../middlewares/auth";
+import { eq, desc, asc, and, sql, avg, count, or } from "drizzle-orm";
+import { requireAuth, optionalAuth, type AuthRequest } from "../middlewares/auth";
+import { CreateGuruBody, UpdateGuruBody, UpdateGuruParams, ListGurusQueryParams } from "@workspace/api-zod";
 
 const router: IRouter = Router();
 
@@ -13,22 +14,41 @@ function slugify(text: string): string {
     .replace(/^-|-$/g, "");
 }
 
-router.get("/gurus", async (req, res) => {
+router.get("/gurus", optionalAuth, async (req: AuthRequest, res) => {
   try {
-    const { category, status, search, sort } = req.query;
+    const parsed = ListGurusQueryParams.safeParse(req.query);
+    if (!parsed.success) {
+      res.status(400).json({ error: "Invalid query parameters" });
+      return;
+    }
+
+    const { category, status, search, sort } = parsed.data;
 
     const conditions = [];
 
-    conditions.push(eq(gurusTable.status, "published"));
+    if (status && status !== "published") {
+      if (!req.dbUserId) {
+        conditions.push(eq(gurusTable.status, "published"));
+      } else {
+        conditions.push(
+          or(
+            eq(gurusTable.status, "published"),
+            and(eq(gurusTable.status, status), eq(gurusTable.creatorId, req.dbUserId))
+          )!
+        );
+      }
+    } else {
+      conditions.push(eq(gurusTable.status, "published"));
+    }
 
-    if (category && typeof category === "string") {
+    if (category) {
       const cat = await db.select().from(categoriesTable).where(eq(categoriesTable.slug, category)).limit(1);
       if (cat.length > 0) {
         conditions.push(eq(gurusTable.categoryId, cat[0].id));
       }
     }
 
-    if (search && typeof search === "string") {
+    if (search) {
       conditions.push(
         sql`(${gurusTable.name} ILIKE ${'%' + search + '%'} OR ${gurusTable.tagline} ILIKE ${'%' + search + '%'} OR ${gurusTable.description} ILIKE ${'%' + search + '%'})`
       );
@@ -154,39 +174,17 @@ router.get("/gurus/:slug", async (req, res) => {
 router.post("/gurus", requireAuth, async (req: AuthRequest, res) => {
   try {
     if (!req.dbUserId) {
-      res.status(400).json({ error: "User profile not found. Please complete your profile first." });
+      res.status(400).json({ error: "User profile not found." });
       return;
     }
 
-    const { name, tagline, description, categoryId, avatarUrl, priceCents, priceInterval, topics, personalityStyle, modelTier, memoryPolicy, introEnabled } = req.body;
-
-    if (!name || typeof name !== "string" || name.trim().length === 0) {
-      res.status(400).json({ error: "Name is required" });
+    const parsed = CreateGuruBody.safeParse(req.body);
+    if (!parsed.success) {
+      res.status(400).json({ error: parsed.error.issues[0]?.message || "Invalid input" });
       return;
     }
 
-    const validIntervals = ["monthly", "yearly"];
-    if (priceInterval && !validIntervals.includes(priceInterval)) {
-      res.status(400).json({ error: "priceInterval must be 'monthly' or 'yearly'" });
-      return;
-    }
-
-    const validStyles = ["professional", "friendly", "direct", "academic"];
-    if (personalityStyle && !validStyles.includes(personalityStyle)) {
-      res.status(400).json({ error: "Invalid personalityStyle" });
-      return;
-    }
-
-    const validTiers = ["basic", "pro", "enterprise"];
-    if (modelTier && !validTiers.includes(modelTier)) {
-      res.status(400).json({ error: "Invalid modelTier" });
-      return;
-    }
-
-    if (priceCents !== undefined && (typeof priceCents !== "number" || priceCents < 0)) {
-      res.status(400).json({ error: "priceCents must be a non-negative number" });
-      return;
-    }
+    const { name, tagline, description, categoryId, avatarUrl, priceCents, priceInterval, topics, personalityStyle, modelTier, memoryPolicy, introEnabled } = parsed.data;
 
     let slug = slugify(name);
     const existing = await db.select({ id: gurusTable.id }).from(gurusTable).where(eq(gurusTable.slug, slug)).limit(1);
@@ -198,18 +196,18 @@ router.post("/gurus", requireAuth, async (req: AuthRequest, res) => {
       creatorId: req.dbUserId,
       name,
       slug,
-      tagline: tagline || null,
-      description: description || null,
-      categoryId: categoryId || null,
-      avatarUrl: avatarUrl || null,
+      tagline: tagline ?? null,
+      description: description ?? null,
+      categoryId: categoryId ?? null,
+      avatarUrl: avatarUrl ?? null,
       status: "published",
-      priceCents: priceCents || 0,
-      priceInterval: priceInterval || "monthly",
-      topics: topics || [],
-      personalityStyle: personalityStyle || "professional",
-      modelTier: modelTier || "basic",
-      memoryPolicy: memoryPolicy || null,
-      introEnabled: introEnabled || false,
+      priceCents: priceCents ?? 0,
+      priceInterval: priceInterval ?? "monthly",
+      topics: topics ?? [],
+      personalityStyle: personalityStyle ?? "professional",
+      modelTier: modelTier ?? "basic",
+      memoryPolicy: memoryPolicy ?? null,
+      introEnabled: introEnabled ?? false,
     }).returning();
 
     await db.update(usersTable).set({ role: "creator" }).where(eq(usersTable.id, req.dbUserId));
@@ -222,11 +220,13 @@ router.post("/gurus", requireAuth, async (req: AuthRequest, res) => {
 
 router.patch("/gurus/:id", requireAuth, async (req: AuthRequest, res) => {
   try {
-    const guruId = parseInt(req.params.id);
-    if (isNaN(guruId)) {
+    const paramsParsed = UpdateGuruParams.safeParse(req.params);
+    if (!paramsParsed.success) {
       res.status(400).json({ error: "Invalid guru ID" });
       return;
     }
+
+    const guruId = paramsParsed.data.id;
 
     const [existing] = await db.select().from(gurusTable).where(eq(gurusTable.id, guruId)).limit(1);
     if (!existing) {
@@ -238,37 +238,28 @@ router.patch("/gurus/:id", requireAuth, async (req: AuthRequest, res) => {
       return;
     }
 
-    const validStatuses = ["draft", "published", "archived"];
-    if (req.body.status && !validStatuses.includes(req.body.status)) {
-      res.status(400).json({ error: "Invalid status" });
+    const bodyParsed = UpdateGuruBody.safeParse(req.body);
+    if (!bodyParsed.success) {
+      res.status(400).json({ error: bodyParsed.error.issues[0]?.message || "Invalid input" });
       return;
     }
 
-    const validIntervals = ["monthly", "yearly"];
-    if (req.body.priceInterval && !validIntervals.includes(req.body.priceInterval)) {
-      res.status(400).json({ error: "Invalid priceInterval" });
-      return;
-    }
+    const updates: Partial<typeof gurusTable.$inferInsert> = { updatedAt: new Date() };
+    const data = bodyParsed.data;
 
-    const validStyles = ["professional", "friendly", "direct", "academic"];
-    if (req.body.personalityStyle && !validStyles.includes(req.body.personalityStyle)) {
-      res.status(400).json({ error: "Invalid personalityStyle" });
-      return;
-    }
-
-    const validTiers = ["basic", "pro", "enterprise"];
-    if (req.body.modelTier && !validTiers.includes(req.body.modelTier)) {
-      res.status(400).json({ error: "Invalid modelTier" });
-      return;
-    }
-
-    const allowedFields = ["name", "tagline", "description", "categoryId", "avatarUrl", "status", "priceCents", "priceInterval", "topics", "personalityStyle", "modelTier", "memoryPolicy", "introEnabled"];
-    const updates: Record<string, any> = { updatedAt: new Date() };
-    for (const field of allowedFields) {
-      if (req.body[field] !== undefined) {
-        updates[field] = req.body[field];
-      }
-    }
+    if (data.name !== undefined) updates.name = data.name;
+    if (data.tagline !== undefined) updates.tagline = data.tagline;
+    if (data.description !== undefined) updates.description = data.description;
+    if (data.categoryId !== undefined) updates.categoryId = data.categoryId;
+    if (data.avatarUrl !== undefined) updates.avatarUrl = data.avatarUrl;
+    if (data.status !== undefined) updates.status = data.status;
+    if (data.priceCents !== undefined) updates.priceCents = data.priceCents;
+    if (data.priceInterval !== undefined) updates.priceInterval = data.priceInterval;
+    if (data.topics !== undefined) updates.topics = data.topics;
+    if (data.personalityStyle !== undefined) updates.personalityStyle = data.personalityStyle;
+    if (data.modelTier !== undefined) updates.modelTier = data.modelTier;
+    if (data.memoryPolicy !== undefined) updates.memoryPolicy = data.memoryPolicy;
+    if (data.introEnabled !== undefined) updates.introEnabled = data.introEnabled;
 
     const [updated] = await db.update(gurusTable).set(updates).where(eq(gurusTable.id, guruId)).returning();
     res.json(updated);

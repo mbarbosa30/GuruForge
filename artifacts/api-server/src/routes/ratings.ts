@@ -3,16 +3,19 @@ import { db } from "@workspace/db";
 import { guruRatingsTable, usersTable, gurusTable } from "@workspace/db/schema";
 import { eq, desc, and } from "drizzle-orm";
 import { requireAuth, type AuthRequest } from "../middlewares/auth";
+import { CreateGuruRatingParams, CreateGuruRatingBody, ListGuruRatingsParams } from "@workspace/api-zod";
 
 const router: IRouter = Router();
 
 router.get("/gurus/:id/ratings", async (req, res) => {
   try {
-    const guruId = parseInt(req.params.id);
-    if (isNaN(guruId)) {
+    const parsed = ListGuruRatingsParams.safeParse(req.params);
+    if (!parsed.success) {
       res.status(400).json({ error: "Invalid guru ID" });
       return;
     }
+
+    const guruId = parsed.data.id;
 
     const ratings = await db
       .select({
@@ -36,23 +39,26 @@ router.get("/gurus/:id/ratings", async (req, res) => {
 
 router.post("/gurus/:id/ratings", requireAuth, async (req: AuthRequest, res) => {
   try {
-    const guruId = parseInt(req.params.id);
-    if (isNaN(guruId)) {
+    const paramsParsed = CreateGuruRatingParams.safeParse(req.params);
+    if (!paramsParsed.success) {
       res.status(400).json({ error: "Invalid guru ID" });
       return;
     }
+
+    const guruId = paramsParsed.data.id;
 
     if (!req.dbUserId) {
       res.status(400).json({ error: "User profile not found" });
       return;
     }
 
-    const { rating, comment } = req.body;
-
-    if (!rating || typeof rating !== "number" || rating < 1 || rating > 5) {
-      res.status(400).json({ error: "Rating must be a number between 1 and 5" });
+    const bodyParsed = CreateGuruRatingBody.safeParse(req.body);
+    if (!bodyParsed.success) {
+      res.status(400).json({ error: bodyParsed.error.issues[0]?.message || "Invalid input" });
       return;
     }
+
+    const { rating, comment } = bodyParsed.data;
 
     const [guru] = await db.select({ id: gurusTable.id }).from(gurusTable).where(eq(gurusTable.id, guruId)).limit(1);
     if (!guru) {
@@ -69,7 +75,7 @@ router.post("/gurus/:id/ratings", requireAuth, async (req: AuthRequest, res) => 
     if (existing.length > 0) {
       const [updated] = await db
         .update(guruRatingsTable)
-        .set({ rating, comment: comment || null })
+        .set({ rating, comment: comment ?? null })
         .where(eq(guruRatingsTable.id, existing[0].id))
         .returning();
       res.status(200).json(updated);
@@ -80,7 +86,7 @@ router.post("/gurus/:id/ratings", requireAuth, async (req: AuthRequest, res) => 
       userId: req.dbUserId,
       guruId,
       rating,
-      comment: comment || null,
+      comment: comment ?? null,
     }).returning();
 
     res.status(201).json(newRating);

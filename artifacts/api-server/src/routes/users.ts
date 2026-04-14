@@ -3,24 +3,22 @@ import { db } from "@workspace/db";
 import { usersTable } from "@workspace/db/schema";
 import { eq } from "drizzle-orm";
 import { requireAuth, type AuthRequest } from "../middlewares/auth";
+import { UpdateMeBody } from "@workspace/api-zod";
 
 const router: IRouter = Router();
 
 router.get("/users/me", requireAuth, async (req: AuthRequest, res) => {
   try {
-    if (!req.userId) {
+    if (!req.clerkId || !req.dbUserId) {
       res.status(401).json({ error: "Unauthorized" });
       return;
     }
 
-    let [user] = await db.select().from(usersTable).where(eq(usersTable.clerkId, req.userId)).limit(1);
+    const [user] = await db.select().from(usersTable).where(eq(usersTable.id, req.dbUserId)).limit(1);
 
     if (!user) {
-      [user] = await db.insert(usersTable).values({
-        clerkId: req.userId,
-        email: (req as any).auth?.sessionClaims?.email || "unknown@example.com",
-        name: (req as any).auth?.sessionClaims?.name || null,
-      }).returning();
+      res.status(404).json({ error: "User not found" });
+      return;
     }
 
     res.json(user);
@@ -31,21 +29,25 @@ router.get("/users/me", requireAuth, async (req: AuthRequest, res) => {
 
 router.patch("/users/me", requireAuth, async (req: AuthRequest, res) => {
   try {
-    if (!req.userId) {
+    if (!req.clerkId || !req.dbUserId) {
       res.status(401).json({ error: "Unauthorized" });
       return;
     }
 
-    const { name, avatarUrl } = req.body;
-    const updates: Record<string, any> = { updatedAt: new Date() };
+    const parsed = UpdateMeBody.safeParse(req.body);
+    if (!parsed.success) {
+      res.status(400).json({ error: parsed.error.issues[0]?.message || "Invalid input" });
+      return;
+    }
 
-    if (name !== undefined) updates.name = name;
-    if (avatarUrl !== undefined) updates.avatarUrl = avatarUrl;
+    const updates: Partial<typeof usersTable.$inferInsert> = { updatedAt: new Date() };
+    if (parsed.data.name !== undefined) updates.name = parsed.data.name;
+    if (parsed.data.avatarUrl !== undefined) updates.avatarUrl = parsed.data.avatarUrl;
 
     const [updated] = await db
       .update(usersTable)
       .set(updates)
-      .where(eq(usersTable.clerkId, req.userId))
+      .where(eq(usersTable.id, req.dbUserId))
       .returning();
 
     if (!updated) {
