@@ -20,8 +20,8 @@ const COST_PER_1K_INPUT: Record<string, number> = {
   "gpt-5-mini": 0.04,
   "grok-3": 0.3,
   "grok-3-mini": 0.03,
-  "grok-4-0420": 0.3,
-  "grok-4-0414": 0.06,
+  "grok-4.20-0309-reasoning": 0.2,
+  "grok-4-1-fast-non-reasoning": 0.02,
 };
 
 const COST_PER_1K_OUTPUT: Record<string, number> = {
@@ -31,8 +31,8 @@ const COST_PER_1K_OUTPUT: Record<string, number> = {
   "gpt-5-mini": 0.16,
   "grok-3": 1.0,
   "grok-3-mini": 0.1,
-  "grok-4-0420": 1.0,
-  "grok-4-0414": 0.2,
+  "grok-4.20-0309-reasoning": 0.6,
+  "grok-4-1-fast-non-reasoning": 0.05,
 };
 
 function estimateCostCents(model: string, promptTokens: number, completionTokens: number): number {
