@@ -32,6 +32,8 @@ pnpm workspace monorepo using TypeScript. Each package manages its own dependenc
 - `lib/api-spec` — OpenAPI spec + Orval codegen config
 - `lib/api-zod` — Generated Zod schemas from OpenAPI
 - `lib/api-client-react` — Generated React Query hooks from OpenAPI
+- `lib/integrations-openai-ai-server` — OpenAI client (via Replit AI Integrations proxy)
+- `lib/integrations-xai-server` — xAI/Grok client (OpenAI-compatible, reads XAI_API_KEY + XAI_BASE_URL env vars)
 
 ### Database Schema
 - `users` — id, clerk_id, email, name, avatar_url, role (user/creator/admin), stripe_customer_id
@@ -103,9 +105,10 @@ pnpm workspace monorepo using TypeScript. Each package manages its own dependenc
 - **Calibration pipeline**: `artifacts/api-server/src/lib/calibrationPipeline.ts` — async post-response extraction (personal memories, collective insights, contribution scoring)
 - **Score calculator**: `artifacts/api-server/src/lib/scoreCalculator.ts` — dynamically recalculates wisdom/satisfaction/userCount on gurus table every 5 calibration cycles
 - **Usage logger**: `artifacts/api-server/src/lib/usageLogger.ts` — logs all LLM calls (triage, conversation, calibration) with token counts and estimated costs
-- **Model config**: `artifacts/api-server/src/lib/modelConfig.ts` — `getModelConfig(modelTier)` returns conversation model, fast model, and OpenAI client (placeholder for Task #11 branded selector)
+- **Model config**: `artifacts/api-server/src/lib/modelConfig.ts` — `getModelConfig(modelTier)` returns `{ provider, conversationModel, fastModel, client }`. Two branded options: `gpt` (GPT-5.4 / GPT-5-mini) and `grok` (Grok-3 / Grok-3-mini). Falls back to GPT if XAI_API_KEY not set.
 - **Connection flow**: User subscribes → clicks "Connect on Telegram" → generates 8-char code → pastes in Telegram bot → accounts linked → conversations begin
-- **OpenAI**: Uses Replit AI Integrations proxy (no user API key needed). Model mapping: basic→gpt-4o-mini, pro/enterprise→gpt-5.2. Use `max_completion_tokens` for gpt-5 series
+- **OpenAI**: Uses Replit AI Integrations proxy (no user API key needed). Use `max_completion_tokens` for gpt-5 series
+- **xAI/Grok**: Uses `lib/integrations-xai-server` with `XAI_API_KEY` + `XAI_BASE_URL` env vars. OpenAI-compatible API at `https://api.x.ai/v1`
 - **3-tier memory system**:
   - **Tier 1 (Live)**: Recent conversation context (last 20 messages in current conversation)
   - **Tier 2 (Personal)**: Per-user per-guru long-term memory (goals, preferences, history, decisions, context). Extracted after each turn via LLM. Stored in `user_memories`. Retrieved by keyword overlap + recency weighting + importance scoring.

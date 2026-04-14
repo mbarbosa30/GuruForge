@@ -807,7 +807,7 @@ components:
           enum: [professional, friendly, direct, academic]
         modelTier:
           type: string
-          enum: [basic, pro, enterprise]
+          enum: [grok, gpt]
         memoryPolicy:
           type: string
         introEnabled:
@@ -844,7 +844,7 @@ components:
           enum: [professional, friendly, direct, academic]
         modelTier:
           type: string
-          enum: [basic, pro, enterprise]
+          enum: [grok, gpt]
         memoryPolicy:
           type: string
         introEnabled:

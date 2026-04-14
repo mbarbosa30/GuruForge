@@ -206,7 +206,7 @@ router.post("/gurus", requireAuth, async (req: AuthRequest, res) => {
       priceInterval: priceInterval ?? "monthly",
       topics: topics ?? [],
       personalityStyle: personalityStyle ?? "professional",
-      modelTier: modelTier ?? "basic",
+      modelTier: modelTier ?? "gpt",
       memoryPolicy: memoryPolicy ?? null,
       introEnabled: introEnabled ?? false,
     }).returning();

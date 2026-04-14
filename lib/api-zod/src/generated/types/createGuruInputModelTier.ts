@@ -10,7 +10,6 @@ export type CreateGuruInputModelTier =
   (typeof CreateGuruInputModelTier)[keyof typeof CreateGuruInputModelTier];
 
 export const CreateGuruInputModelTier = {
-  basic: "basic",
-  pro: "pro",
-  enterprise: "enterprise",
+  grok: "grok",
+  gpt: "gpt",
 } as const;

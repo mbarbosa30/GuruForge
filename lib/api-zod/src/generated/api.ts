@@ -86,7 +86,7 @@ export const CreateGuruBody = zod.object({
   personalityStyle: zod
     .enum(["professional", "friendly", "direct", "academic"])
     .optional(),
-  modelTier: zod.enum(["basic", "pro", "enterprise"]).optional(),
+  modelTier: zod.enum(["grok", "gpt"]).optional(),
   memoryPolicy: zod.string().optional(),
   introEnabled: zod.boolean().optional(),
 });
@@ -147,7 +147,7 @@ export const UpdateGuruBody = zod.object({
   personalityStyle: zod
     .enum(["professional", "friendly", "direct", "academic"])
     .optional(),
-  modelTier: zod.enum(["basic", "pro", "enterprise"]).optional(),
+  modelTier: zod.enum(["grok", "gpt"]).optional(),
   memoryPolicy: zod.string().optional(),
   introEnabled: zod.boolean().optional(),
   telegramBotToken: zod.string().optional(),

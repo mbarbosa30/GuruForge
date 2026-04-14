@@ -16,9 +16,8 @@ const PERSONALITY_OPTIONS = [
 ] as const;
 
 const MODEL_TIERS = [
-  { value: "basic", label: "Basic", desc: "Standard intelligence, fast responses, lower cost" },
-  { value: "pro", label: "Pro", desc: "Advanced reasoning, nuanced answers, recommended" },
-  { value: "enterprise", label: "Enterprise", desc: "Maximum capability, deep analysis, premium" },
+  { value: "gpt", label: "GPT", desc: "Versatile, reliable, ecosystem-rich", detail: "Powered by GPT-5.4 for conversations" },
+  { value: "grok", label: "Grok", desc: "Fast, truthful, real-time wisdom", detail: "Powered by Grok-3 for conversations" },
 ] as const;
 
 interface FormData {
@@ -33,7 +32,7 @@ interface FormData {
   notFor: string;
   languagePreference: string;
   personalityStyle: "professional" | "friendly" | "direct" | "academic";
-  modelTier: "basic" | "pro" | "enterprise";
+  modelTier: "gpt" | "grok";
   memoryPersonal: boolean;
   memoryShared: boolean;
   introEnabled: boolean;
@@ -53,7 +52,7 @@ const INITIAL: FormData = {
   notFor: "",
   languagePreference: "English",
   personalityStyle: "friendly",
-  modelTier: "pro",
+  modelTier: "gpt",
   memoryPersonal: true,
   memoryShared: true,
   introEnabled: false,
@@ -249,9 +248,9 @@ function StepPurpose({ data, onChange }: { data: FormData; onChange: (d: Partial
 }
 
 function OptionCard({
-  selected, onClick, label, desc, testId,
+  selected, onClick, label, desc, detail, testId,
 }: {
-  selected: boolean; onClick: () => void; label: string; desc: string; testId: string;
+  selected: boolean; onClick: () => void; label: string; desc: string; detail?: string; testId: string;
 }) {
   return (
     <button
@@ -264,6 +263,7 @@ function OptionCard({
     >
       <span className={`text-[13px] font-semibold block mb-1 ${selected ? "text-[#111]" : "text-[#555]"}`}>{label}</span>
       <span className="text-[12px] text-[#888] leading-[1.4] block">{desc}</span>
+      {detail && <span className="text-[11px] text-[#aaa] leading-[1.4] block mt-1">{detail}</span>}
     </button>
   );
 }
@@ -273,7 +273,7 @@ function StepIntelligence({ data, onChange }: { data: FormData; onChange: (d: Pa
     <div className="space-y-8 max-w-[560px]">
       <div>
         <FieldLabel>Model tier</FieldLabel>
-        <div className="grid grid-cols-1 sm:grid-cols-3 gap-px bg-[#e0e0e0]">
+        <div className="grid grid-cols-1 sm:grid-cols-2 gap-px bg-[#e0e0e0]">
           {MODEL_TIERS.map((tier) => (
             <OptionCard
               key={tier.value}
@@ -281,6 +281,7 @@ function StepIntelligence({ data, onChange }: { data: FormData; onChange: (d: Pa
               onClick={() => onChange({ modelTier: tier.value })}
               label={tier.label}
               desc={tier.desc}
+              detail={tier.detail}
               testId={`option-tier-${tier.value}`}
             />
           ))}
@@ -446,7 +447,7 @@ function StepReview({ data, categories }: { data: FormData; categories: Category
         <ReviewRow label="Target users" value={data.targetUsers} />
         <ReviewRow label="Not for" value={data.notFor} />
         <ReviewRow label="Topics" value={data.topics.length > 0 ? data.topics.join(", ") : null} />
-        <ReviewRow label="Model tier" value={<span className="capitalize">{data.modelTier}</span>} />
+        <ReviewRow label="AI model" value={<span>Powered by {data.modelTier === "gpt" ? "GPT" : "Grok"}</span>} />
         <ReviewRow label="Personality" value={<span className="capitalize">{data.personalityStyle}</span>} />
         <ReviewRow label="Language" value={data.languagePreference} />
         <ReviewRow label="Personal memory" value={data.memoryPersonal ? "On" : "Off"} />

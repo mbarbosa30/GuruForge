@@ -5,7 +5,7 @@ import { usersTable } from "./users";
 import { categoriesTable } from "./categories";
 
 export const guruStatusEnum = ["draft", "published", "archived"] as const;
-export const modelTierEnum = ["basic", "pro", "enterprise"] as const;
+export const modelTierEnum = ["grok", "gpt"] as const;
 export const personalityStyleEnum = ["professional", "friendly", "direct", "academic"] as const;
 export const priceIntervalEnum = ["monthly", "yearly"] as const;
 
@@ -23,7 +23,7 @@ export const gurusTable = pgTable("gurus", {
   priceInterval: varchar("price_interval", { length: 20 }).notNull().default("monthly"),
   topics: text("topics").array(),
   personalityStyle: varchar("personality_style", { length: 50 }).default("professional"),
-  modelTier: varchar("model_tier", { length: 20 }).default("basic"),
+  modelTier: varchar("model_tier", { length: 20 }).default("gpt"),
   memoryPolicy: text("memory_policy"),
   introEnabled: boolean("intro_enabled").default(false),
   wisdomScore: real("wisdom_score").default(0),

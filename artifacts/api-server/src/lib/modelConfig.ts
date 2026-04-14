@@ -1,4 +1,5 @@
 import { openai } from "@workspace/integrations-openai-ai-server";
+import { getXaiClient } from "@workspace/integrations-xai-server";
 import type OpenAI from "openai";
 
 export type ModelProvider = "gpt" | "grok";
@@ -10,54 +11,24 @@ export interface ModelConfig {
   client: OpenAI;
 }
 
-interface ProviderTierConfig {
-  provider: ModelProvider;
-  conversationModel: string;
-  fastModel: string;
-}
-
-const GPT_TIERS: Record<string, ProviderTierConfig> = {
-  basic: { provider: "gpt", conversationModel: "gpt-4o-mini", fastModel: "gpt-4o-mini" },
-  pro: { provider: "gpt", conversationModel: "gpt-5.2", fastModel: "gpt-4o-mini" },
-  enterprise: { provider: "gpt", conversationModel: "gpt-5.2", fastModel: "gpt-4o-mini" },
+const PROVIDER_MODELS: Record<ModelProvider, { conversationModel: string; fastModel: string }> = {
+  gpt: { conversationModel: "gpt-5.4", fastModel: "gpt-5-mini" },
+  grok: { conversationModel: "grok-3", fastModel: "grok-3-mini" },
 };
-
-const GROK_TIERS: Record<string, ProviderTierConfig> = {
-  grok_basic: { provider: "grok", conversationModel: "grok-2", fastModel: "grok-2-mini" },
-  grok_pro: { provider: "grok", conversationModel: "grok-3", fastModel: "grok-2-mini" },
-};
-
-let grokClient: OpenAI | null = null;
-
-export function registerGrokClient(client: OpenAI): void {
-  grokClient = client;
-}
-
-function getProviderClient(provider: ModelProvider): OpenAI {
-  if (provider === "grok") {
-    if (grokClient) return grokClient;
-    console.warn(
-      "Grok provider client not yet registered; falling back to GPT. " +
-      "Register via registerGrokClient() when Grok integration is configured.",
-    );
-    return openai;
-  }
-  return openai;
-}
 
 export function getModelConfig(modelTier: string | null): ModelConfig {
-  const tier = modelTier ?? "basic";
+  const tier = (modelTier ?? "gpt") as ModelProvider;
 
-  const grokConfig = GROK_TIERS[tier];
-  if (grokConfig) {
-    const client = getProviderClient("grok");
-    if (!grokClient) {
-      const fallback = GPT_TIERS.basic;
-      return { ...fallback, client };
+  if (tier === "grok") {
+    const xaiClient = getXaiClient();
+    if (!xaiClient) {
+      console.warn(
+        "Grok selected but XAI_API_KEY not configured; falling back to GPT.",
+      );
+      return { provider: "gpt", ...PROVIDER_MODELS.gpt, client: openai };
     }
-    return { ...grokConfig, client };
+    return { provider: "grok", ...PROVIDER_MODELS.grok, client: xaiClient };
   }
 
-  const gptConfig = GPT_TIERS[tier] ?? GPT_TIERS.basic;
-  return { ...gptConfig, client: openai };
+  return { provider: "gpt", ...PROVIDER_MODELS.gpt, client: openai };
 }
