@@ -28,17 +28,17 @@ export default function Home() {
     {
       num: "01",
       title: "The Invisible Thread",
-      desc: "Each Guru is the quiet center of a wisdom circle — privately listening to every member, synthesizing anonymous patterns across all conversations, and surfacing insights no single person could see alone.",
+      desc: "Each Guru is the quiet center of a wisdom circle — privately listening to every member, synthesizing anonymous patterns across conversations, and surfacing insights no single person could see.",
     },
     {
       num: "02",
       title: "Community-Owned Intelligence",
-      desc: "The wisdom belongs to the circle, not the platform. Every member who contributes earns a stake in the intelligence they helped build through Wisdom Royalties.",
+      desc: "The wisdom belongs to the circle, not the platform. Every member who contributes earns a meaningful stake in the collective intelligence they helped build through Wisdom Royalties.",
     },
     {
       num: "03",
       title: "Connections That Matter",
-      desc: "When the Guru recognizes that two members could genuinely help each other, it proposes a warm introduction — but only if both independently consent. Real relationships, born from shared context.",
+      desc: "When the Guru recognizes that two members could genuinely help each other, it proposes a warm introduction — but only if both independently consent. Real relationships, shared context.",
     },
   ];
 
@@ -46,17 +46,17 @@ export default function Home() {
     {
       num: "01",
       title: "Find your circle",
-      desc: "Explore wisdom circles focused on the domains you care about — from DeFi strategy to fundraising to leadership growth.",
+      desc: "Explore wisdom circles focused on the domains you care about most — from DeFi strategy to fundraising to personal leadership growth.",
     },
     {
       num: "02",
       title: "Join the conversation",
-      desc: "Enter a private, ongoing dialogue with your Guru. It remembers your journey, understands your context, and meets you where you are.",
+      desc: "Enter a private, ongoing dialogue with your Guru. It remembers your full journey, understands your context, and meets you where you are.",
     },
     {
       num: "03",
       title: "Watch wisdom compound",
-      desc: "Every conversation makes the circle smarter. The Guru weaves anonymous patterns from the entire community into sharper, deeper guidance for everyone.",
+      desc: "Every conversation makes the circle smarter. The Guru weaves anonymous patterns from across the community into deeper guidance for all.",
     },
   ];
 
@@ -115,7 +115,7 @@ export default function Home() {
           wiser without ever exposing what anyone said. Not a social network.
           Not a chatbot. A wisdom circle.
         </p>
-        <div className="flex gap-4 items-center flex-wrap">
+        <div className="flex gap-8 items-center flex-wrap">
           <Link
             href="/marketplace"
             className="text-[13px] font-medium tracking-[0.04em] uppercase text-white bg-[#111] px-7 py-3 no-underline inline-block hover:bg-[#333] transition-colors"
