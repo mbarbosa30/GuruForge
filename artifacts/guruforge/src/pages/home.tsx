@@ -235,7 +235,7 @@ export default function Home() {
 
       <div className="border-t border-[#e0e0e0] mx-6 md:mx-10" />
 
-      <section className="px-6 md:px-10 py-16 max-w-[600px]">
+      <section className="px-6 md:px-10 py-16 max-w-[720px]">
         <p className="text-[11px] font-medium tracking-[0.12em] uppercase text-[#888] mb-6">
           For creators
         </p>
