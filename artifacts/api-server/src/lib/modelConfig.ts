@@ -27,13 +27,20 @@ const GROK_TIERS: Record<string, ProviderTierConfig> = {
   grok_pro: { provider: "grok", conversationModel: "grok-3", fastModel: "grok-2-mini" },
 };
 
+let grokClient: OpenAI | null = null;
+
+export function registerGrokClient(client: OpenAI): void {
+  grokClient = client;
+}
+
 function getProviderClient(provider: ModelProvider): OpenAI {
   if (provider === "grok") {
-    throw new Error(
-      "Grok provider client not yet configured. " +
-      "Task #11 (Branded model selector) will register the Grok client. " +
-      "Assign a GPT-based model tier to this Guru until Grok support is enabled.",
+    if (grokClient) return grokClient;
+    console.warn(
+      "Grok provider client not yet registered; falling back to GPT. " +
+      "Register via registerGrokClient() when Grok integration is configured.",
     );
+    return openai;
   }
   return openai;
 }
@@ -41,8 +48,16 @@ function getProviderClient(provider: ModelProvider): OpenAI {
 export function getModelConfig(modelTier: string | null): ModelConfig {
   const tier = modelTier ?? "basic";
 
-  const config = GPT_TIERS[tier] ?? GROK_TIERS[tier] ?? GPT_TIERS.basic;
-  const client = getProviderClient(config.provider);
+  const grokConfig = GROK_TIERS[tier];
+  if (grokConfig) {
+    const client = getProviderClient("grok");
+    if (!grokClient) {
+      const fallback = GPT_TIERS.basic;
+      return { ...fallback, client };
+    }
+    return { ...grokConfig, client };
+  }
 
-  return { ...config, client };
+  const gptConfig = GPT_TIERS[tier] ?? GPT_TIERS.basic;
+  return { ...gptConfig, client: openai };
 }
