@@ -4,5 +4,7 @@ export const modules: ModuleMap = {
   "./components/mockups/guruforge/CreatorFlow.tsx": () => import("../components/mockups/guruforge/CreatorFlow.tsx"),
   "./components/mockups/guruforge/GuruProfile.tsx": () => import("../components/mockups/guruforge/GuruProfile.tsx"),
   "./components/mockups/guruforge/Landing.tsx": () => import("../components/mockups/guruforge/Landing.tsx"),
-  "./components/mockups/guruforge/Marketplace.tsx": () => import("../components/mockups/guruforge/Marketplace.tsx")
+  "./components/mockups/guruforge/Marketplace.tsx": () => import("../components/mockups/guruforge/Marketplace.tsx"),
+  "./components/mockups/guruforge/MarketplaceEditorial.tsx": () => import("../components/mockups/guruforge/MarketplaceEditorial.tsx"),
+  "./components/mockups/guruforge/MarketplaceLeaderboard.tsx": () => import("../components/mockups/guruforge/MarketplaceLeaderboard.tsx")
 };

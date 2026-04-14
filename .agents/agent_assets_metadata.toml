@@ -12,3 +12,9 @@ id = "N4U9YuFJtP9-Zk-l6pF5V"
 uri = "file://artifacts/mockup-sandbox/public/images/guruforge-network.png"
 type = "image"
 title = "AI data processing visualization"
+
+[[generated]]
+id = "5WCiAqvqLZ_PNI7MXHxH8"
+uri = "file://artifacts/mockup-sandbox/public/images/guruforge-editorial-hero.png"
+type = "image"
+title = "Hero VC Scout Image"
