@@ -399,6 +399,42 @@ paths:
             application/json:
               schema:
                 $ref: "#/components/schemas/TelegramStatusResponse"
+  /telegram/wisdom-toggle/{guruId}:
+    patch:
+      operationId: toggleWisdomContribution
+      tags: [telegram]
+      summary: Toggle wisdom contribution for a Guru connection
+      parameters:
+        - name: guruId
+          in: path
+          required: true
+          schema:
+            type: integer
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/WisdomToggleInput"
+      responses:
+        "200":
+          description: Updated setting
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/WisdomToggleResponse"
+        "401":
+          description: Unauthorized
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ErrorResponse"
+        "404":
+          description: No active connection
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ErrorResponse"
   /telegram/bot-info/{guruId}:
     get:
       operationId: getTelegramBotInfo
@@ -985,6 +1021,8 @@ components:
         connectedAt:
           type: string
           nullable: true
+        contributesToWisdom:
+          type: boolean
       required:
         - connected
     TelegramBotInfoResponse:
@@ -997,6 +1035,20 @@ components:
           nullable: true
       required:
         - configured
+    WisdomToggleInput:
+      type: object
+      properties:
+        contributesToWisdom:
+          type: boolean
+      required:
+        - contributesToWisdom
+    WisdomToggleResponse:
+      type: object
+      properties:
+        contributesToWisdom:
+          type: boolean
+      required:
+        - contributesToWisdom
     UpdateBotTokenInput:
       type: object
       properties:

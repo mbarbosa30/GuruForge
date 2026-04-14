@@ -1,4 +1,4 @@
-import { pgTable, serial, integer, varchar, timestamp, uniqueIndex } from "drizzle-orm/pg-core";
+import { pgTable, serial, integer, varchar, timestamp, uniqueIndex, boolean } from "drizzle-orm/pg-core";
 import { createInsertSchema } from "drizzle-zod";
 import { z } from "zod/v4";
 import { usersTable } from "./users";
@@ -13,6 +13,7 @@ export const telegramConnectionsTable = pgTable("telegram_connections", {
   telegramUserId: varchar("telegram_user_id", { length: 64 }).notNull(),
   telegramChatId: varchar("telegram_chat_id", { length: 64 }).notNull(),
   status: varchar("status", { length: 20 }).notNull().default("active"),
+  contributesToWisdom: boolean("contributes_to_wisdom").notNull().default(true),
   connectedAt: timestamp("connected_at", { withTimezone: true }).defaultNow().notNull(),
 }, (table) => [
   uniqueIndex("telegram_conn_user_guru_idx").on(table.userId, table.guruId),

@@ -170,9 +170,58 @@ router.get("/telegram/status/:guruId", requireAuth, async (req: AuthRequest, res
     res.json({
       connected: !!connection,
       connectedAt: connection?.connectedAt?.toISOString() ?? null,
+      contributesToWisdom: connection?.contributesToWisdom ?? true,
     });
   } catch (err) {
     res.json({ connected: false });
+  }
+});
+
+router.patch("/telegram/wisdom-toggle/:guruId", requireAuth, async (req: AuthRequest, res) => {
+  try {
+    if (!req.dbUserId) {
+      res.status(400).json({ error: "User profile not found." });
+      return;
+    }
+
+    const guruId = parseInt(req.params.guruId, 10);
+    if (isNaN(guruId)) {
+      res.status(400).json({ error: "Invalid guru ID." });
+      return;
+    }
+
+    const { contributesToWisdom } = req.body;
+    if (typeof contributesToWisdom !== "boolean") {
+      res.status(400).json({ error: "contributesToWisdom must be a boolean." });
+      return;
+    }
+
+    const [connection] = await db
+      .select()
+      .from(telegramConnectionsTable)
+      .where(
+        and(
+          eq(telegramConnectionsTable.userId, req.dbUserId),
+          eq(telegramConnectionsTable.guruId, guruId),
+          eq(telegramConnectionsTable.status, "active"),
+        ),
+      )
+      .limit(1);
+
+    if (!connection) {
+      res.status(404).json({ error: "No active connection found." });
+      return;
+    }
+
+    await db
+      .update(telegramConnectionsTable)
+      .set({ contributesToWisdom })
+      .where(eq(telegramConnectionsTable.id, connection.id));
+
+    res.json({ contributesToWisdom });
+  } catch (err) {
+    console.error("Wisdom toggle error:", err);
+    res.status(500).json({ error: "Failed to update wisdom contribution setting." });
   }
 });
 

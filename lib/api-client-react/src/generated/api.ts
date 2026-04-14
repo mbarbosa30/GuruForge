@@ -41,6 +41,8 @@ import type {
   UpdateUserInput,
   User,
   UserSubscription,
+  WisdomToggleInput,
+  WisdomToggleResponse,
 } from "./api.schemas";
 
 import { customFetch } from "../custom-fetch";
@@ -1374,6 +1376,96 @@ export function useGetTelegramStatus<
 
   return { ...query, queryKey: queryOptions.queryKey };
 }
+
+/**
+ * @summary Toggle wisdom contribution for a Guru connection
+ */
+export const getToggleWisdomContributionUrl = (guruId: number) => {
+  return `/api/telegram/wisdom-toggle/${guruId}`;
+};
+
+export const toggleWisdomContribution = async (
+  guruId: number,
+  wisdomToggleInput: WisdomToggleInput,
+  options?: RequestInit,
+): Promise<WisdomToggleResponse> => {
+  return customFetch<WisdomToggleResponse>(
+    getToggleWisdomContributionUrl(guruId),
+    {
+      ...options,
+      method: "PATCH",
+      headers: { "Content-Type": "application/json", ...options?.headers },
+      body: JSON.stringify(wisdomToggleInput),
+    },
+  );
+};
+
+export const getToggleWisdomContributionMutationOptions = <
+  TError = ErrorType<ErrorResponse>,
+  TContext = unknown,
+>(options?: {
+  mutation?: UseMutationOptions<
+    Awaited<ReturnType<typeof toggleWisdomContribution>>,
+    TError,
+    { guruId: number; data: BodyType<WisdomToggleInput> },
+    TContext
+  >;
+  request?: SecondParameter<typeof customFetch>;
+}): UseMutationOptions<
+  Awaited<ReturnType<typeof toggleWisdomContribution>>,
+  TError,
+  { guruId: number; data: BodyType<WisdomToggleInput> },
+  TContext
+> => {
+  const mutationKey = ["toggleWisdomContribution"];
+  const { mutation: mutationOptions, request: requestOptions } = options
+    ? options.mutation &&
+      "mutationKey" in options.mutation &&
+      options.mutation.mutationKey
+      ? options
+      : { ...options, mutation: { ...options.mutation, mutationKey } }
+    : { mutation: { mutationKey }, request: undefined };
+
+  const mutationFn: MutationFunction<
+    Awaited<ReturnType<typeof toggleWisdomContribution>>,
+    { guruId: number; data: BodyType<WisdomToggleInput> }
+  > = (props) => {
+    const { guruId, data } = props ?? {};
+
+    return toggleWisdomContribution(guruId, data, requestOptions);
+  };
+
+  return { mutationFn, ...mutationOptions };
+};
+
+export type ToggleWisdomContributionMutationResult = NonNullable<
+  Awaited<ReturnType<typeof toggleWisdomContribution>>
+>;
+export type ToggleWisdomContributionMutationBody = BodyType<WisdomToggleInput>;
+export type ToggleWisdomContributionMutationError = ErrorType<ErrorResponse>;
+
+/**
+ * @summary Toggle wisdom contribution for a Guru connection
+ */
+export const useToggleWisdomContribution = <
+  TError = ErrorType<ErrorResponse>,
+  TContext = unknown,
+>(options?: {
+  mutation?: UseMutationOptions<
+    Awaited<ReturnType<typeof toggleWisdomContribution>>,
+    TError,
+    { guruId: number; data: BodyType<WisdomToggleInput> },
+    TContext
+  >;
+  request?: SecondParameter<typeof customFetch>;
+}): UseMutationResult<
+  Awaited<ReturnType<typeof toggleWisdomContribution>>,
+  TError,
+  { guruId: number; data: BodyType<WisdomToggleInput> },
+  TContext
+> => {
+  return useMutation(getToggleWisdomContributionMutationOptions(options));
+};
 
 /**
  * @summary Get Telegram bot info for a guru

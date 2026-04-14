@@ -328,6 +328,22 @@ export const GetTelegramStatusParams = zod.object({
 export const GetTelegramStatusResponse = zod.object({
   connected: zod.boolean(),
   connectedAt: zod.string().nullish(),
+  contributesToWisdom: zod.boolean().optional(),
+});
+
+/**
+ * @summary Toggle wisdom contribution for a Guru connection
+ */
+export const ToggleWisdomContributionParams = zod.object({
+  guruId: zod.coerce.number(),
+});
+
+export const ToggleWisdomContributionBody = zod.object({
+  contributesToWisdom: zod.boolean(),
+});
+
+export const ToggleWisdomContributionResponse = zod.object({
+  contributesToWisdom: zod.boolean(),
 });
 
 /**

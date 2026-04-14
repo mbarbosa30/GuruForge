@@ -7,3 +7,5 @@ export * from "./conversations";
 export * from "./messages";
 export * from "./telegram-connections";
 export * from "./connection-codes";
+export * from "./user-memories";
+export * from "./collective-patterns";

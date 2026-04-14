@@ -38,3 +38,5 @@ export * from "./updateGuruInputStatus";
 export * from "./updateUserInput";
 export * from "./user";
 export * from "./userSubscription";
+export * from "./wisdomToggleInput";
+export * from "./wisdomToggleResponse";

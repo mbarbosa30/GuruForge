@@ -6,8 +6,6 @@
  * OpenAPI spec version: 0.1.0
  */
 
-export interface TelegramStatusResponse {
-  connected: boolean;
-  connectedAt?: string | null;
-  contributesToWisdom?: boolean;
+export interface WisdomToggleResponse {
+  contributesToWisdom: boolean;
 }

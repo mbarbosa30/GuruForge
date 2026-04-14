@@ -7,6 +7,7 @@ import {
   useCheckSubscription,
   useCreateCheckoutSession,
   useGetTelegramStatus,
+  useToggleWisdomContribution,
   getGetGuruQueryOptions,
   getListGuruRatingsQueryOptions,
   getCheckSubscriptionQueryOptions,
@@ -109,6 +110,28 @@ export default function GuruProfile() {
   });
 
   const isTelegramConnected = telegramStatus?.connected === true;
+  const [wisdomEnabled, setWisdomEnabled] = useState(true);
+  const wisdomToggleMutation = useToggleWisdomContribution();
+
+  useEffect(() => {
+    if (telegramStatus?.contributesToWisdom !== undefined) {
+      setWisdomEnabled(telegramStatus.contributesToWisdom);
+    }
+  }, [telegramStatus?.contributesToWisdom]);
+
+  async function handleWisdomToggle() {
+    if (!guru?.id) return;
+    const newValue = !wisdomEnabled;
+    setWisdomEnabled(newValue);
+    try {
+      await wisdomToggleMutation.mutateAsync({
+        guruId: guru.id,
+        data: { contributesToWisdom: newValue },
+      });
+    } catch {
+      setWisdomEnabled(!newValue);
+    }
+  }
 
   useEffect(() => {
     if (checkoutResult === "success") {
@@ -305,6 +328,19 @@ export default function GuruProfile() {
                 Connect on Telegram
               </button>
             )
+          )}
+          {isSubscribed && isTelegramConnected && (
+            <button
+              onClick={handleWisdomToggle}
+              className={`text-[13px] font-medium tracking-[0.04em] uppercase px-7 py-3 border transition-colors cursor-pointer ${
+                wisdomEnabled
+                  ? "text-[#555] bg-white border-[#ddd] hover:border-[#999]"
+                  : "text-[#999] bg-[#fafafa] border-[#e8e8e8] hover:border-[#ccc]"
+              }`}
+              data-testid="button-wisdom-toggle"
+            >
+              {wisdomEnabled ? "Contributing to Wisdom" : "Wisdom Contribution Off"}
+            </button>
           )}
         </div>
         {checkoutError && (

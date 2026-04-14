@@ -41,8 +41,10 @@ pnpm workspace monorepo using TypeScript. Each package manages its own dependenc
 - `guru_ratings` — id, user_id, guru_id, rating (1-5), comment (unique constraint on user_id + guru_id)
 - `conversations` — id, user_id, guru_id, title, message_count, total_input_tokens, total_output_tokens, last_message_at, status
 - `messages` — id, conversation_id, role (user/assistant/system), content, input_tokens, output_tokens
-- `telegram_connections` — id, user_id, guru_id, telegram_user_id, telegram_username, chat_id, status, connected_at (unique per user+guru)
+- `telegram_connections` — id, user_id, guru_id, telegram_user_id, telegram_chat_id, status, contributes_to_wisdom (bool, default true), connected_at (unique per user+guru, unique per guru+telegram_user_id)
 - `connection_codes` — id, user_id, guru_id, code, expires_at, used
+- `user_memories` — id, user_id, guru_id, category (goals/preferences/history/decisions/context), summary, details (jsonb), importance (0-1), last_accessed_at, created_at, updated_at
+- `collective_patterns` — id, guru_id, pattern_type (common_questions/successful_strategies/pitfalls/trends), summary, frequency, confidence (0-1), source_count, created_at, updated_at
 
 ### API Endpoints (under `/api`)
 - `GET /api/healthz` — Health check
@@ -65,6 +67,7 @@ pnpm workspace monorepo using TypeScript. Each package manages its own dependenc
 - `GET /api/telegram/bot-info/:guruId` — Get Telegram bot info (public)
 - `POST /api/telegram/webhook/:guruId` — Telegram webhook handler (grammy)
 - `PATCH /api/telegram/bot-token/:guruId` — Set/update bot token (auth required, creator only)
+- `PATCH /api/telegram/wisdom-toggle/:guruId` — Toggle wisdom contribution (auth required)
 
 ### Auth
 - Clerk middleware validates JWT tokens
@@ -95,6 +98,13 @@ pnpm workspace monorepo using TypeScript. Each package manages its own dependenc
 - **Conversation engine**: `artifacts/api-server/src/lib/conversationEngine.ts` — handles message processing, OpenAI calls, token tracking
 - **Connection flow**: User subscribes → clicks "Connect on Telegram" → generates 8-char code → pastes in Telegram bot → accounts linked → conversations begin
 - **OpenAI**: Uses Replit AI Integrations proxy (no user API key needed). Model mapping: basic→gpt-4o-mini, pro/enterprise→gpt-5.2. Use `max_completion_tokens` for gpt-5 series
+- **3-tier memory system**:
+  - **Tier 1 (Live)**: Recent conversation context (last 20 messages in current conversation)
+  - **Tier 2 (Personal)**: Per-user per-guru long-term memory (goals, preferences, history, decisions, context). Extracted after each turn via LLM. Stored in `user_memories`. Retrieved by keyword overlap + recency weighting + importance scoring.
+  - **Tier 3 (Collective)**: Anonymized patterns across all users of a guru (common_questions, successful_strategies, pitfalls, trends). Extracted every 10 conversations via LLM with PII redaction. Stored in `collective_patterns`.
+  - **PII redaction**: `piiRedactor.ts` strips emails, phones, URLs, SSNs, credit cards, IPs before content enters Tier 3
+  - **Memory policy**: Guru's `memoryPolicy` field controls whether memory is enabled. `"none"` disables all memory.
+  - **Contribution toggle**: Users can opt out of collective wisdom via `contributesToWisdom` on their telegram connection
 
 ### Design System
 - Neo-minimal flat UI: pure white bg, sharp edges, uppercase micro-labels, numbered cards, clean typography

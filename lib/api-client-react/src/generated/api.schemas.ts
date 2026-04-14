@@ -281,11 +281,20 @@ export interface TelegramConnectionResponse {
 export interface TelegramStatusResponse {
   connected: boolean;
   connectedAt?: string | null;
+  contributesToWisdom?: boolean;
 }
 
 export interface TelegramBotInfoResponse {
   configured: boolean;
   botUsername?: string | null;
+}
+
+export interface WisdomToggleInput {
+  contributesToWisdom: boolean;
+}
+
+export interface WisdomToggleResponse {
+  contributesToWisdom: boolean;
 }
 
 export interface UpdateBotTokenInput {

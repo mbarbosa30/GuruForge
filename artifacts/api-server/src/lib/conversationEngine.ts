@@ -10,15 +10,20 @@ import {
 } from "@workspace/db/schema";
 import { eq, and, desc, gt } from "drizzle-orm";
 import { openai } from "@workspace/integrations-openai-ai-server";
+import { retrieveMemoryContext, extractPersonalMemories, maybeExtractCollectivePatterns } from "./memoryManager";
 
-function buildSystemPrompt(guru: {
-  name: string;
-  description: string | null;
-  tagline: string | null;
-  personalityStyle: string | null;
-  topics: string[] | null;
-  memoryPolicy: string | null;
-}): string {
+function buildSystemPrompt(
+  guru: {
+    name: string;
+    description: string | null;
+    tagline: string | null;
+    personalityStyle: string | null;
+    topics: string[] | null;
+    memoryPolicy: string | null;
+  },
+  personalMemories: string,
+  collectivePatterns: string,
+): string {
   const personality = guru.personalityStyle ?? "professional";
   const personalityDescriptions: Record<string, string> = {
     professional: "You communicate in a clear, structured, and professional manner. You are precise and thoughtful.",
@@ -36,8 +41,29 @@ function buildSystemPrompt(guru: {
     `\nYou are part of a private wisdom community. Every user talks to you privately 1-on-1.`,
     `You learn collectively from all your users — synthesizing patterns across conversations to offer insights no single person could provide alone.`,
     `You never reveal personal details from one user to another. All collective insights are anonymized.`,
-    `Keep responses helpful, contextual, and appropriately concise. Don't be overly verbose unless the topic requires depth.`,
   ];
+
+  if (personalMemories) {
+    parts.push(
+      `\n--- PERSONAL MEMORY (things you remember about this specific user) ---`,
+      personalMemories,
+      `--- END PERSONAL MEMORY ---`,
+      `Use these memories naturally in conversation. Reference them when relevant (e.g., "Last time you mentioned X..."). Do not list them unprompted.`,
+    );
+  }
+
+  if (collectivePatterns) {
+    parts.push(
+      `\n--- COLLECTIVE WISDOM (anonymized patterns from your community) ---`,
+      collectivePatterns,
+      `--- END COLLECTIVE WISDOM ---`,
+      `Weave these patterns into your advice naturally. Reference community-level insights when helpful (e.g., "Based on what I've learned from this community..."). Never attribute patterns to specific users.`,
+    );
+  }
+
+  parts.push(
+    `\nKeep responses helpful, contextual, and appropriately concise. Don't be overly verbose unless the topic requires depth.`,
+  );
 
   return parts.filter(Boolean).join("\n");
 }
@@ -230,7 +256,21 @@ export async function handleTelegramMessage(
 
   recentMessages.reverse();
 
-  const systemPrompt = buildSystemPrompt(guru);
+  const memoryEnabled = guru.memoryPolicy !== "none";
+  let personalMemories = "";
+  let collectivePatterns = "";
+
+  if (memoryEnabled) {
+    try {
+      const memCtx = await retrieveMemoryContext(connection.userId, guruId, text);
+      personalMemories = memCtx.personalMemories;
+      collectivePatterns = memCtx.collectivePatterns;
+    } catch (err) {
+      console.error("Memory retrieval failed, continuing without memory context:", err);
+    }
+  }
+
+  const systemPrompt = buildSystemPrompt(guru, personalMemories, collectivePatterns);
 
   const chatMessages: Array<{ role: "system" | "user" | "assistant"; content: string }> = [
     { role: "system", content: systemPrompt },
@@ -279,6 +319,15 @@ export async function handleTelegramMessage(
     .update(conversationsTable)
     .set({ updatedAt: new Date() })
     .where(eq(conversationsTable.id, conversation.id));
+
+  if (memoryEnabled) {
+    extractPersonalMemories(connection.userId, guruId, text, assistantContent).catch((err) =>
+      console.error("Background memory extraction failed:", err),
+    );
+    maybeExtractCollectivePatterns(guruId).catch((err) =>
+      console.error("Background collective pattern extraction failed:", err),
+    );
+  }
 
   return assistantContent;
 }
