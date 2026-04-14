@@ -11,5 +11,7 @@ export const modules: ModuleMap = {
   "./components/mockups/guruforge/LandingStagger.tsx": () => import("../components/mockups/guruforge/LandingStagger.tsx"),
   "./components/mockups/guruforge/Marketplace.tsx": () => import("../components/mockups/guruforge/Marketplace.tsx"),
   "./components/mockups/guruforge/MarketplaceEditorial.tsx": () => import("../components/mockups/guruforge/MarketplaceEditorial.tsx"),
-  "./components/mockups/guruforge/MarketplaceLeaderboard.tsx": () => import("../components/mockups/guruforge/MarketplaceLeaderboard.tsx")
+  "./components/mockups/guruforge/MarketplaceLeaderboard.tsx": () => import("../components/mockups/guruforge/MarketplaceLeaderboard.tsx"),
+  "./components/mockups/guruforge/MarketplaceSocial.tsx": () => import("../components/mockups/guruforge/MarketplaceSocial.tsx"),
+  "./components/mockups/guruforge/MarketplaceSpeed.tsx": () => import("../components/mockups/guruforge/MarketplaceSpeed.tsx")
 };
