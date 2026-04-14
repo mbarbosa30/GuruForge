@@ -1,0 +1,81 @@
+Landing Page for GuruForge.ai (v1 – Hero Launch Version)
+MISSION
+Create a breathtaking, emotionally powerful, futuristic landing page that makes visitors feel:
+“This is not another AI tool. This is where real wisdom, community, and human connection are being forged with AI.”
+The entire page must scream Wisdom > Intelligence.
+It is selling a living network of specialized AI Gurus that get wiser every day through real human communities — inside Telegram.
+Core Positioning (use this tone everywhere):
+“While others build smarter AI…
+We forge wiser ones.
+Ones that remember your journey, learn from hundreds of others just like you, connect you to real opportunities, and reward you as they grow.”
+
+HERO SECTION (above the fold – make it epic)
+
+Dark cosmic background with subtle glowing particles that look like “wisdom nodes” connecting and being forged
+Massive headline (Framer Motion elegant reveal):
+“Wisdom. Community. Connection.”
+Subheadline:
+“A marketplace of living AI Gurus that get dramatically wiser the more people use them.
+Forged together inside Telegram. Owned by their communities.”
+Trust line: “Now in private beta • guruforge.ai”
+Primary CTA buttons:
+• “Browse Living Gurus” (big, glowing)
+• “Forge Your Own Guru” (secondary)
+Small social proof: “Already 47 Gurus forged • 1,284 Pioneers earning royalties • 94% average Satisfaction Score”
+
+
+SECTION 2 – THE PROBLEM (emotional)
+Headline: “General AI is smart. But it will never be your wise companion.”
+Copy:
+It doesn’t remember the last 9 months of your journey.
+It can’t see what actually worked for 500 other founders in your exact situation.
+It can’t introduce you to someone who just solved the problem you’re facing right now.
+That’s why we forged GuruForge.
+
+SECTION 3 – HOW GURUFORGE WORKS (4-step visual flow)
+
+Discover Your Guru
+Browse specialized living agents — DeFi Wizard, Startup Operator, Stoic Philosopher, etc.
+Connect in 10 Seconds
+Get a secure code → paste it in Telegram → your personal Guru wakes up.
+Experience Collective Wisdom
+Powered by the proven 3-tier intelligence system (Triage → Conversation → Calibration) + shared memory.
+Own a Piece of the Growth
+As a Pioneer you earn real royalties as your Guru gets wiser.
+
+
+SECTION 4 – THE THREE PILLARS (visual heavy)
+1. Wisdom of the Crowd
+Every conversation forges anonymized, privacy-first collective wisdom. The Guru learns “what works and why not” across hundreds of users.
+2. Real Human Connection
+Safe warm intros powered by the community. “I know someone who just solved exactly this.”
+3. You Own the Upside
+Pioneer Royalties: The earlier you join, the bigger your permanent share of the Guru’s future revenue.
+
+SECTION 5 – PROOF IT WORKS
+
+Live Wisdom Score & Satisfaction Score visuals
+Real-sounding founder testimonials
+Pioneer earnings example (“Pioneer #23 is earning $487/mo from the DeFi Guru”)
+Growth counter: “+312 new insights forged this week”
+
+
+SECTION 6 – FOR CREATORS
+Headline: “Turn your expertise into a living, revenue-generating AI Guru”
+
+“You choose the model. You pay only for usage. You keep 70%.”
+“Your Guru gets wiser every day — even while you sleep.”
+
+
+FINAL CTA (full width, high energy)
+“Ready to join the first network of truly wise AI?”
+Buttons:
+“Browse All Gurus”
+“Forge Your Own Guru”
+Footer: “Built on the proven 3-tier intelligence system from prazo.ai & teli.gent”
+
+STYLE:
+Ultra-premium dark theme (deep space black + electric teal + subtle molten-gold accents for the “forge” feeling). Heavy Framer Motion, particle forge effects, buttery smooth, mobile-first.
+Tech: Next.js 15 App Router, TypeScript, Tailwind, shadcn/ui, Framer Motion. Production-ready.
+
+Start building the full landing page exactly as described. Make it so compelling that visitors feel immediate FOMO and excitement about being part of the wisdom movement.
