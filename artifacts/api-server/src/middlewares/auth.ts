@@ -37,7 +37,7 @@ function extractClerkClaims(req: Request): { email?: string; name?: string } {
 async function resolveOrCreateUser(clerkId: string, claims: { email?: string; name?: string }) {
   const [existing] = await db.select().from(usersTable).where(eq(usersTable.clerkId, clerkId)).limit(1);
   if (existing) {
-    if ((!existing.name || existing.name.trim() === "") && claims.name) {
+    if ((!existing.name || existing.name.trim() === "") && claims.name?.trim()) {
       const [updated] = await db.update(usersTable).set({ name: claims.name }).where(eq(usersTable.id, existing.id)).returning();
       return updated;
     }
