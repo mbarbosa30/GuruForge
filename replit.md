@@ -63,7 +63,7 @@ pnpm workspace monorepo using TypeScript. Each package manages its own dependenc
 - `/` — Landing page with hero, features, waitlist form, and "Browse Marketplace" CTA
 - `/marketplace` — Guru discovery page with search, category filters, sort, and responsive 3-col grid
 - `/guru/:slug` — Guru profile page with stats, description, topics, trust indicators, ratings, CTAs
-- `/create` — Placeholder for creator wizard (coming soon)
+- `/create` — 6-step Guru creator wizard (Identity, Purpose, Intelligence, Memory, Pricing, Review) with auth gate
 - `/sign-in`, `/sign-up` — Clerk auth pages
 
 ### Design System

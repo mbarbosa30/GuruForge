@@ -9,6 +9,7 @@ import Layout from "@/components/layout";
 import Home from "@/pages/home";
 import Marketplace from "@/pages/marketplace";
 import GuruProfile from "@/pages/guru-profile";
+import CreateGuru from "@/pages/create-guru";
 import NotFound from "@/pages/not-found";
 
 const clerkPubKey = import.meta.env.VITE_CLERK_PUBLISHABLE_KEY;
@@ -76,17 +77,6 @@ function LayoutGuruProfile() {
   return <Layout><GuruProfile /></Layout>;
 }
 
-function LayoutCreatePlaceholder() {
-  return (
-    <Layout>
-      <div className="px-6 md:px-10 py-16 text-center">
-        <p className="text-[11px] font-medium tracking-[0.12em] uppercase text-[#888] mb-3">Coming soon</p>
-        <h1 className="text-[32px] font-light tracking-[-0.03em] text-[#111] mb-3">Create a Guru</h1>
-        <p className="text-[15px] text-[#777]">The creator wizard is being forged. Check back soon.</p>
-      </div>
-    </Layout>
-  );
-}
 
 function Router() {
   return (
@@ -94,7 +84,7 @@ function Router() {
       <Route path="/" component={Home} />
       <Route path="/marketplace" component={LayoutMarketplace} />
       <Route path="/guru/:slug" component={LayoutGuruProfile} />
-      <Route path="/create" component={LayoutCreatePlaceholder} />
+      <Route path="/create" component={CreateGuru} />
       <Route path="/sign-in/*?" component={SignInPage} />
       <Route path="/sign-up/*?" component={SignUpPage} />
       <Route component={NotFound} />
