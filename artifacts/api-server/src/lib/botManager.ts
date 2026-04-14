@@ -5,6 +5,7 @@ import { db } from "@workspace/db";
 import { gurusTable } from "@workspace/db/schema";
 import { eq } from "drizzle-orm";
 import { handleTelegramMessage } from "./conversationEngine";
+import { logger } from "./logger";
 
 interface BotEntry {
   bot: Bot;
@@ -36,11 +37,11 @@ export async function startBot(guruId: number): Promise<boolean> {
         const response = await handleTelegramMessage(guruId, telegramUserId, chatId, text);
         await ctx.reply(response);
       } catch (err) {
-        console.error(`Bot ${guruId} message error:`, err);
+        logger.error({ err, guruId }, "Bot message error");
         try {
           await ctx.reply("I'm having trouble processing your message right now. Please try again in a moment.");
         } catch (replyErr) {
-          console.error(`Bot ${guruId} failed to send error reply:`, replyErr);
+          logger.error({ err: replyErr, guruId }, "Failed to send error reply");
         }
       }
     });
@@ -51,7 +52,7 @@ export async function startBot(guruId: number): Promise<boolean> {
     activeBots.set(guruId, { bot, handler });
     return true;
   } catch (err) {
-    console.error(`Failed to start bot for guru ${guruId}:`, err);
+    logger.error({ err, guruId }, "Failed to start bot");
     return false;
   }
 }
@@ -87,7 +88,7 @@ export async function startAllPublishedBots(): Promise<void> {
         try {
           await setupWebhook(guru.id, `https://${domain}/api/telegram/webhook/${guru.id}`);
         } catch (err) {
-          console.error(`Failed to set webhook for guru ${guru.id}:`, err);
+          logger.error({ err, guruId: guru.id }, "Failed to set webhook on startup");
         }
       }
     }
@@ -115,7 +116,7 @@ export async function setupWebhook(guruId: number, webhookUrl: string): Promise<
     });
     return true;
   } catch (err) {
-    console.error(`Failed to set webhook for guru ${guruId}:`, err);
+    logger.error({ err, guruId }, "Failed to set webhook");
     return false;
   }
 }
@@ -128,7 +129,7 @@ export async function clearWebhook(guruId: number): Promise<boolean> {
     await entry.bot.api.deleteWebhook();
     return true;
   } catch (err) {
-    console.error(`Failed to clear webhook for guru ${guruId}:`, err);
+    logger.error({ err, guruId }, "Failed to clear webhook");
     return false;
   }
 }
