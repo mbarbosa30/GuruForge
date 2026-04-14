@@ -105,7 +105,7 @@ pnpm workspace monorepo using TypeScript. Each package manages its own dependenc
 - **Calibration pipeline**: `artifacts/api-server/src/lib/calibrationPipeline.ts` — async post-response extraction (personal memories, collective insights, contribution scoring)
 - **Score calculator**: `artifacts/api-server/src/lib/scoreCalculator.ts` — dynamically recalculates wisdom/satisfaction/userCount on gurus table every 5 calibration cycles
 - **Usage logger**: `artifacts/api-server/src/lib/usageLogger.ts` — logs all LLM calls (triage, conversation, calibration) with token counts and estimated costs
-- **Model config**: `artifacts/api-server/src/lib/modelConfig.ts` — `getModelConfig(modelTier)` returns `{ provider, conversationModel, fastModel, client }`. Two branded options: `gpt` (GPT-5.4 / GPT-5-mini) and `grok` (Grok-3 / Grok-3-mini). Falls back to GPT if XAI_API_KEY not set.
+- **Model config**: `artifacts/api-server/src/lib/modelConfig.ts` — `getModelConfig(modelTier)` returns `{ provider, conversationModel, fastModel, client }`. Two branded options: `gpt` (GPT-5.4 / GPT-5-mini) and `grok` (Grok-3 / Grok-3-mini). Throws clear error if Grok selected but XAI_API_KEY not set; conversation engine catches this and returns user-friendly unavailability message.
 - **Connection flow**: User subscribes → clicks "Connect on Telegram" → generates 8-char code → pastes in Telegram bot → accounts linked → conversations begin
 - **OpenAI**: Uses Replit AI Integrations proxy (no user API key needed). Use `max_completion_tokens` for gpt-5 series
 - **xAI/Grok**: Uses `lib/integrations-xai-server` with `XAI_API_KEY` + `XAI_BASE_URL` env vars. OpenAI-compatible API at `https://api.x.ai/v1`
