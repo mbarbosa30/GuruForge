@@ -14,6 +14,7 @@ export const usageLogsTable = pgTable("usage_logs", {
   completionTokens: integer("completion_tokens").notNull().default(0),
   totalTokens: integer("total_tokens").notNull().default(0),
   estimatedCostCents: integer("estimated_cost_cents").notNull().default(0),
+  latencyMs: integer("latency_ms"),
   createdAt: timestamp("created_at", { withTimezone: true }).defaultNow().notNull(),
 });
 

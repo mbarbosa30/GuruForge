@@ -13,7 +13,7 @@ export interface ModelConfig {
 
 const PROVIDER_MODELS: Record<ModelProvider, { conversationModel: string; fastModel: string }> = {
   gpt: { conversationModel: "gpt-5.4", fastModel: "gpt-5-mini" },
-  grok: { conversationModel: "grok-3", fastModel: "grok-3-mini" },
+  grok: { conversationModel: "grok-4-0420", fastModel: "grok-4-0414" },
 };
 
 export function getModelConfig(modelTier: string | null): ModelConfig {

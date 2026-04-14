@@ -122,12 +122,14 @@ Assistant response: ${assistantResponse}
 Respond ONLY with a valid JSON array, no other text.`;
 
     const model = "gpt-4o-mini";
+    const memStart = Date.now();
     const completion = await openai.chat.completions.create({
       model,
       max_completion_tokens: 1024,
       messages: [{ role: "user", content: prompt }],
       temperature: 0.3,
     });
+    const memLatency = Date.now() - memStart;
 
     await logUsage({
       guruId,
@@ -137,6 +139,7 @@ Respond ONLY with a valid JSON array, no other text.`;
       promptTokens: completion.usage?.prompt_tokens ?? 0,
       completionTokens: completion.usage?.completion_tokens ?? 0,
       totalTokens: completion.usage?.total_tokens ?? 0,
+      latencyMs: memLatency,
     });
 
     const content = completion.choices[0]?.message?.content?.trim() ?? "[]";
@@ -273,6 +276,7 @@ async function extractCollectivePatterns(guruId: number): Promise<void> {
         promptTokens: result.usage.promptTokens,
         completionTokens: result.usage.completionTokens,
         totalTokens: result.usage.totalTokens,
+        latencyMs: result.usage.latencyMs ?? null,
       });
     }
     redactedExchanges.push(`[${m.role}]: ${result.redacted}`);
@@ -293,12 +297,14 @@ ${redactedExchanges.slice(0, 50).join("\n")}
 Respond ONLY with a valid JSON array, no other text.`;
 
   const patternModel = "gpt-4o-mini";
+  const patStart = Date.now();
   const completion = await openai.chat.completions.create({
     model: patternModel,
     max_completion_tokens: 1024,
     messages: [{ role: "user", content: prompt }],
     temperature: 0.3,
   });
+  const patLatency = Date.now() - patStart;
 
   await logUsage({
     guruId,
@@ -307,6 +313,7 @@ Respond ONLY with a valid JSON array, no other text.`;
     promptTokens: completion.usage?.prompt_tokens ?? 0,
     completionTokens: completion.usage?.completion_tokens ?? 0,
     totalTokens: completion.usage?.total_tokens ?? 0,
+    latencyMs: patLatency,
   });
 
   const content = completion.choices[0]?.message?.content?.trim() ?? "[]";

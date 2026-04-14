@@ -35,12 +35,14 @@ Assistant response: ${input.assistantResponse}
 
 Respond ONLY with valid JSON, no other text.`;
 
+    const calStart = Date.now();
     const completion = await client.chat.completions.create({
       model: fastModel,
       max_completion_tokens: 1024,
       messages: [{ role: "user", content: prompt }],
       temperature: 0.3,
     });
+    const calLatency = Date.now() - calStart;
 
     await logUsage({
       guruId: input.guruId,
@@ -51,6 +53,7 @@ Respond ONLY with valid JSON, no other text.`;
       promptTokens: completion.usage?.prompt_tokens ?? 0,
       completionTokens: completion.usage?.completion_tokens ?? 0,
       totalTokens: completion.usage?.total_tokens ?? 0,
+      latencyMs: calLatency,
     });
 
     const content = completion.choices[0]?.message?.content?.trim() ?? "{}";
@@ -178,6 +181,7 @@ async function upsertCollectiveInsights(
         promptTokens: redactionResult.usage.promptTokens,
         completionTokens: redactionResult.usage.completionTokens,
         totalTokens: redactionResult.usage.totalTokens,
+        latencyMs: redactionResult.usage.latencyMs ?? null,
       });
     }
 

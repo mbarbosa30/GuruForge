@@ -42,6 +42,13 @@ function parseMemoryPolicy(memoryPolicy: string | null): MemoryPolicyFlags {
   }
 }
 
+function getMaxCompletionTokens(priceCents: number): number {
+  if (priceCents >= 10000) return 2400;
+  if (priceCents >= 5000) return 1200;
+  if (priceCents >= 2000) return 600;
+  return 300;
+}
+
 function buildSystemPrompt(
   guru: {
     name: string;
@@ -54,6 +61,7 @@ function buildSystemPrompt(
   personalMemories: string,
   collectivePatterns: string,
   triage: TriageResult | null,
+  userName: string | null,
 ): string {
   const personality = guru.personalityStyle ?? "professional";
   const personalityDescriptions: Record<string, string> = {
@@ -69,6 +77,7 @@ function buildSystemPrompt(
     guru.description ? `\nAbout you: ${guru.description}` : "",
     `\nPersonality: ${personalityDescriptions[personality] ?? personalityDescriptions.professional}`,
     guru.topics?.length ? `\nYour areas of expertise: ${guru.topics.join(", ")}` : "",
+    userName ? `\nThe user's name is "${userName.replace(/[^\p{L}\p{N}\s'-]/gu, "").slice(0, 50)}". Address them by name naturally when appropriate.` : "",
     `\nYou are part of a private wisdom community. Every user talks to you privately 1-on-1.`,
     `You learn collectively from all your users — synthesizing patterns across conversations to offer insights no single person could provide alone.`,
     `You never reveal personal details from one user to another. All collective insights are anonymized.`,
@@ -350,7 +359,19 @@ export async function handleTelegramMessage(
     }
   }
 
-  const systemPrompt = buildSystemPrompt(guru, personalMemories, collectivePatterns, triage);
+  let userName: string | null = null;
+  try {
+    const [user] = await db
+      .select({ name: usersTable.name })
+      .from(usersTable)
+      .where(eq(usersTable.id, connection.userId))
+      .limit(1);
+    userName = user?.name ?? null;
+  } catch (err) {
+    console.error("Failed to fetch user name:", err);
+  }
+
+  const systemPrompt = buildSystemPrompt(guru, personalMemories, collectivePatterns, triage, userName);
 
   const chatMessages: Array<{ role: "system" | "user" | "assistant"; content: string }> = [
     { role: "system", content: systemPrompt },
@@ -369,11 +390,15 @@ export async function handleTelegramMessage(
     return "This Guru's AI model is not currently available. Please try again later or contact the Guru creator.";
   }
 
+  const maxTokens = getMaxCompletionTokens(guru.priceCents);
+
+  const convStart = Date.now();
   const completion = await modelConfig.client.chat.completions.create({
     model: modelConfig.conversationModel,
-    max_completion_tokens: 8192,
+    max_completion_tokens: maxTokens,
     messages: chatMessages,
   });
+  const convLatency = Date.now() - convStart;
 
   const assistantContent = completion.choices[0]?.message?.content ?? "I'm sorry, I couldn't generate a response.";
   const promptTokens = completion.usage?.prompt_tokens ?? 0;
@@ -389,6 +414,7 @@ export async function handleTelegramMessage(
     promptTokens,
     completionTokens,
     totalTokens,
+    latencyMs: convLatency,
   });
 
   await db.insert(messagesTable).values([

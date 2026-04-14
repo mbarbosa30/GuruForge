@@ -47,12 +47,14 @@ Return a JSON object with:
 
 Respond ONLY with valid JSON, no other text.`;
 
+    const triageStart = Date.now();
     const completion = await client.chat.completions.create({
       model: fastModel,
       max_completion_tokens: 256,
       messages: [{ role: "user", content: prompt }],
       temperature: 0,
     });
+    const triageLatency = Date.now() - triageStart;
 
     const content = completion.choices[0]?.message?.content?.trim() ?? "{}";
 
@@ -65,6 +67,7 @@ Respond ONLY with valid JSON, no other text.`;
       promptTokens: completion.usage?.prompt_tokens ?? 0,
       completionTokens: completion.usage?.completion_tokens ?? 0,
       totalTokens: completion.usage?.total_tokens ?? 0,
+      latencyMs: triageLatency,
     });
 
     const cleaned = content.replace(/```json\n?/g, "").replace(/```\n?/g, "");

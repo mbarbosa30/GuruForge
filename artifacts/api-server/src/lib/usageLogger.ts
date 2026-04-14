@@ -10,16 +10,29 @@ interface UsageEntry {
   promptTokens: number;
   completionTokens: number;
   totalTokens: number;
+  latencyMs?: number | null;
 }
 
 const COST_PER_1K_INPUT: Record<string, number> = {
   "gpt-4o-mini": 0.015,
   "gpt-5.2": 0.25,
+  "gpt-5.4": 0.25,
+  "gpt-5-mini": 0.04,
+  "grok-3": 0.3,
+  "grok-3-mini": 0.03,
+  "grok-4-0420": 0.3,
+  "grok-4-0414": 0.06,
 };
 
 const COST_PER_1K_OUTPUT: Record<string, number> = {
   "gpt-4o-mini": 0.06,
   "gpt-5.2": 1.0,
+  "gpt-5.4": 1.0,
+  "gpt-5-mini": 0.16,
+  "grok-3": 1.0,
+  "grok-3-mini": 0.1,
+  "grok-4-0420": 1.0,
+  "grok-4-0414": 0.2,
 };
 
 function estimateCostCents(model: string, promptTokens: number, completionTokens: number): number {
@@ -41,6 +54,7 @@ export async function logUsage(entry: UsageEntry): Promise<void> {
       completionTokens: entry.completionTokens,
       totalTokens: entry.totalTokens,
       estimatedCostCents: estimateCostCents(entry.model, entry.promptTokens, entry.completionTokens),
+      latencyMs: entry.latencyMs ?? null,
     });
   } catch (err) {
     console.error("Usage logging error:", err);

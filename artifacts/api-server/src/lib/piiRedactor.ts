@@ -15,7 +15,7 @@ export interface RedactionResult {
   redacted: string;
   redactionCount: number;
   redactedTypes: string[];
-  usage?: { model: string; promptTokens: number; completionTokens: number; totalTokens: number };
+  usage?: { model: string; promptTokens: number; completionTokens: number; totalTokens: number; latencyMs?: number };
 }
 
 export function redactPIIRegex(text: string): RedactionResult {
@@ -55,6 +55,7 @@ export async function redactPIIWithLLM(text: string): Promise<RedactionResult> {
 
   try {
     const model = "gpt-4o-mini";
+    const piiStart = Date.now();
     const completion = await openai.chat.completions.create({
       model,
       max_completion_tokens: 2048,
@@ -95,6 +96,8 @@ Return ONLY the redacted text with no explanation. If no additional PII is found
       }
     }
 
+    const piiLatency = Date.now() - piiStart;
+
     return {
       redacted: llmRedacted,
       redactionCount: regexResult.redactionCount + llmRedactionCount,
@@ -104,6 +107,7 @@ Return ONLY the redacted text with no explanation. If no additional PII is found
         promptTokens: completion.usage?.prompt_tokens ?? 0,
         completionTokens: completion.usage?.completion_tokens ?? 0,
         totalTokens: completion.usage?.total_tokens ?? 0,
+        latencyMs: piiLatency,
       },
     };
   } catch (err) {
