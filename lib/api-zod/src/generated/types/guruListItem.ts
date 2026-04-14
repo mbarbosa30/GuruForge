@@ -5,6 +5,7 @@
  * GuruForge API specification
  * OpenAPI spec version: 0.1.0
  */
+import type { GuruListItemModelTier } from "./guruListItemModelTier";
 
 export interface GuruListItem {
   id: number;
@@ -19,7 +20,7 @@ export interface GuruListItem {
   priceInterval: string;
   topics?: string[] | null;
   personalityStyle?: string | null;
-  modelTier?: string | null;
+  modelTier?: GuruListItemModelTier;
   wisdomScore?: number | null;
   satisfactionScore?: number | null;
   userCount?: number | null;

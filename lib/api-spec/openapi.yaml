@@ -588,6 +588,7 @@ components:
           nullable: true
         modelTier:
           type: string
+          enum: [grok, gpt]
           nullable: true
         wisdomScore:
           type: number
@@ -657,6 +658,7 @@ components:
           nullable: true
         modelTier:
           type: string
+          enum: [grok, gpt]
           nullable: true
         memoryPolicy:
           type: string
@@ -742,6 +744,7 @@ components:
           nullable: true
         modelTier:
           type: string
+          enum: [grok, gpt]
           nullable: true
         memoryPolicy:
           type: string

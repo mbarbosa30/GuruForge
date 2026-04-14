@@ -5,6 +5,7 @@
  * GuruForge API specification
  * OpenAPI spec version: 0.1.0
  */
+import type { GuruModelTier } from "./guruModelTier";
 
 export interface Guru {
   id: number;
@@ -20,7 +21,7 @@ export interface Guru {
   priceInterval: string;
   topics?: string[] | null;
   personalityStyle?: string | null;
-  modelTier?: string | null;
+  modelTier?: GuruModelTier;
   memoryPolicy?: string | null;
   introEnabled?: boolean | null;
   wisdomScore?: number | null;

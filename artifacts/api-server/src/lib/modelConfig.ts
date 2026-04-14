@@ -22,10 +22,10 @@ export function getModelConfig(modelTier: string | null): ModelConfig {
   if (tier === "grok") {
     const xaiClient = getXaiClient();
     if (!xaiClient) {
-      console.warn(
-        "Grok selected but XAI_API_KEY not configured; falling back to GPT.",
+      throw new Error(
+        "This Guru uses Grok but the xAI API key is not configured. " +
+        "Set the XAI_API_KEY environment variable to enable Grok-powered conversations.",
       );
-      return { provider: "gpt", ...PROVIDER_MODELS.gpt, client: openai };
     }
     return { provider: "grok", ...PROVIDER_MODELS.grok, client: xaiClient };
   }

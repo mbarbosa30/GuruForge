@@ -22,6 +22,15 @@ export interface Category {
   displayOrder: number;
 }
 
+export type GuruListItemModelTier =
+  | (typeof GuruListItemModelTier)[keyof typeof GuruListItemModelTier]
+  | null;
+
+export const GuruListItemModelTier = {
+  grok: "grok",
+  gpt: "gpt",
+} as const;
+
 export interface GuruListItem {
   id: number;
   name: string;
@@ -35,7 +44,7 @@ export interface GuruListItem {
   priceInterval: string;
   topics?: string[] | null;
   personalityStyle?: string | null;
-  modelTier?: string | null;
+  modelTier?: GuruListItemModelTier;
   wisdomScore?: number | null;
   satisfactionScore?: number | null;
   userCount?: number | null;
@@ -44,6 +53,15 @@ export interface GuruListItem {
   categorySlug?: string | null;
   creatorName?: string | null;
 }
+
+export type GuruDetailModelTier =
+  | (typeof GuruDetailModelTier)[keyof typeof GuruDetailModelTier]
+  | null;
+
+export const GuruDetailModelTier = {
+  grok: "grok",
+  gpt: "gpt",
+} as const;
 
 export interface GuruDetail {
   id: number;
@@ -59,7 +77,7 @@ export interface GuruDetail {
   priceInterval: string;
   topics?: string[] | null;
   personalityStyle?: string | null;
-  modelTier?: string | null;
+  modelTier?: GuruDetailModelTier;
   memoryPolicy?: string | null;
   introEnabled?: boolean | null;
   wisdomScore?: number | null;
@@ -73,6 +91,15 @@ export interface GuruDetail {
   avgRating?: number | null;
   totalRatings: number;
 }
+
+export type GuruModelTier =
+  | (typeof GuruModelTier)[keyof typeof GuruModelTier]
+  | null;
+
+export const GuruModelTier = {
+  grok: "grok",
+  gpt: "gpt",
+} as const;
 
 export interface Guru {
   id: number;
@@ -88,7 +115,7 @@ export interface Guru {
   priceInterval: string;
   topics?: string[] | null;
   personalityStyle?: string | null;
-  modelTier?: string | null;
+  modelTier?: GuruModelTier;
   memoryPolicy?: string | null;
   introEnabled?: boolean | null;
   wisdomScore?: number | null;

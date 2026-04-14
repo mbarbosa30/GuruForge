@@ -357,10 +357,16 @@ export async function handleTelegramMessage(
     { role: "user", content: text },
   ];
 
-  const { conversationModel } = getModelConfig(guru.modelTier);
+  let modelConfig;
+  try {
+    modelConfig = getModelConfig(guru.modelTier);
+  } catch (err: any) {
+    console.error("Model config error:", err.message);
+    return "This Guru's AI model is not currently available. Please try again later or contact the Guru creator.";
+  }
 
-  const completion = await getModelConfig(guru.modelTier).client.chat.completions.create({
-    model: conversationModel,
+  const completion = await modelConfig.client.chat.completions.create({
+    model: modelConfig.conversationModel,
     max_completion_tokens: 8192,
     messages: chatMessages,
   });
@@ -375,7 +381,7 @@ export async function handleTelegramMessage(
     userId: connection.userId,
     conversationId: conversation.id,
     callType: "conversation",
-    model: conversationModel,
+    model: modelConfig.conversationModel,
     promptTokens,
     completionTokens,
     totalTokens,
