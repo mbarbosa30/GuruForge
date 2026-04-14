@@ -4,7 +4,7 @@ import { gurusTable, usersTable, categoriesTable, guruRatingsTable } from "@work
 import { eq, desc, asc, and, sql, avg, count, or } from "drizzle-orm";
 import { requireAuth, optionalAuth, type AuthRequest } from "../middlewares/auth";
 import { CreateGuruBody, UpdateGuruBody, UpdateGuruParams, ListGurusQueryParams } from "@workspace/api-zod";
-import { handleGuruStatusChange } from "../lib/botManager";
+import { handleGuruStatusChange, isBotActive, stopBot, startBot, setupWebhook } from "../lib/botManager";
 
 const router: IRouter = Router();
 
@@ -269,6 +269,17 @@ router.patch("/gurus/:id", requireAuth, async (req: AuthRequest, res) => {
       handleGuruStatusChange(guruId, data.status).catch((err) =>
         console.error(`Bot lifecycle error for guru ${guruId}:`, err)
       );
+    } else if (data.telegramBotToken !== undefined && updated.status === "published") {
+      (async () => {
+        if (isBotActive(guruId)) stopBot(guruId);
+        const started = await startBot(guruId);
+        if (started) {
+          const domain = process.env.REPLIT_DEV_DOMAIN || process.env.REPLIT_DOMAINS?.split(",")[0];
+          if (domain) {
+            await setupWebhook(guruId, `https://${domain}/api/telegram/webhook/${guruId}`);
+          }
+        }
+      })().catch((err) => console.error(`Bot token update error for guru ${guruId}:`, err));
     }
 
     res.json(updated);

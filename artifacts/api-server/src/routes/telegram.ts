@@ -93,15 +93,23 @@ router.post("/telegram/connect/:guruId", requireAuth, async (req: AuthRequest, r
       return;
     }
 
-    const code = generateCode();
+    let code = "";
     const expiresAt = new Date(Date.now() + 10 * 60 * 1000);
 
-    await db.insert(connectionCodesTable).values({
-      userId: req.dbUserId,
-      guruId,
-      code,
-      expiresAt,
-    });
+    for (let attempt = 0; attempt < 5; attempt++) {
+      code = generateCode();
+      try {
+        await db.insert(connectionCodesTable).values({
+          userId: req.dbUserId,
+          guruId,
+          code,
+          expiresAt,
+        });
+        break;
+      } catch (insertErr: unknown) {
+        if (attempt === 4) throw insertErr;
+      }
+    }
 
     if (!isBotActive(guruId)) {
       const started = await startBot(guruId);
