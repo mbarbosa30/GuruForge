@@ -366,7 +366,7 @@ export async function handleTelegramMessage(
       .from(usersTable)
       .where(eq(usersTable.id, connection.userId))
       .limit(1);
-    userName = user?.name ?? null;
+    userName = user?.name || null;
   } catch (err) {
     console.error("Failed to fetch user name:", err);
   }
