@@ -55,25 +55,25 @@ async function fetchPrivyProfile(privyUserId: string): Promise<PrivyProfile> {
 }
 
 async function resolveOrCreateUser(privyUserId: string) {
-  const [existing] = await db
+  const [existingByPrivyId] = await db
     .select()
     .from(usersTable)
     .where(eq(usersTable.privyId, privyUserId))
     .limit(1);
 
-  if (existing) {
-    if (!existing.name || existing.name.trim() === "") {
+  if (existingByPrivyId) {
+    if (!existingByPrivyId.name || existingByPrivyId.name.trim() === "") {
       try {
         const profile = await fetchPrivyProfile(privyUserId);
         if (profile.name.trim()) {
           const updates: Record<string, string> = { name: profile.name };
-          if (!existing.email || existing.email === "unknown@example.com") {
+          if (!existingByPrivyId.email || existingByPrivyId.email === "unknown@example.com") {
             updates.email = profile.email;
           }
           const [updated] = await db
             .update(usersTable)
             .set(updates)
-            .where(eq(usersTable.id, existing.id))
+            .where(eq(usersTable.id, existingByPrivyId.id))
             .returning();
           return updated;
         }
@@ -81,25 +81,43 @@ async function resolveOrCreateUser(privyUserId: string) {
         console.error("Failed to fetch Privy user profile:", err);
       }
     }
-    return existing;
+    return existingByPrivyId;
   }
 
-  let name: string | null = null;
-  let email = "unknown@example.com";
+  let profile: PrivyProfile = { name: "", email: "unknown@example.com" };
   try {
-    const profile = await fetchPrivyProfile(privyUserId);
-    name = profile.name.trim() || null;
-    email = profile.email;
+    profile = await fetchPrivyProfile(privyUserId);
   } catch (err) {
-    console.error("Failed to fetch Privy profile for new user:", err);
+    console.error("Failed to fetch Privy profile:", err);
+  }
+
+  if (profile.email && profile.email !== "unknown@example.com") {
+    const [existingByEmail] = await db
+      .select()
+      .from(usersTable)
+      .where(eq(usersTable.email, profile.email))
+      .limit(1);
+
+    if (existingByEmail) {
+      const updates: Record<string, string> = { privyId: privyUserId };
+      if (profile.name.trim() && (!existingByEmail.name || existingByEmail.name.trim() === "")) {
+        updates.name = profile.name;
+      }
+      const [migrated] = await db
+        .update(usersTable)
+        .set(updates)
+        .where(eq(usersTable.id, existingByEmail.id))
+        .returning();
+      return migrated;
+    }
   }
 
   const [created] = await db
     .insert(usersTable)
     .values({
       privyId: privyUserId,
-      email,
-      name,
+      email: profile.email,
+      name: profile.name.trim() || null,
     })
     .returning();
   return created;
