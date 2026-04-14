@@ -3,13 +3,21 @@ info:
   # Do not change the title, if the title changes, the import paths will be broken
   title: Api
   version: 0.1.0
-  description: API specification
+  description: GuruForge API specification
 servers:
   - url: /api
     description: Base API path
 tags:
   - name: health
     description: Health operations
+  - name: categories
+    description: Category operations
+  - name: gurus
+    description: Guru operations
+  - name: users
+    description: User operations
+  - name: ratings
+    description: Rating operations
 paths:
   /healthz:
     get:
@@ -24,6 +32,235 @@ paths:
             application/json:
               schema:
                 $ref: "#/components/schemas/HealthStatus"
+  /categories:
+    get:
+      operationId: listCategories
+      tags: [categories]
+      summary: List all categories
+      responses:
+        "200":
+          description: List of categories
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: "#/components/schemas/Category"
+  /gurus:
+    get:
+      operationId: listGurus
+      tags: [gurus]
+      summary: List and search gurus
+      parameters:
+        - name: category
+          in: query
+          schema:
+            type: string
+          description: Filter by category slug
+        - name: status
+          in: query
+          schema:
+            type: string
+          description: Filter by status (default published)
+        - name: search
+          in: query
+          schema:
+            type: string
+          description: Search by name, tagline, or description
+        - name: sort
+          in: query
+          schema:
+            type: string
+            enum: [newest, wisdom, price_asc, price_desc, users]
+          description: Sort order
+      responses:
+        "200":
+          description: List of gurus
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: "#/components/schemas/GuruListItem"
+    post:
+      operationId: createGuru
+      tags: [gurus]
+      summary: Create a new guru
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/CreateGuruInput"
+      responses:
+        "201":
+          description: Guru created
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/Guru"
+        "401":
+          description: Unauthorized
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ErrorResponse"
+  /gurus/{slug}:
+    get:
+      operationId: getGuru
+      tags: [gurus]
+      summary: Get a guru by slug
+      parameters:
+        - name: slug
+          in: path
+          required: true
+          schema:
+            type: string
+      responses:
+        "200":
+          description: Guru details
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/GuruDetail"
+        "404":
+          description: Not found
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ErrorResponse"
+  /gurus/{id}:
+    patch:
+      operationId: updateGuru
+      tags: [gurus]
+      summary: Update a guru
+      parameters:
+        - name: id
+          in: path
+          required: true
+          schema:
+            type: integer
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/UpdateGuruInput"
+      responses:
+        "200":
+          description: Guru updated
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/Guru"
+        "401":
+          description: Unauthorized
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ErrorResponse"
+        "403":
+          description: Forbidden
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ErrorResponse"
+  /gurus/{id}/ratings:
+    get:
+      operationId: listGuruRatings
+      tags: [ratings]
+      summary: Get ratings for a guru
+      parameters:
+        - name: id
+          in: path
+          required: true
+          schema:
+            type: integer
+      responses:
+        "200":
+          description: List of ratings
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: "#/components/schemas/Rating"
+    post:
+      operationId: createGuruRating
+      tags: [ratings]
+      summary: Rate a guru (creates or updates existing rating)
+      parameters:
+        - name: id
+          in: path
+          required: true
+          schema:
+            type: integer
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/CreateRatingInput"
+      responses:
+        "200":
+          description: Rating updated (existing rating)
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/GuruRating"
+        "201":
+          description: Rating created
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/GuruRating"
+        "401":
+          description: Unauthorized
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ErrorResponse"
+  /users/me:
+    get:
+      operationId: getMe
+      tags: [users]
+      summary: Get current user profile
+      responses:
+        "200":
+          description: User profile
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/User"
+        "401":
+          description: Unauthorized
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ErrorResponse"
+    patch:
+      operationId: updateMe
+      tags: [users]
+      summary: Update current user profile
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/UpdateUserInput"
+      responses:
+        "200":
+          description: Updated user profile
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/User"
+        "401":
+          description: Unauthorized
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ErrorResponse"
 components:
   schemas:
     HealthStatus:
@@ -33,4 +270,424 @@ components:
           type: string
       required:
         - status
-
+    ErrorResponse:
+      type: object
+      properties:
+        error:
+          type: string
+      required:
+        - error
+    Category:
+      type: object
+      properties:
+        id:
+          type: integer
+        name:
+          type: string
+        slug:
+          type: string
+        description:
+          type: string
+          nullable: true
+        icon:
+          type: string
+          nullable: true
+        displayOrder:
+          type: integer
+      required:
+        - id
+        - name
+        - slug
+        - displayOrder
+    GuruListItem:
+      type: object
+      properties:
+        id:
+          type: integer
+        name:
+          type: string
+        slug:
+          type: string
+        tagline:
+          type: string
+          nullable: true
+        description:
+          type: string
+          nullable: true
+        categoryId:
+          type: integer
+          nullable: true
+        avatarUrl:
+          type: string
+          nullable: true
+        status:
+          type: string
+        priceCents:
+          type: integer
+        priceInterval:
+          type: string
+        topics:
+          type: array
+          items:
+            type: string
+          nullable: true
+        personalityStyle:
+          type: string
+          nullable: true
+        modelTier:
+          type: string
+          nullable: true
+        wisdomScore:
+          type: number
+          nullable: true
+        satisfactionScore:
+          type: number
+          nullable: true
+        userCount:
+          type: integer
+          nullable: true
+        createdAt:
+          type: string
+          format: date-time
+        categoryName:
+          type: string
+          nullable: true
+        categorySlug:
+          type: string
+          nullable: true
+        creatorName:
+          type: string
+          nullable: true
+      required:
+        - id
+        - name
+        - slug
+        - status
+        - priceCents
+        - priceInterval
+        - createdAt
+    GuruDetail:
+      type: object
+      properties:
+        id:
+          type: integer
+        creatorId:
+          type: integer
+        name:
+          type: string
+        slug:
+          type: string
+        tagline:
+          type: string
+          nullable: true
+        description:
+          type: string
+          nullable: true
+        categoryId:
+          type: integer
+          nullable: true
+        avatarUrl:
+          type: string
+          nullable: true
+        status:
+          type: string
+        priceCents:
+          type: integer
+        priceInterval:
+          type: string
+        topics:
+          type: array
+          items:
+            type: string
+          nullable: true
+        personalityStyle:
+          type: string
+          nullable: true
+        modelTier:
+          type: string
+          nullable: true
+        memoryPolicy:
+          type: string
+          nullable: true
+        introEnabled:
+          type: boolean
+          nullable: true
+        wisdomScore:
+          type: number
+          nullable: true
+        satisfactionScore:
+          type: number
+          nullable: true
+        userCount:
+          type: integer
+          nullable: true
+        createdAt:
+          type: string
+          format: date-time
+        categoryName:
+          type: string
+          nullable: true
+        categorySlug:
+          type: string
+          nullable: true
+        creatorName:
+          type: string
+          nullable: true
+        creatorAvatarUrl:
+          type: string
+          nullable: true
+        avgRating:
+          type: number
+          nullable: true
+        totalRatings:
+          type: integer
+      required:
+        - id
+        - creatorId
+        - name
+        - slug
+        - status
+        - priceCents
+        - priceInterval
+        - createdAt
+        - totalRatings
+    Guru:
+      type: object
+      properties:
+        id:
+          type: integer
+        creatorId:
+          type: integer
+        name:
+          type: string
+        slug:
+          type: string
+        tagline:
+          type: string
+          nullable: true
+        description:
+          type: string
+          nullable: true
+        categoryId:
+          type: integer
+          nullable: true
+        avatarUrl:
+          type: string
+          nullable: true
+        status:
+          type: string
+        priceCents:
+          type: integer
+        priceInterval:
+          type: string
+        topics:
+          type: array
+          items:
+            type: string
+          nullable: true
+        personalityStyle:
+          type: string
+          nullable: true
+        modelTier:
+          type: string
+          nullable: true
+        memoryPolicy:
+          type: string
+          nullable: true
+        introEnabled:
+          type: boolean
+          nullable: true
+        wisdomScore:
+          type: number
+          nullable: true
+        satisfactionScore:
+          type: number
+          nullable: true
+        userCount:
+          type: integer
+          nullable: true
+        stripeProductId:
+          type: string
+          nullable: true
+        stripePriceId:
+          type: string
+          nullable: true
+        createdAt:
+          type: string
+          format: date-time
+        updatedAt:
+          type: string
+          format: date-time
+      required:
+        - id
+        - creatorId
+        - name
+        - slug
+        - status
+        - priceCents
+        - priceInterval
+        - createdAt
+        - updatedAt
+    CreateGuruInput:
+      type: object
+      properties:
+        name:
+          type: string
+        tagline:
+          type: string
+        description:
+          type: string
+        categoryId:
+          type: integer
+        avatarUrl:
+          type: string
+        priceCents:
+          type: integer
+        priceInterval:
+          type: string
+          enum: [monthly, yearly]
+        topics:
+          type: array
+          items:
+            type: string
+        personalityStyle:
+          type: string
+          enum: [professional, friendly, direct, academic]
+        modelTier:
+          type: string
+          enum: [basic, pro, enterprise]
+        memoryPolicy:
+          type: string
+        introEnabled:
+          type: boolean
+      required:
+        - name
+    UpdateGuruInput:
+      type: object
+      properties:
+        name:
+          type: string
+        tagline:
+          type: string
+        description:
+          type: string
+        categoryId:
+          type: integer
+        avatarUrl:
+          type: string
+        status:
+          type: string
+          enum: [draft, published, archived]
+        priceCents:
+          type: integer
+        priceInterval:
+          type: string
+          enum: [monthly, yearly]
+        topics:
+          type: array
+          items:
+            type: string
+        personalityStyle:
+          type: string
+          enum: [professional, friendly, direct, academic]
+        modelTier:
+          type: string
+          enum: [basic, pro, enterprise]
+        memoryPolicy:
+          type: string
+        introEnabled:
+          type: boolean
+    User:
+      type: object
+      properties:
+        id:
+          type: integer
+        clerkId:
+          type: string
+        email:
+          type: string
+        name:
+          type: string
+          nullable: true
+        avatarUrl:
+          type: string
+          nullable: true
+        role:
+          type: string
+        createdAt:
+          type: string
+          format: date-time
+        updatedAt:
+          type: string
+          format: date-time
+      required:
+        - id
+        - clerkId
+        - email
+        - role
+        - createdAt
+        - updatedAt
+    UpdateUserInput:
+      type: object
+      properties:
+        name:
+          type: string
+        avatarUrl:
+          type: string
+    Rating:
+      type: object
+      properties:
+        id:
+          type: integer
+        rating:
+          type: integer
+        comment:
+          type: string
+          nullable: true
+        createdAt:
+          type: string
+          format: date-time
+        userName:
+          type: string
+          nullable: true
+        userAvatarUrl:
+          type: string
+          nullable: true
+      required:
+        - id
+        - rating
+        - createdAt
+    GuruRating:
+      type: object
+      properties:
+        id:
+          type: integer
+        userId:
+          type: integer
+        guruId:
+          type: integer
+        rating:
+          type: integer
+        comment:
+          type: string
+          nullable: true
+        createdAt:
+          type: string
+          format: date-time
+      required:
+        - id
+        - userId
+        - guruId
+        - rating
+        - createdAt
+    CreateRatingInput:
+      type: object
+      properties:
+        rating:
+          type: integer
+          minimum: 1
+          maximum: 5
+        comment:
+          type: string
+      required:
+        - rating
