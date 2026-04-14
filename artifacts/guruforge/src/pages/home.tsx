@@ -62,7 +62,7 @@ export default function Home() {
       </header>
 
       <section className="px-6 md:px-12 pt-20 pb-28 md:pt-32 md:pb-40 max-w-3xl mx-auto text-center">
-        <motion.div initial="hidden" animate="visible" variants={stagger} className="flex flex-col items-center">
+        <motion.div initial="hidden" whileInView="visible" viewport={{ once: true }} variants={stagger} className="flex flex-col items-center">
           <motion.h1
             variants={fade}
             className="text-4xl md:text-6xl lg:text-7xl font-bold tracking-tight leading-[1.08] mb-8 text-[#1a1a1a]"
@@ -183,7 +183,7 @@ export default function Home() {
               <h3 className="text-lg font-semibold mb-3 text-[#1a1a1a]">Shared Ownership</h3>
               <p className="text-[#666] text-base leading-relaxed">
                 Pioneer users who join early will own a real slice of their Guru's
-                future growth through Wisdom Royalties.
+                future growth through Pioneer Wisdom Royalties.
               </p>
             </motion.div>
           </div>
