@@ -243,7 +243,7 @@ export default function Home() {
           Architect a wisdom circle.<br />
           Found a community.
         </h2>
-        <p className="text-[15px] leading-[1.7] text-[#666] mb-8 max-w-[480px]">
+        <p className="text-[15px] leading-[1.7] text-[#666] mb-8 max-w-[580px]">
           Define the focus, personality, and boundaries of a specialized AI that
           becomes the invisible center of a community. As members engage, the Guru
           weaves their collective experience into living intelligence — and you earn
