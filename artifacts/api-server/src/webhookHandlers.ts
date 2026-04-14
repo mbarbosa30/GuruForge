@@ -31,21 +31,35 @@ function resolveStatus(stripeStatus: string): "active" | "cancelled" {
 }
 
 async function handleSubscriptionEvent(subscription: StripeSubscriptionEvent) {
+  const status = resolveStatus(subscription.status);
+  const expiresAt = subscription.current_period_end
+    ? new Date(subscription.current_period_end * 1000)
+    : null;
+
+  const existing = await db
+    .select()
+    .from(subscriptionsTable)
+    .where(eq(subscriptionsTable.stripeSubscriptionId, subscription.id))
+    .limit(1);
+
+  if (existing.length > 0) {
+    await db
+      .update(subscriptionsTable)
+      .set({ status, expiresAt })
+      .where(eq(subscriptionsTable.stripeSubscriptionId, subscription.id));
+    return;
+  }
+
   const guruId = parseInt(subscription.metadata?.guruId ?? "0", 10);
   const userId = parseInt(subscription.metadata?.userId ?? "0", 10);
 
   if (!guruId || !userId) {
-    console.warn("Webhook: Missing guruId or userId in subscription metadata", {
+    console.warn("Webhook: No existing record and missing metadata for new subscription", {
       subscriptionId: subscription.id,
       metadata: subscription.metadata,
     });
     return;
   }
-
-  const status = resolveStatus(subscription.status);
-  const expiresAt = subscription.current_period_end
-    ? new Date(subscription.current_period_end * 1000)
-    : null;
 
   await db
     .insert(subscriptionsTable)

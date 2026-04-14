@@ -122,8 +122,25 @@ export default function GuruProfile() {
       } else {
         setCheckoutError("Unable to start checkout. Please try again.");
       }
-    } catch (err: any) {
-      const msg = err?.response?.data?.error || "Something went wrong. Please try again.";
+    } catch (err: unknown) {
+      let msg = "Something went wrong. Please try again.";
+      if (err instanceof Error) {
+        msg = err.message;
+      }
+      if (
+        typeof err === "object" &&
+        err !== null &&
+        "response" in err &&
+        typeof (err as Record<string, unknown>).response === "object"
+      ) {
+        const response = (err as Record<string, unknown>).response as Record<string, unknown>;
+        if (typeof response.data === "object" && response.data !== null) {
+          const data = response.data as Record<string, unknown>;
+          if (typeof data.error === "string") {
+            msg = data.error;
+          }
+        }
+      }
       setCheckoutError(msg);
     } finally {
       setCheckoutLoading(false);
