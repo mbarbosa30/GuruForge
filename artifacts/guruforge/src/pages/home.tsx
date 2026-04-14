@@ -102,14 +102,14 @@ export default function Home() {
   return (
     <Layout>
       <section className="px-6 md:px-10 pt-20 md:pt-24 pb-16 md:pb-20 max-w-[820px]">
-        <p className="text-[11px] font-medium tracking-[0.12em] uppercase text-[#888] mb-7">
+        <p className="text-[11px] font-medium tracking-[0.12em] uppercase text-[#777] mb-7">
           The world's first wisdom network
         </p>
         <h1 className="text-[40px] md:text-[48px] font-light tracking-[-0.03em] leading-[1.1] mb-8 text-[#111]">
           A new kind of network,<br />
           built on wisdom.
         </h1>
-        <p className="text-base font-normal leading-[1.7] text-[#666] max-w-[620px] mb-12">
+        <p className="text-base font-normal leading-[1.7] text-[#555] max-w-[620px] mb-12">
           Each Guru is the invisible thread connecting a private community.
           It synthesizes collective intelligence from every conversation — growing
           wiser without ever exposing what anyone said. Not a social network.
@@ -138,10 +138,10 @@ export default function Home() {
       <section className="px-6 md:px-10 py-16 max-w-[1200px]">
         <div className="flex items-end justify-between mb-10 flex-wrap gap-4">
           <div>
-            <p className="text-[11px] font-medium tracking-[0.12em] uppercase text-[#888] mb-3">
+            <p className="text-[11px] font-medium tracking-[0.12em] uppercase text-[#777] mb-3">
               Featured circles
             </p>
-            <p className="text-[15px] text-[#777] max-w-[420px]">
+            <p className="text-[15px] text-[#666] max-w-[420px]">
               The wisest circles, ranked by community-driven wisdom score.
             </p>
           </div>
@@ -182,20 +182,20 @@ export default function Home() {
 
       <div className="border-t border-[#e0e0e0] mx-6 md:mx-10" />
 
-      <section className="px-6 md:px-10 py-16">
-        <p className="text-[11px] font-medium tracking-[0.12em] uppercase text-[#888] mb-10">
+      <section className="px-6 md:px-10 py-16 bg-[#f8f8f7]">
+        <p className="text-[11px] font-medium tracking-[0.12em] uppercase text-[#777] mb-10">
           The wisdom journey
         </p>
         <div className="grid grid-cols-1 md:grid-cols-3 gap-px bg-[#e0e0e0] max-w-[900px]">
           {steps.map((step) => (
             <div key={step.num} className="bg-white px-6 md:px-7 py-8">
-              <span className="text-[11px] font-semibold tracking-[0.08em] text-[#999] block mb-4">
+              <span className="text-[11px] font-semibold tracking-[0.08em] text-[#888] block mb-4">
                 {step.num}
               </span>
               <h3 className="text-[15px] font-semibold mb-2.5 text-[#111]">
                 {step.title}
               </h3>
-              <p className="text-[13px] leading-[1.65] text-[#777] m-0">
+              <p className="text-[13px] leading-[1.65] text-[#666] m-0">
                 {step.desc}
               </p>
             </div>
@@ -206,7 +206,7 @@ export default function Home() {
       <div className="border-t border-[#e0e0e0] mx-6 md:mx-10" />
 
       <section className="px-6 md:px-10 py-16">
-        <p className="text-[11px] font-medium tracking-[0.12em] uppercase text-[#888] mb-10">
+        <p className="text-[11px] font-medium tracking-[0.12em] uppercase text-[#777] mb-10">
           How this is different
         </p>
         <div className="max-w-[900px] overflow-x-auto">
@@ -223,8 +223,8 @@ export default function Home() {
               {comparison.map((row) => (
                 <tr key={row.dimension} className="border-b border-[#f0f0f0]">
                   <td className="text-[11px] font-medium tracking-[0.06em] uppercase text-[#888] py-4 pr-6 align-top">{row.dimension}</td>
-                  <td className="text-[13px] text-[#999] py-4 pr-6 leading-[1.5] align-top">{row.social}</td>
-                  <td className="text-[13px] text-[#999] py-4 pr-6 leading-[1.5] align-top">{row.ai}</td>
+                  <td className="text-[13px] text-[#888] py-4 pr-6 leading-[1.5] align-top">{row.social}</td>
+                  <td className="text-[13px] text-[#888] py-4 pr-6 leading-[1.5] align-top">{row.ai}</td>
                   <td className="text-[13px] text-[#333] py-4 leading-[1.5] align-top font-medium">{row.guruforge}</td>
                 </tr>
               ))}
@@ -236,14 +236,14 @@ export default function Home() {
       <div className="border-t border-[#e0e0e0] mx-6 md:mx-10" />
 
       <section className="px-6 md:px-10 py-16 max-w-[720px]">
-        <p className="text-[11px] font-medium tracking-[0.12em] uppercase text-[#888] mb-6">
+        <p className="text-[11px] font-medium tracking-[0.12em] uppercase text-[#777] mb-6">
           For creators
         </p>
         <h2 className="text-[28px] md:text-[32px] font-light tracking-[-0.02em] leading-[1.15] mb-4 text-[#111]">
           Architect a wisdom circle.<br />
           Found a community.
         </h2>
-        <p className="text-[15px] leading-[1.7] text-[#666] mb-8 max-w-[580px]">
+        <p className="text-[15px] leading-[1.7] text-[#555] mb-8 max-w-[580px]">
           Define the focus, personality, and boundaries of a specialized AI that
           becomes the invisible center of a community. As members engage, the Guru
           weaves their collective experience into living intelligence — and you earn
@@ -260,20 +260,20 @@ export default function Home() {
 
       <div className="border-t border-[#e0e0e0] mx-6 md:mx-10" />
 
-      <section className="px-6 md:px-10 py-16">
-        <p className="text-[11px] font-medium tracking-[0.12em] uppercase text-[#888] mb-10">
+      <section className="px-6 md:px-10 py-16 bg-[#f8f8f7]">
+        <p className="text-[11px] font-medium tracking-[0.12em] uppercase text-[#777] mb-10">
           Three pillars
         </p>
         <div className="grid grid-cols-1 md:grid-cols-3 gap-px bg-[#e0e0e0] max-w-[900px]">
           {pillars.map((item) => (
             <div key={item.num} className="bg-white px-6 md:px-7 py-8">
-              <span className="text-[11px] font-semibold tracking-[0.08em] text-[#999] block mb-4">
+              <span className="text-[11px] font-semibold tracking-[0.08em] text-[#888] block mb-4">
                 {item.num}
               </span>
               <h3 className="text-[15px] font-semibold mb-2.5 text-[#111]">
                 {item.title}
               </h3>
-              <p className="text-[13px] leading-[1.65] text-[#777] m-0">
+              <p className="text-[13px] leading-[1.65] text-[#666] m-0">
                 {item.desc}
               </p>
             </div>
