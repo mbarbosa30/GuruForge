@@ -1,5 +1,5 @@
 kind = "web"
-previewPath = "/guruforge/"
+previewPath = "/"
 title = "GuruForge"
 version = "1.0.0"
 id = "artifacts/guruforge"
@@ -11,7 +11,7 @@ version = "1.0.0"
 
 [[services]]
 name = "web"
-paths = [ "/guruforge/" ]
+paths = [ "/" ]
 localPort = 23183
 
 [services.development]
@@ -28,4 +28,4 @@ to = "/index.html"
 
 [services.env]
 PORT = "23183"
-BASE_PATH = "/guruforge/"
+BASE_PATH = "/"

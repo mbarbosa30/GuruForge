@@ -101,7 +101,7 @@ router.post("/subscriptions/checkout", requireAuth, async (req: AuthRequest, res
     }
 
     const domain = process.env.REPLIT_DEV_DOMAIN || process.env.REPLIT_DOMAINS?.split(",")[0] || "localhost";
-    const baseUrl = `https://${domain}/guruforge`;
+    const baseUrl = `https://${domain}`;
 
     const session = await stripe.checkout.sessions.create({
       customer: customerId,
@@ -186,7 +186,7 @@ router.post("/subscriptions/portal", requireAuth, async (req: AuthRequest, res) 
 
     const stripe = await getUncachableStripeClient();
     const domain = process.env.REPLIT_DEV_DOMAIN || process.env.REPLIT_DOMAINS?.split(",")[0] || "localhost";
-    const returnUrl = `https://${domain}/guruforge/dashboard`;
+    const returnUrl = `https://${domain}/dashboard`;
 
     const session = await stripe.billingPortal.sessions.create({
       customer: user.stripeCustomerId,

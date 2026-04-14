@@ -79,8 +79,4 @@ app.use(clerkMiddleware());
 
 app.use("/api", router);
 
-app.get("/", (_req, res) => {
-  res.redirect(301, "/guruforge/");
-});
-
 export default app;
