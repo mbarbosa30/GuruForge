@@ -36,9 +36,13 @@ pnpm workspace monorepo using TypeScript. Each package manages its own dependenc
 ### Database Schema
 - `users` — id, clerk_id, email, name, avatar_url, role (user/creator/admin), stripe_customer_id
 - `categories` — id, name, slug, description, icon, display_order
-- `gurus` — id, creator_id (FK users), name, slug, tagline, description, category_id (FK categories), avatar_url, status, price_cents, price_interval, topics, personality_style, model_tier, memory_policy, intro_enabled, wisdom_score, satisfaction_score, user_count, stripe_product_id, stripe_price_id
+- `gurus` — id, creator_id (FK users), name, slug, tagline, description, category_id (FK categories), avatar_url, status, price_cents, price_interval, topics, personality_style, model_tier, memory_policy, intro_enabled, wisdom_score, satisfaction_score, user_count, stripe_product_id, stripe_price_id, telegram_bot_token
 - `subscriptions` — id, user_id, guru_id, status, started_at, expires_at, stripe_subscription_id
 - `guru_ratings` — id, user_id, guru_id, rating (1-5), comment (unique constraint on user_id + guru_id)
+- `conversations` — id, user_id, guru_id, title, message_count, total_input_tokens, total_output_tokens, last_message_at, status
+- `messages` — id, conversation_id, role (user/assistant/system), content, input_tokens, output_tokens
+- `telegram_connections` — id, user_id, guru_id, telegram_user_id, telegram_username, chat_id, status, connected_at (unique per user+guru)
+- `connection_codes` — id, user_id, guru_id, code, expires_at, used
 
 ### API Endpoints (under `/api`)
 - `GET /api/healthz` — Health check
@@ -56,6 +60,11 @@ pnpm workspace monorepo using TypeScript. Each package manages its own dependenc
 - `POST /api/subscriptions/portal` — Create Stripe billing portal session (auth required)
 - `GET /api/subscriptions/check/:guruId` — Check subscription status for a guru (auth required)
 - `POST /api/webhooks/stripe` — Stripe webhook (raw body, before express.json())
+- `POST /api/telegram/connect/:guruId` — Generate Telegram connection code (auth required)
+- `GET /api/telegram/status/:guruId` — Check Telegram connection status (auth required)
+- `GET /api/telegram/bot-info/:guruId` — Get Telegram bot info (public)
+- `POST /api/telegram/webhook/:guruId` — Telegram webhook handler (grammy)
+- `PATCH /api/telegram/bot-token/:guruId` — Set/update bot token (auth required, creator only)
 
 ### Auth
 - Clerk middleware validates JWT tokens
@@ -79,6 +88,13 @@ pnpm workspace monorepo using TypeScript. Each package manages its own dependenc
 - **Checkout flow**: Subscribe button → creates Stripe customer (if needed) → creates Stripe product/price (if needed) → creates checkout session → redirects to Stripe → webhook updates subscription status
 - **Billing portal**: Manage Billing button on dashboard → creates portal session → redirects to Stripe portal
 - **Startup**: `runMigrations` (stripe schema) → `getStripeSync` → `findOrCreateManagedWebhook` → `syncBackfill`
+
+### Telegram Integration
+- **Bot framework**: grammy (externalized in esbuild, not bundled)
+- **Bot manager**: `artifacts/api-server/src/lib/botManager.ts` — manages per-guru bot instances, webhook setup
+- **Conversation engine**: `artifacts/api-server/src/lib/conversationEngine.ts` — handles message processing, OpenAI calls, token tracking
+- **Connection flow**: User subscribes → clicks "Connect on Telegram" → generates 8-char code → pastes in Telegram bot → accounts linked → conversations begin
+- **OpenAI**: Uses Replit AI Integrations proxy (no user API key needed). Model mapping: basic→gpt-4o-mini, pro/enterprise→gpt-5.2. Use `max_completion_tokens` for gpt-5 series
 
 ### Design System
 - Neo-minimal flat UI: pure white bg, sharp edges, uppercase micro-labels, numbered cards, clean typography

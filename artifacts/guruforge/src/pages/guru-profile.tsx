@@ -6,11 +6,14 @@ import {
   useListGuruRatings,
   useCheckSubscription,
   useCreateCheckoutSession,
+  useGetTelegramStatus,
   getGetGuruQueryOptions,
   getListGuruRatingsQueryOptions,
   getCheckSubscriptionQueryOptions,
+  getGetTelegramStatusQueryOptions,
 } from "@workspace/api-client-react";
 import type { Rating } from "@workspace/api-client-react";
+import TelegramConnectModal from "@/components/telegram-connect-modal";
 
 function formatPrice(cents: number, interval: string) {
   const dollars = (cents / 100).toFixed(cents % 100 === 0 ? 0 : 2);
@@ -76,6 +79,7 @@ export default function GuruProfile() {
   const { isSignedIn } = useAuth();
   const [checkoutLoading, setCheckoutLoading] = useState(false);
   const [checkoutError, setCheckoutError] = useState<string | null>(null);
+  const [showTelegramModal, setShowTelegramModal] = useState(false);
 
   const { data: guru, isLoading, isError } = useGetGuru(slug, {
     query: { ...getGetGuruQueryOptions(slug), enabled: !!slug },
@@ -96,6 +100,15 @@ export default function GuruProfile() {
   const checkoutMutation = useCreateCheckoutSession();
 
   const isSubscribed = subCheck?.subscribed === true;
+
+  const { data: telegramStatus } = useGetTelegramStatus(guruId, {
+    query: {
+      ...getGetTelegramStatusQueryOptions(guruId),
+      enabled: !!guru?.id && !!isSignedIn && isSubscribed,
+    },
+  });
+
+  const isTelegramConnected = telegramStatus?.connected === true;
 
   useEffect(() => {
     if (checkoutResult === "success") {
@@ -275,12 +288,24 @@ export default function GuruProfile() {
               {checkoutLoading ? "Redirecting..." : `Subscribe — ${formatPrice(guru.priceCents, guru.priceInterval)}`}
             </button>
           )}
-          <button
-            className="text-[13px] font-medium tracking-[0.04em] uppercase text-[#555] bg-white px-7 py-3 border border-[#ddd] hover:border-[#999] hover:text-[#333] transition-colors cursor-pointer"
-            data-testid="button-telegram"
-          >
-            Connect on Telegram
-          </button>
+          {isSubscribed && (
+            isTelegramConnected ? (
+              <div
+                className="text-[13px] font-medium tracking-[0.04em] uppercase text-[#2a7a2a] bg-[#f0f8f0] px-7 py-3 border border-[#c8e0c8] text-center"
+                data-testid="badge-telegram-connected"
+              >
+                Connected on Telegram
+              </div>
+            ) : (
+              <button
+                onClick={() => setShowTelegramModal(true)}
+                className="text-[13px] font-medium tracking-[0.04em] uppercase text-[#555] bg-white px-7 py-3 border border-[#ddd] hover:border-[#999] hover:text-[#333] transition-colors cursor-pointer"
+                data-testid="button-telegram"
+              >
+                Connect on Telegram
+              </button>
+            )
+          )}
         </div>
         {checkoutError && (
           <p className="text-[12px] text-[#c44] mt-2">{checkoutError}</p>
@@ -319,6 +344,15 @@ export default function GuruProfile() {
           <p className="text-[13px] text-[#aaa]">No ratings yet. Be the first to review this Guru.</p>
         )}
       </section>
+
+      {guru && (
+        <TelegramConnectModal
+          guruId={guru.id}
+          guruName={guru.name}
+          isOpen={showTelegramModal}
+          onClose={() => setShowTelegramModal(false)}
+        />
+      )}
     </div>
   );
 }

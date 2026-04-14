@@ -299,3 +299,59 @@ export const CheckSubscriptionParams = zod.object({
 export const CheckSubscriptionResponse = zod.object({
   subscribed: zod.boolean(),
 });
+
+/**
+ * @summary Generate a Telegram connection code for a guru
+ */
+export const CreateTelegramConnectionParams = zod.object({
+  guruId: zod.coerce.number(),
+});
+
+export const CreateTelegramConnectionResponse = zod.object({
+  code: zod.string().nullish(),
+  expiresAt: zod.string().nullish(),
+  expiresInSeconds: zod.number().nullish(),
+  alreadyConnected: zod.boolean().nullish(),
+  message: zod.string().nullish(),
+});
+
+/**
+ * @summary Check Telegram connection status for a guru
+ */
+export const GetTelegramStatusParams = zod.object({
+  guruId: zod.coerce.number(),
+});
+
+export const GetTelegramStatusResponse = zod.object({
+  connected: zod.boolean(),
+  connectedAt: zod.string().nullish(),
+});
+
+/**
+ * @summary Get Telegram bot info for a guru
+ */
+export const GetTelegramBotInfoParams = zod.object({
+  guruId: zod.coerce.number(),
+});
+
+export const GetTelegramBotInfoResponse = zod.object({
+  configured: zod.boolean(),
+  botUsername: zod.string().nullish(),
+});
+
+/**
+ * @summary Set the Telegram bot token for a guru (creator only)
+ */
+export const UpdateTelegramBotTokenParams = zod.object({
+  guruId: zod.coerce.number(),
+});
+
+export const UpdateTelegramBotTokenBody = zod.object({
+  botToken: zod.string(),
+});
+
+export const UpdateTelegramBotTokenResponse = zod.object({
+  success: zod.boolean(),
+  botUsername: zod.string().nullish(),
+  botName: zod.string().nullish(),
+});

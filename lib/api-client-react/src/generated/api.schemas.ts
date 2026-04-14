@@ -267,6 +267,34 @@ export interface SubscriptionCheck {
   subscribed: boolean;
 }
 
+export interface TelegramConnectionResponse {
+  code?: string | null;
+  expiresAt?: string | null;
+  expiresInSeconds?: number | null;
+  alreadyConnected?: boolean | null;
+  message?: string | null;
+}
+
+export interface TelegramStatusResponse {
+  connected: boolean;
+  connectedAt?: string | null;
+}
+
+export interface TelegramBotInfoResponse {
+  configured: boolean;
+  botUsername?: string | null;
+}
+
+export interface UpdateBotTokenInput {
+  botToken: string;
+}
+
+export interface UpdateBotTokenResponse {
+  success: boolean;
+  botUsername?: string | null;
+  botName?: string | null;
+}
+
 export type ListGurusParams = {
   /**
    * Filter by category slug

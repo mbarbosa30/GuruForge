@@ -32,6 +32,11 @@ import type {
   PortalSession,
   Rating,
   SubscriptionCheck,
+  TelegramBotInfoResponse,
+  TelegramConnectionResponse,
+  TelegramStatusResponse,
+  UpdateBotTokenInput,
+  UpdateBotTokenResponse,
   UpdateGuruInput,
   UpdateUserInput,
   User,
@@ -1194,3 +1199,359 @@ export function useCheckSubscription<
 
   return { ...query, queryKey: queryOptions.queryKey };
 }
+
+/**
+ * @summary Generate a Telegram connection code for a guru
+ */
+export const getCreateTelegramConnectionUrl = (guruId: number) => {
+  return `/api/telegram/connect/${guruId}`;
+};
+
+export const createTelegramConnection = async (
+  guruId: number,
+  options?: RequestInit,
+): Promise<TelegramConnectionResponse> => {
+  return customFetch<TelegramConnectionResponse>(
+    getCreateTelegramConnectionUrl(guruId),
+    {
+      ...options,
+      method: "POST",
+    },
+  );
+};
+
+export const getCreateTelegramConnectionMutationOptions = <
+  TError = ErrorType<ErrorResponse>,
+  TContext = unknown,
+>(options?: {
+  mutation?: UseMutationOptions<
+    Awaited<ReturnType<typeof createTelegramConnection>>,
+    TError,
+    { guruId: number },
+    TContext
+  >;
+  request?: SecondParameter<typeof customFetch>;
+}): UseMutationOptions<
+  Awaited<ReturnType<typeof createTelegramConnection>>,
+  TError,
+  { guruId: number },
+  TContext
+> => {
+  const mutationKey = ["createTelegramConnection"];
+  const { mutation: mutationOptions, request: requestOptions } = options
+    ? options.mutation &&
+      "mutationKey" in options.mutation &&
+      options.mutation.mutationKey
+      ? options
+      : { ...options, mutation: { ...options.mutation, mutationKey } }
+    : { mutation: { mutationKey }, request: undefined };
+
+  const mutationFn: MutationFunction<
+    Awaited<ReturnType<typeof createTelegramConnection>>,
+    { guruId: number }
+  > = (props) => {
+    const { guruId } = props ?? {};
+
+    return createTelegramConnection(guruId, requestOptions);
+  };
+
+  return { mutationFn, ...mutationOptions };
+};
+
+export type CreateTelegramConnectionMutationResult = NonNullable<
+  Awaited<ReturnType<typeof createTelegramConnection>>
+>;
+
+export type CreateTelegramConnectionMutationError = ErrorType<ErrorResponse>;
+
+/**
+ * @summary Generate a Telegram connection code for a guru
+ */
+export const useCreateTelegramConnection = <
+  TError = ErrorType<ErrorResponse>,
+  TContext = unknown,
+>(options?: {
+  mutation?: UseMutationOptions<
+    Awaited<ReturnType<typeof createTelegramConnection>>,
+    TError,
+    { guruId: number },
+    TContext
+  >;
+  request?: SecondParameter<typeof customFetch>;
+}): UseMutationResult<
+  Awaited<ReturnType<typeof createTelegramConnection>>,
+  TError,
+  { guruId: number },
+  TContext
+> => {
+  return useMutation(getCreateTelegramConnectionMutationOptions(options));
+};
+
+/**
+ * @summary Check Telegram connection status for a guru
+ */
+export const getGetTelegramStatusUrl = (guruId: number) => {
+  return `/api/telegram/status/${guruId}`;
+};
+
+export const getTelegramStatus = async (
+  guruId: number,
+  options?: RequestInit,
+): Promise<TelegramStatusResponse> => {
+  return customFetch<TelegramStatusResponse>(getGetTelegramStatusUrl(guruId), {
+    ...options,
+    method: "GET",
+  });
+};
+
+export const getGetTelegramStatusQueryKey = (guruId: number) => {
+  return [`/api/telegram/status/${guruId}`] as const;
+};
+
+export const getGetTelegramStatusQueryOptions = <
+  TData = Awaited<ReturnType<typeof getTelegramStatus>>,
+  TError = ErrorType<unknown>,
+>(
+  guruId: number,
+  options?: {
+    query?: UseQueryOptions<
+      Awaited<ReturnType<typeof getTelegramStatus>>,
+      TError,
+      TData
+    >;
+    request?: SecondParameter<typeof customFetch>;
+  },
+) => {
+  const { query: queryOptions, request: requestOptions } = options ?? {};
+
+  const queryKey =
+    queryOptions?.queryKey ?? getGetTelegramStatusQueryKey(guruId);
+
+  const queryFn: QueryFunction<
+    Awaited<ReturnType<typeof getTelegramStatus>>
+  > = ({ signal }) => getTelegramStatus(guruId, { signal, ...requestOptions });
+
+  return {
+    queryKey,
+    queryFn,
+    enabled: !!guruId,
+    ...queryOptions,
+  } as UseQueryOptions<
+    Awaited<ReturnType<typeof getTelegramStatus>>,
+    TError,
+    TData
+  > & { queryKey: QueryKey };
+};
+
+export type GetTelegramStatusQueryResult = NonNullable<
+  Awaited<ReturnType<typeof getTelegramStatus>>
+>;
+export type GetTelegramStatusQueryError = ErrorType<unknown>;
+
+/**
+ * @summary Check Telegram connection status for a guru
+ */
+
+export function useGetTelegramStatus<
+  TData = Awaited<ReturnType<typeof getTelegramStatus>>,
+  TError = ErrorType<unknown>,
+>(
+  guruId: number,
+  options?: {
+    query?: UseQueryOptions<
+      Awaited<ReturnType<typeof getTelegramStatus>>,
+      TError,
+      TData
+    >;
+    request?: SecondParameter<typeof customFetch>;
+  },
+): UseQueryResult<TData, TError> & { queryKey: QueryKey } {
+  const queryOptions = getGetTelegramStatusQueryOptions(guruId, options);
+
+  const query = useQuery(queryOptions) as UseQueryResult<TData, TError> & {
+    queryKey: QueryKey;
+  };
+
+  return { ...query, queryKey: queryOptions.queryKey };
+}
+
+/**
+ * @summary Get Telegram bot info for a guru
+ */
+export const getGetTelegramBotInfoUrl = (guruId: number) => {
+  return `/api/telegram/bot-info/${guruId}`;
+};
+
+export const getTelegramBotInfo = async (
+  guruId: number,
+  options?: RequestInit,
+): Promise<TelegramBotInfoResponse> => {
+  return customFetch<TelegramBotInfoResponse>(
+    getGetTelegramBotInfoUrl(guruId),
+    {
+      ...options,
+      method: "GET",
+    },
+  );
+};
+
+export const getGetTelegramBotInfoQueryKey = (guruId: number) => {
+  return [`/api/telegram/bot-info/${guruId}`] as const;
+};
+
+export const getGetTelegramBotInfoQueryOptions = <
+  TData = Awaited<ReturnType<typeof getTelegramBotInfo>>,
+  TError = ErrorType<unknown>,
+>(
+  guruId: number,
+  options?: {
+    query?: UseQueryOptions<
+      Awaited<ReturnType<typeof getTelegramBotInfo>>,
+      TError,
+      TData
+    >;
+    request?: SecondParameter<typeof customFetch>;
+  },
+) => {
+  const { query: queryOptions, request: requestOptions } = options ?? {};
+
+  const queryKey =
+    queryOptions?.queryKey ?? getGetTelegramBotInfoQueryKey(guruId);
+
+  const queryFn: QueryFunction<
+    Awaited<ReturnType<typeof getTelegramBotInfo>>
+  > = ({ signal }) => getTelegramBotInfo(guruId, { signal, ...requestOptions });
+
+  return {
+    queryKey,
+    queryFn,
+    enabled: !!guruId,
+    ...queryOptions,
+  } as UseQueryOptions<
+    Awaited<ReturnType<typeof getTelegramBotInfo>>,
+    TError,
+    TData
+  > & { queryKey: QueryKey };
+};
+
+export type GetTelegramBotInfoQueryResult = NonNullable<
+  Awaited<ReturnType<typeof getTelegramBotInfo>>
+>;
+export type GetTelegramBotInfoQueryError = ErrorType<unknown>;
+
+/**
+ * @summary Get Telegram bot info for a guru
+ */
+
+export function useGetTelegramBotInfo<
+  TData = Awaited<ReturnType<typeof getTelegramBotInfo>>,
+  TError = ErrorType<unknown>,
+>(
+  guruId: number,
+  options?: {
+    query?: UseQueryOptions<
+      Awaited<ReturnType<typeof getTelegramBotInfo>>,
+      TError,
+      TData
+    >;
+    request?: SecondParameter<typeof customFetch>;
+  },
+): UseQueryResult<TData, TError> & { queryKey: QueryKey } {
+  const queryOptions = getGetTelegramBotInfoQueryOptions(guruId, options);
+
+  const query = useQuery(queryOptions) as UseQueryResult<TData, TError> & {
+    queryKey: QueryKey;
+  };
+
+  return { ...query, queryKey: queryOptions.queryKey };
+}
+
+/**
+ * @summary Set the Telegram bot token for a guru (creator only)
+ */
+export const getUpdateTelegramBotTokenUrl = (guruId: number) => {
+  return `/api/telegram/bot-token/${guruId}`;
+};
+
+export const updateTelegramBotToken = async (
+  guruId: number,
+  updateBotTokenInput: UpdateBotTokenInput,
+  options?: RequestInit,
+): Promise<UpdateBotTokenResponse> => {
+  return customFetch<UpdateBotTokenResponse>(
+    getUpdateTelegramBotTokenUrl(guruId),
+    {
+      ...options,
+      method: "PATCH",
+      headers: { "Content-Type": "application/json", ...options?.headers },
+      body: JSON.stringify(updateBotTokenInput),
+    },
+  );
+};
+
+export const getUpdateTelegramBotTokenMutationOptions = <
+  TError = ErrorType<ErrorResponse>,
+  TContext = unknown,
+>(options?: {
+  mutation?: UseMutationOptions<
+    Awaited<ReturnType<typeof updateTelegramBotToken>>,
+    TError,
+    { guruId: number; data: BodyType<UpdateBotTokenInput> },
+    TContext
+  >;
+  request?: SecondParameter<typeof customFetch>;
+}): UseMutationOptions<
+  Awaited<ReturnType<typeof updateTelegramBotToken>>,
+  TError,
+  { guruId: number; data: BodyType<UpdateBotTokenInput> },
+  TContext
+> => {
+  const mutationKey = ["updateTelegramBotToken"];
+  const { mutation: mutationOptions, request: requestOptions } = options
+    ? options.mutation &&
+      "mutationKey" in options.mutation &&
+      options.mutation.mutationKey
+      ? options
+      : { ...options, mutation: { ...options.mutation, mutationKey } }
+    : { mutation: { mutationKey }, request: undefined };
+
+  const mutationFn: MutationFunction<
+    Awaited<ReturnType<typeof updateTelegramBotToken>>,
+    { guruId: number; data: BodyType<UpdateBotTokenInput> }
+  > = (props) => {
+    const { guruId, data } = props ?? {};
+
+    return updateTelegramBotToken(guruId, data, requestOptions);
+  };
+
+  return { mutationFn, ...mutationOptions };
+};
+
+export type UpdateTelegramBotTokenMutationResult = NonNullable<
+  Awaited<ReturnType<typeof updateTelegramBotToken>>
+>;
+export type UpdateTelegramBotTokenMutationBody = BodyType<UpdateBotTokenInput>;
+export type UpdateTelegramBotTokenMutationError = ErrorType<ErrorResponse>;
+
+/**
+ * @summary Set the Telegram bot token for a guru (creator only)
+ */
+export const useUpdateTelegramBotToken = <
+  TError = ErrorType<ErrorResponse>,
+  TContext = unknown,
+>(options?: {
+  mutation?: UseMutationOptions<
+    Awaited<ReturnType<typeof updateTelegramBotToken>>,
+    TError,
+    { guruId: number; data: BodyType<UpdateBotTokenInput> },
+    TContext
+  >;
+  request?: SecondParameter<typeof customFetch>;
+}): UseMutationResult<
+  Awaited<ReturnType<typeof updateTelegramBotToken>>,
+  TError,
+  { guruId: number; data: BodyType<UpdateBotTokenInput> },
+  TContext
+> => {
+  return useMutation(getUpdateTelegramBotTokenMutationOptions(options));
+};

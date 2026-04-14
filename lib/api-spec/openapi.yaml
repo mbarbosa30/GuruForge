@@ -20,6 +20,8 @@ tags:
     description: Rating operations
   - name: subscriptions
     description: Subscription operations
+  - name: telegram
+    description: Telegram connection operations
 paths:
   /healthz:
     get:
@@ -345,6 +347,108 @@ paths:
                 $ref: "#/components/schemas/SubscriptionCheck"
         "401":
           description: Unauthorized
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ErrorResponse"
+  /telegram/connect/{guruId}:
+    post:
+      operationId: createTelegramConnection
+      tags: [telegram]
+      summary: Generate a Telegram connection code for a guru
+      parameters:
+        - name: guruId
+          in: path
+          required: true
+          schema:
+            type: integer
+      responses:
+        "200":
+          description: Connection code or already connected
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/TelegramConnectionResponse"
+        "401":
+          description: Unauthorized
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ErrorResponse"
+        "403":
+          description: No active subscription
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ErrorResponse"
+  /telegram/status/{guruId}:
+    get:
+      operationId: getTelegramStatus
+      tags: [telegram]
+      summary: Check Telegram connection status for a guru
+      parameters:
+        - name: guruId
+          in: path
+          required: true
+          schema:
+            type: integer
+      responses:
+        "200":
+          description: Connection status
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/TelegramStatusResponse"
+  /telegram/bot-info/{guruId}:
+    get:
+      operationId: getTelegramBotInfo
+      tags: [telegram]
+      summary: Get Telegram bot info for a guru
+      parameters:
+        - name: guruId
+          in: path
+          required: true
+          schema:
+            type: integer
+      responses:
+        "200":
+          description: Bot info
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/TelegramBotInfoResponse"
+  /telegram/bot-token/{guruId}:
+    patch:
+      operationId: updateTelegramBotToken
+      tags: [telegram]
+      summary: Set the Telegram bot token for a guru (creator only)
+      parameters:
+        - name: guruId
+          in: path
+          required: true
+          schema:
+            type: integer
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/UpdateBotTokenInput"
+      responses:
+        "200":
+          description: Bot token updated
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/UpdateBotTokenResponse"
+        "401":
+          description: Unauthorized
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ErrorResponse"
+        "403":
+          description: Forbidden
           content:
             application/json:
               schema:
@@ -847,3 +951,61 @@ components:
           type: boolean
       required:
         - subscribed
+    TelegramConnectionResponse:
+      type: object
+      properties:
+        code:
+          type: string
+          nullable: true
+        expiresAt:
+          type: string
+          nullable: true
+        expiresInSeconds:
+          type: integer
+          nullable: true
+        alreadyConnected:
+          type: boolean
+          nullable: true
+        message:
+          type: string
+          nullable: true
+    TelegramStatusResponse:
+      type: object
+      properties:
+        connected:
+          type: boolean
+        connectedAt:
+          type: string
+          nullable: true
+      required:
+        - connected
+    TelegramBotInfoResponse:
+      type: object
+      properties:
+        configured:
+          type: boolean
+        botUsername:
+          type: string
+          nullable: true
+      required:
+        - configured
+    UpdateBotTokenInput:
+      type: object
+      properties:
+        botToken:
+          type: string
+      required:
+        - botToken
+    UpdateBotTokenResponse:
+      type: object
+      properties:
+        success:
+          type: boolean
+        botUsername:
+          type: string
+          nullable: true
+        botName:
+          type: string
+          nullable: true
+      required:
+        - success

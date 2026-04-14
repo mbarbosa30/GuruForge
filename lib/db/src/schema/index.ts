@@ -3,3 +3,7 @@ export * from "./categories";
 export * from "./gurus";
 export * from "./subscriptions";
 export * from "./guru-ratings";
+export * from "./conversations";
+export * from "./messages";
+export * from "./telegram-connections";
+export * from "./connection-codes";

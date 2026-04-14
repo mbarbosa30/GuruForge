@@ -2,6 +2,7 @@ import { runMigrations } from "stripe-replit-sync";
 import { getStripeSync } from "./lib/stripeClient";
 import app from "./app";
 import { logger } from "./lib/logger";
+import { startAllPublishedBots } from "./lib/botManager";
 
 async function initStripe() {
   const databaseUrl = process.env.DATABASE_URL;
@@ -56,4 +57,8 @@ app.listen(port, (err) => {
   }
 
   logger.info({ port }, "Server listening");
+
+  startAllPublishedBots()
+    .then(() => logger.info("Telegram bots initialized"))
+    .catch((err: unknown) => logger.error({ err }, "Failed to start Telegram bots"));
 });

@@ -6,6 +6,7 @@ import {
   useCreatePortalSession,
   getListMySubscriptionsQueryOptions,
 } from "@workspace/api-client-react";
+import TelegramStatusBadge from "@/components/telegram-status-badge";
 
 function formatPrice(cents: number, interval: string) {
   const dollars = (cents / 100).toFixed(cents % 100 === 0 ? 0 : 2);
@@ -113,12 +114,15 @@ function DashboardContent() {
                   </div>
                 )}
                 <div>
-                  <Link
-                    href={`/guru/${sub.guruSlug}`}
-                    className="text-[15px] font-medium text-[#222] no-underline hover:text-[#555] transition-colors"
-                  >
-                    {sub.guruName}
-                  </Link>
+                  <div className="flex items-center gap-2">
+                    <Link
+                      href={`/guru/${sub.guruSlug}`}
+                      className="text-[15px] font-medium text-[#222] no-underline hover:text-[#555] transition-colors"
+                    >
+                      {sub.guruName}
+                    </Link>
+                    <TelegramStatusBadge guruId={sub.guruId} guruName={sub.guruName} guruSlug={sub.guruSlug} />
+                  </div>
                   <p className="text-[12px] text-[#999] mt-0.5">
                     Since {formatDate(sub.startedAt)}
                   </p>
