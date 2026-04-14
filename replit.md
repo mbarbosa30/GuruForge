@@ -59,9 +59,18 @@ pnpm workspace monorepo using TypeScript. Each package manages its own dependenc
 - Public endpoints: categories, guru list/detail, ratings list
 - Protected endpoints: user profile, guru create/update, rating create
 
+### Frontend Pages
+- `/` — Landing page with hero, features, waitlist form, and "Browse Marketplace" CTA
+- `/marketplace` — Guru discovery page with search, category filters, sort, and responsive 3-col grid
+- `/guru/:slug` — Guru profile page with stats, description, topics, trust indicators, ratings, CTAs
+- `/create` — Placeholder for creator wizard (coming soon)
+- `/sign-in`, `/sign-up` — Clerk auth pages
+
 ### Design System
 - Neo-minimal flat UI: pure white bg, sharp edges, uppercase micro-labels, numbered cards, clean typography
 - Light backgrounds only, no dark themes, no heavy animations
+- Shared `Layout` component wraps all pages with consistent nav bar and footer
+- Clerk `Show` component for auth-conditional rendering (Sign In vs UserButton)
 
 ## Key Commands
 

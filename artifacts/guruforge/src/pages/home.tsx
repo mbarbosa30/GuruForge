@@ -1,5 +1,6 @@
 import { useState, useEffect } from "react";
 import { Link } from "wouter";
+import Layout from "@/components/layout";
 
 export default function Home() {
   const [email, setEmail] = useState("");
@@ -46,25 +47,7 @@ export default function Home() {
   ];
 
   return (
-    <div className="min-h-[100dvh] bg-white text-[#111] font-sans text-[15px] leading-relaxed selection:bg-neutral-200">
-
-      <header className="flex items-center justify-between px-6 md:px-10 py-5 border-b border-[#e0e0e0]">
-        <Link
-          href="/"
-          className="text-sm font-semibold tracking-[0.08em] uppercase text-[#111]"
-          data-testid="link-logo"
-        >
-          GuruForge
-        </Link>
-        <a
-          href="#waitlist"
-          className="text-xs font-medium tracking-[0.06em] uppercase text-[#777] no-underline border-b border-[#bbb] pb-0.5 hover:text-[#444] hover:border-[#888] transition-colors"
-          data-testid="link-nav-waitlist"
-        >
-          Waitlist
-        </a>
-      </header>
-
+    <Layout>
       <section className="px-6 md:px-10 pt-20 md:pt-24 pb-16 md:pb-20 max-w-[680px]">
         <p className="text-[11px] font-medium tracking-[0.12em] uppercase text-[#888] mb-7">
           Day zero — domain secured
@@ -79,20 +62,20 @@ export default function Home() {
           inside Telegram. They learn from real human experience,
           remember your journey, and get wiser every day.
         </p>
-        <div className="flex gap-4 items-center">
-          <a
-            href="#waitlist"
+        <div className="flex gap-4 items-center flex-wrap">
+          <Link
+            href="/marketplace"
             className="text-[13px] font-medium tracking-[0.04em] uppercase text-white bg-[#111] px-7 py-3 no-underline inline-block hover:bg-[#333] transition-colors"
-            data-testid="button-join-waitlist"
+            data-testid="button-browse-marketplace"
           >
-            Join waitlist
-          </a>
+            Browse Marketplace
+          </Link>
           <a
             href="#waitlist"
             className="text-[13px] font-medium tracking-[0.04em] text-[#777] no-underline border-b border-[#bbb] pb-px hover:text-[#444] hover:border-[#888] transition-colors"
-            data-testid="button-forge-guru"
+            data-testid="button-join-waitlist"
           >
-            Forge a Guru
+            Join waitlist
           </a>
         </div>
       </section>
@@ -207,14 +190,6 @@ export default function Home() {
           </form>
         )}
       </section>
-
-      <footer className="px-6 md:px-10 py-6 border-t border-[#e0e0e0] flex flex-col sm:flex-row justify-between items-center gap-2">
-        <span className="text-[11px] text-[#999] tracking-[0.02em]">
-          Built on the 3-tier intelligence system from selfclaw.ai & teli.gent
-        </span>
-        <span className="text-[11px] text-[#aaa]">guruforge.ai</span>
-      </footer>
-
-    </div>
+    </Layout>
   );
 }
