@@ -4,6 +4,7 @@ import { gurusTable, usersTable, categoriesTable, guruRatingsTable } from "@work
 import { eq, desc, asc, and, sql, avg, count, or } from "drizzle-orm";
 import { requireAuth, optionalAuth, type AuthRequest } from "../middlewares/auth";
 import { CreateGuruBody, UpdateGuruBody, UpdateGuruParams, ListGurusQueryParams } from "@workspace/api-zod";
+import { handleGuruStatusChange } from "../lib/botManager";
 
 const router: IRouter = Router();
 
@@ -260,8 +261,16 @@ router.patch("/gurus/:id", requireAuth, async (req: AuthRequest, res) => {
     if (data.modelTier !== undefined) updates.modelTier = data.modelTier;
     if (data.memoryPolicy !== undefined) updates.memoryPolicy = data.memoryPolicy;
     if (data.introEnabled !== undefined) updates.introEnabled = data.introEnabled;
+    if (data.telegramBotToken !== undefined) updates.telegramBotToken = data.telegramBotToken;
 
     const [updated] = await db.update(gurusTable).set(updates).where(eq(gurusTable.id, guruId)).returning();
+
+    if (data.status !== undefined && data.status !== existing.status) {
+      handleGuruStatusChange(guruId, data.status).catch((err) =>
+        console.error(`Bot lifecycle error for guru ${guruId}:`, err)
+      );
+    }
+
     res.json(updated);
   } catch (err) {
     res.status(500).json({ error: "Failed to update guru" });

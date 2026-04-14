@@ -192,6 +192,7 @@ export interface UpdateGuruInput {
   modelTier?: UpdateGuruInputModelTier;
   memoryPolicy?: string;
   introEnabled?: boolean;
+  telegramBotToken?: string;
 }
 
 export interface User {
@@ -273,6 +274,8 @@ export interface TelegramConnectionResponse {
   expiresInSeconds?: number | null;
   alreadyConnected?: boolean | null;
   message?: string | null;
+  botUsername?: string | null;
+  botLink?: string | null;
 }
 
 export interface TelegramStatusResponse {

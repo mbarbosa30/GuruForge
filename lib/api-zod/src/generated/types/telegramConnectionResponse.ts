@@ -12,4 +12,6 @@ export interface TelegramConnectionResponse {
   expiresInSeconds?: number | null;
   alreadyConnected?: boolean | null;
   message?: string | null;
+  botUsername?: string | null;
+  botLink?: string | null;
 }

@@ -789,6 +789,8 @@ components:
           type: string
         introEnabled:
           type: boolean
+        telegramBotToken:
+          type: string
     User:
       type: object
       properties:
@@ -967,6 +969,12 @@ components:
           type: boolean
           nullable: true
         message:
+          type: string
+          nullable: true
+        botUsername:
+          type: string
+          nullable: true
+        botLink:
           type: string
           nullable: true
     TelegramStatusResponse:

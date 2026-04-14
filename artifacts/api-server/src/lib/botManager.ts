@@ -80,15 +80,49 @@ export async function startAllPublishedBots(): Promise<void> {
   }
 }
 
+export function getWebhookSecret(guruId: number): string {
+  return `guru_${guruId}_${process.env.SESSION_SECRET || "default"}`;
+}
+
 export async function setupWebhook(guruId: number, webhookUrl: string): Promise<boolean> {
   const entry = activeBots.get(guruId);
   if (!entry) return false;
 
   try {
-    await entry.bot.api.setWebhook(webhookUrl);
+    await entry.bot.api.setWebhook(webhookUrl, {
+      secret_token: getWebhookSecret(guruId),
+    });
     return true;
   } catch (err) {
     console.error(`Failed to set webhook for guru ${guruId}:`, err);
     return false;
+  }
+}
+
+export async function clearWebhook(guruId: number): Promise<boolean> {
+  const entry = activeBots.get(guruId);
+  if (!entry) return false;
+
+  try {
+    await entry.bot.api.deleteWebhook();
+    return true;
+  } catch (err) {
+    console.error(`Failed to clear webhook for guru ${guruId}:`, err);
+    return false;
+  }
+}
+
+export async function handleGuruStatusChange(guruId: number, newStatus: string): Promise<void> {
+  if (newStatus === "published") {
+    const started = await startBot(guruId);
+    if (started) {
+      const domain = process.env.REPLIT_DEV_DOMAIN || process.env.REPLIT_DOMAINS?.split(",")[0];
+      if (domain) {
+        await setupWebhook(guruId, `https://${domain}/api/telegram/webhook/${guruId}`);
+      }
+    }
+  } else if (newStatus === "archived" || newStatus === "draft") {
+    await clearWebhook(guruId);
+    stopBot(guruId);
   }
 }

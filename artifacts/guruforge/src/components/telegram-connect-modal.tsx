@@ -25,6 +25,7 @@ export default function TelegramConnectModal({
   const [expiresAt, setExpiresAt] = useState<string | null>(null);
   const [isConnected, setIsConnected] = useState(false);
   const [error, setError] = useState<string | null>(null);
+  const [connectBotLink, setConnectBotLink] = useState<string | null>(null);
   const pollRef = useRef<ReturnType<typeof setInterval> | null>(null);
   const queryClient = useQueryClient();
 
@@ -39,6 +40,7 @@ export default function TelegramConnectModal({
       setExpiresAt(null);
       setIsConnected(false);
       setError(null);
+      setConnectBotLink(null);
       if (pollRef.current) {
         clearInterval(pollRef.current);
         pollRef.current = null;
@@ -65,6 +67,7 @@ export default function TelegramConnectModal({
       if (result.code) {
         setCode(result.code);
         setExpiresAt(result.expiresAt ?? null);
+        setConnectBotLink(result.botLink ?? null);
         startPolling();
       }
     } catch (err: unknown) {
@@ -115,7 +118,7 @@ export default function TelegramConnectModal({
   }, [expiresAt]);
 
   const botUsername = botInfo?.botUsername;
-  const botLink = botUsername ? `https://t.me/${botUsername}` : null;
+  const botLink = connectBotLink || (botUsername ? `https://t.me/${botUsername}` : null);
 
   if (!isOpen) return null;
 

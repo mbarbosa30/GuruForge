@@ -150,6 +150,7 @@ export const UpdateGuruBody = zod.object({
   modelTier: zod.enum(["basic", "pro", "enterprise"]).optional(),
   memoryPolicy: zod.string().optional(),
   introEnabled: zod.boolean().optional(),
+  telegramBotToken: zod.string().optional(),
 });
 
 export const UpdateGuruResponse = zod.object({
@@ -313,6 +314,8 @@ export const CreateTelegramConnectionResponse = zod.object({
   expiresInSeconds: zod.number().nullish(),
   alreadyConnected: zod.boolean().nullish(),
   message: zod.string().nullish(),
+  botUsername: zod.string().nullish(),
+  botLink: zod.string().nullish(),
 });
 
 /**

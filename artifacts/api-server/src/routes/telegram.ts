@@ -8,7 +8,7 @@ import {
   subscriptionsTable,
 } from "@workspace/db/schema";
 import { eq, and } from "drizzle-orm";
-import { getBotHandler, startBot, setupWebhook, isBotActive } from "../lib/botManager";
+import { getBotHandler, startBot, setupWebhook, isBotActive, getWebhookSecret } from "../lib/botManager";
 import crypto from "crypto";
 
 const router: IRouter = Router();
@@ -113,10 +113,20 @@ router.post("/telegram/connect/:guruId", requireAuth, async (req: AuthRequest, r
       }
     }
 
+    let botUsername: string | null = null;
+    try {
+      const { Bot } = await import("grammy");
+      const tempBot = new Bot(guru.telegramBotToken);
+      const me = await tempBot.api.getMe();
+      botUsername = me.username ?? null;
+    } catch {}
+
     res.json({
       code,
       expiresAt: expiresAt.toISOString(),
       expiresInSeconds: 600,
+      botUsername,
+      botLink: botUsername ? `https://t.me/${botUsername}` : null,
     });
   } catch (err) {
     console.error("Telegram connect error:", err);
@@ -194,9 +204,16 @@ router.get("/telegram/bot-info/:guruId", async (req, res) => {
 
 router.post("/telegram/webhook/:guruId", async (req, res) => {
   try {
-    const guruId = parseInt(req.params.guruId, 10);
+    const guruId = parseInt(req.params.guruId as string, 10);
     if (isNaN(guruId)) {
       res.status(400).json({ error: "Invalid guru ID." });
+      return;
+    }
+
+    const expectedSecret = getWebhookSecret(guruId);
+    const receivedSecret = req.headers["x-telegram-bot-api-secret-token"];
+    if (!receivedSecret || receivedSecret !== expectedSecret) {
+      res.status(403).json({ error: "Unauthorized." });
       return;
     }
 
