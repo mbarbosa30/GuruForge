@@ -45,7 +45,7 @@ pnpm workspace monorepo using TypeScript. Each package manages its own dependenc
 - `connection_codes` — id, user_id, guru_id, code, expires_at, used
 - `user_memories` — id, user_id, guru_id, category (goals/preferences/history/decisions/context), summary, details (jsonb), importance (0-1), last_accessed_at, created_at, updated_at
 - `collective_patterns` — id, guru_id, pattern_type (common_questions/successful_strategies/pitfalls/trends), summary, frequency, confidence (0-1), source_count, created_at, updated_at
-- `contribution_scores` — id, user_id, guru_id, score, conversation_count, patterns_contributed, last_updated_at (unique per user+guru)
+- `contribution_scores` — id, user_id, guru_id, score, turn_count, patterns_contributed, last_updated_at (unique per user+guru)
 - `usage_logs` — id, guru_id, user_id, conversation_id, call_type (triage/conversation/calibration/memory_extraction), model, prompt_tokens, completion_tokens, total_tokens, estimated_cost_cents, created_at
 
 ### API Endpoints (under `/api`)

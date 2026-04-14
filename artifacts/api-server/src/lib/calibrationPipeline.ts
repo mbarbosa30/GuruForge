@@ -239,14 +239,14 @@ async function updateContributionScore(
       .limit(1);
 
     if (existing) {
-      const newCount = existing.conversationCount + 1;
+      const newCount = existing.turnCount + 1;
       const decay = 0.95;
       const newScore = existing.score * decay + quality * (1 - decay) * 100;
       await db
         .update(contributionScoresTable)
         .set({
           score: Math.min(100, newScore),
-          conversationCount: newCount,
+          turnCount: newCount,
           patternsContributed: quality > 0.3 ? existing.patternsContributed + 1 : existing.patternsContributed,
           lastUpdatedAt: new Date(),
         })
@@ -256,7 +256,7 @@ async function updateContributionScore(
         userId,
         guruId,
         score: quality * 10,
-        conversationCount: 1,
+        turnCount: 1,
         patternsContributed: quality > 0.3 ? 1 : 0,
       });
     }

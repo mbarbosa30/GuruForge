@@ -355,7 +355,7 @@ export const GetContributionScoreParams = zod.object({
 
 export const GetContributionScoreResponse = zod.object({
   score: zod.number(),
-  conversationCount: zod.number(),
+  turnCount: zod.number(),
   patternsContributed: zod.number(),
   lastUpdatedAt: zod.coerce.date().nullish(),
 });

@@ -7,7 +7,7 @@ export const contributionScoresTable = pgTable("contribution_scores", {
   userId: integer("user_id").notNull().references(() => usersTable.id),
   guruId: integer("guru_id").notNull().references(() => gurusTable.id),
   score: real("score").notNull().default(0),
-  conversationCount: integer("conversation_count").notNull().default(0),
+  turnCount: integer("turn_count").notNull().default(0),
   patternsContributed: integer("patterns_contributed").notNull().default(0),
   lastUpdatedAt: timestamp("last_updated_at", { withTimezone: true }).defaultNow().notNull(),
 }, (table) => [

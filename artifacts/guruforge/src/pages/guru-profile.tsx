@@ -313,7 +313,7 @@ export default function GuruProfile() {
         </div>
       </section>
 
-      {isSubscribed && contributionScore && (contributionScore.score > 0 || contributionScore.conversationCount > 0) && (
+      {isSubscribed && contributionScore && (contributionScore.score > 0 || contributionScore.turnCount > 0) && (
         <section className="mb-10">
           <p className="text-[11px] font-medium tracking-[0.12em] uppercase text-[#888] mb-4">Your contribution</p>
           <div className="grid grid-cols-1 sm:grid-cols-3 gap-px bg-[#e0e0e0]">
@@ -322,8 +322,8 @@ export default function GuruProfile() {
               <span className="text-[14px] text-[#333]">{Math.round(contributionScore.score)}</span>
             </div>
             <div className="bg-white px-5 py-4">
-              <span className="text-[11px] font-medium tracking-[0.04em] uppercase text-[#888] block mb-1">Conversations</span>
-              <span className="text-[14px] text-[#333]">{contributionScore.conversationCount}</span>
+              <span className="text-[11px] font-medium tracking-[0.04em] uppercase text-[#888] block mb-1">Turns</span>
+              <span className="text-[14px] text-[#333]">{contributionScore.turnCount}</span>
             </div>
             <div className="bg-white px-5 py-4">
               <span className="text-[11px] font-medium tracking-[0.04em] uppercase text-[#888] block mb-1">Patterns contributed</span>

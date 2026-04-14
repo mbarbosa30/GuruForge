@@ -1078,7 +1078,7 @@ components:
       properties:
         score:
           type: number
-        conversationCount:
+        turnCount:
           type: integer
         patternsContributed:
           type: integer
@@ -1088,7 +1088,7 @@ components:
           nullable: true
       required:
         - score
-        - conversationCount
+        - turnCount
         - patternsContributed
     UpdateBotTokenInput:
       type: object

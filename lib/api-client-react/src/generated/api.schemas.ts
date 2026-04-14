@@ -299,7 +299,7 @@ export interface WisdomToggleResponse {
 
 export interface ContributionScoreResponse {
   score: number;
-  conversationCount: number;
+  turnCount: number;
   patternsContributed: number;
   lastUpdatedAt?: string | null;
 }

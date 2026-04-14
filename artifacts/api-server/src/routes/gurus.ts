@@ -314,7 +314,7 @@ router.get("/gurus/:guruId/contribution-score", requireAuth, async (req: AuthReq
 
     res.json({
       score: score?.score ?? 0,
-      conversationCount: score?.conversationCount ?? 0,
+      turnCount: score?.turnCount ?? 0,
       patternsContributed: score?.patternsContributed ?? 0,
       lastUpdatedAt: score?.lastUpdatedAt ?? null,
     });
