@@ -1,0 +1,14 @@
+uploads = []
+outputs = []
+
+[[generated]]
+id = "2prTajys3AFBi7wrSpcCg"
+uri = "file://artifacts/mockup-sandbox/public/images/guruforge-hero.png"
+type = "image"
+title = "Abstract neural network visualization"
+
+[[generated]]
+id = "N4U9YuFJtP9-Zk-l6pF5V"
+uri = "file://artifacts/mockup-sandbox/public/images/guruforge-network.png"
+type = "image"
+title = "AI data processing visualization"
