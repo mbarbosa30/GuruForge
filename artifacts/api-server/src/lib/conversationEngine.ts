@@ -402,20 +402,23 @@ export async function handleTelegramMessage(
     .set({ updatedAt: new Date() })
     .where(eq(conversationsTable.id, conversation.id));
 
-  runCalibration({
-    guruId,
-    userId: connection.userId,
-    conversationId: conversation.id,
-    modelTier: guru.modelTier,
-    userMessage: text,
-    assistantResponse: assistantContent,
-    personalMemoryEnabled: memoryFlags.personalMemory,
-    sharedLearningEnabled: memoryFlags.sharedLearning,
-  }).catch((err) => console.error("Background calibration failed:", err));
-
-  maybeRecalculateScores(guruId).catch((err) =>
-    console.error("Background score recalculation failed:", err),
-  );
+  (async () => {
+    try {
+      await runCalibration({
+        guruId,
+        userId: connection.userId,
+        conversationId: conversation.id,
+        modelTier: guru.modelTier,
+        userMessage: text,
+        assistantResponse: assistantContent,
+        personalMemoryEnabled: memoryFlags.personalMemory,
+        sharedLearningEnabled: memoryFlags.sharedLearning,
+      });
+      await maybeRecalculateScores(guruId);
+    } catch (err) {
+      console.error("Background calibration/score recalculation failed:", err);
+    }
+  })();
 
   return assistantContent;
 }
