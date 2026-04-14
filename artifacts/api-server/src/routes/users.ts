@@ -9,7 +9,7 @@ const router: IRouter = Router();
 
 router.get("/users/me", requireAuth, async (req: AuthRequest, res) => {
   try {
-    if (!req.clerkId || !req.dbUserId) {
+    if (!req.privyId || !req.dbUserId) {
       res.status(401).json({ error: "Unauthorized" });
       return;
     }
@@ -29,7 +29,7 @@ router.get("/users/me", requireAuth, async (req: AuthRequest, res) => {
 
 router.patch("/users/me", requireAuth, async (req: AuthRequest, res) => {
   try {
-    if (!req.clerkId || !req.dbUserId) {
+    if (!req.privyId || !req.dbUserId) {
       res.status(401).json({ error: "Unauthorized" });
       return;
     }

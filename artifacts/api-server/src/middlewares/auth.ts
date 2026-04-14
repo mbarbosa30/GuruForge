@@ -1,20 +1,25 @@
 import { Request, Response, NextFunction } from "express";
-import { PrivyClient } from "@privy-io/server-auth";
+import { PrivyClient, User as PrivyUser } from "@privy-io/server-auth";
 import { db } from "@workspace/db";
 import { usersTable } from "@workspace/db/schema";
 import { eq } from "drizzle-orm";
 
 export interface AuthRequest extends Request {
   privyId?: string;
-  clerkId?: string;
   dbUserId?: number;
   dbUserRole?: string;
 }
 
-const privy = new PrivyClient(
-  process.env.PRIVY_APP_ID!,
-  process.env.PRIVY_APP_SECRET!,
-);
+const appId = process.env.PRIVY_APP_ID;
+const appSecret = process.env.PRIVY_APP_SECRET;
+
+if (!appId || !appSecret) {
+  throw new Error(
+    "PRIVY_APP_ID and PRIVY_APP_SECRET environment variables are required",
+  );
+}
+
+const privy = new PrivyClient(appId, appSecret);
 
 function extractBearerToken(req: Request): string | null {
   const authHeader = req.headers.authorization;
@@ -27,23 +32,26 @@ interface PrivyProfile {
   email: string;
 }
 
-async function fetchPrivyProfile(privyUserId: string): Promise<PrivyProfile> {
-  const user = await privy.getUser(privyUserId);
-
+function extractProfileFromPrivyUser(user: PrivyUser): PrivyProfile {
   const name =
-    (user as any).google?.name ||
-    (user as any).apple?.name ||
-    (user as any).twitter?.name ||
-    (user as any).discord?.name ||
+    user.google?.name ||
+    user.twitter?.name ||
+    user.discord?.username ||
     "";
 
   const email =
-    (user as any).google?.email ||
-    (user as any).email?.address ||
-    (user as any).apple?.email ||
+    user.google?.email ||
+    user.email?.address ||
+    user.apple?.email ||
+    user.discord?.email ||
     "unknown@example.com";
 
   return { name, email };
+}
+
+async function fetchPrivyProfile(privyUserId: string): Promise<PrivyProfile> {
+  const user = await privy.getUser(privyUserId);
+  return extractProfileFromPrivyUser(user);
 }
 
 async function resolveOrCreateUser(privyUserId: string) {
@@ -112,7 +120,6 @@ export const requireAuth = async (
     const claims = await privy.verifyAuthToken(token);
     const privyUserId = claims.userId;
     req.privyId = privyUserId;
-    req.clerkId = privyUserId;
 
     const user = await resolveOrCreateUser(privyUserId);
     req.dbUserId = user.id;
@@ -135,7 +142,6 @@ export const optionalAuth = async (
       const claims = await privy.verifyAuthToken(token);
       const privyUserId = claims.userId;
       req.privyId = privyUserId;
-      req.clerkId = privyUserId;
 
       const user = await resolveOrCreateUser(privyUserId);
       req.dbUserId = user.id;

@@ -17,7 +17,7 @@ pnpm workspace monorepo using TypeScript. Each package manages its own dependenc
 - **Validation**: Zod (`zod/v4`), `drizzle-zod`
 - **API codegen**: Orval (from OpenAPI spec)
 - **Build**: esbuild (CJS bundle)
-- **Auth**: Clerk (whitelabel, proxy-based)
+- **Auth**: Privy.io (social login: Google, Apple, Twitter, Discord, email, SMS)
 - **Frontend**: React + Vite + Tailwind CSS + wouter
 
 ## Architecture
@@ -80,11 +80,15 @@ pnpm workspace monorepo using TypeScript. Each package manages its own dependenc
 - `POST /api/feedback` — Submit thumbs up/down on memory or pattern (auth required, toggles)
 
 ### Auth
-- Clerk middleware validates JWT tokens
-- `requireAuth` middleware: validates auth and resolves DB user
+- Privy.io for authentication (replaced Clerk)
+- Frontend: `@privy-io/react-auth` with `PrivyProvider` in App.tsx, `AuthTokenSync` component for Bearer token injection
+- Backend: `@privy-io/server-auth` with `PrivyClient.verifyAuthToken()` for JWT verification
+- `requireAuth` middleware: verifies Privy token, resolves/creates DB user by Privy DID (stored in `clerk_id` column for backwards compatibility)
 - `optionalAuth` middleware: resolves auth if present, continues if not
+- Profile extraction: name from Google/Twitter/Discord, email from Google/Apple/Discord/email
 - Public endpoints: categories, guru list/detail, ratings list
 - Protected endpoints: user profile, guru create/update, rating create
+- Environment: `PRIVY_APP_ID`, `PRIVY_APP_SECRET` (backend), `VITE_PRIVY_APP_ID` (frontend)
 
 ### Frontend Pages
 - `/` — Landing page with hero, features, waitlist form, and "Browse Marketplace" CTA
@@ -94,7 +98,6 @@ pnpm workspace monorepo using TypeScript. Each package manages its own dependenc
 - `/dashboard` — User subscriptions dashboard with Manage Billing link and Wisdom Feed links (auth required)
 - `/guru/:slug/wisdom` — Personal Wisdom Feed page for a subscribed guru (auth required, search, category filter, thumbs up/down)
 - `/guru/:slug/journal` — Public Guru Journal page showing collective patterns (public, pattern type filter, thumbs up/down for auth users)
-- `/sign-in`, `/sign-up` — Clerk auth pages
 
 ### Payments (Stripe)
 - **Integration**: Replit Stripe connector (`stripe-replit-sync` + `stripe` packages at workspace root)
@@ -128,7 +131,7 @@ pnpm workspace monorepo using TypeScript. Each package manages its own dependenc
 - Neo-minimal flat UI: pure white bg, sharp edges, uppercase micro-labels, numbered cards, clean typography
 - Light backgrounds only, no dark themes, no heavy animations
 - Shared `Layout` component wraps all pages with consistent nav bar and footer
-- Clerk `Show` component for auth-conditional rendering (Sign In vs UserButton)
+- Privy `usePrivy()` hook for auth-conditional rendering (Sign In button vs user menu)
 
 ## Key Commands
 
