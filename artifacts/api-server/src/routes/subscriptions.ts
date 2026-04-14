@@ -207,7 +207,8 @@ router.get("/subscriptions/check/:guruId", requireAuth, async (req: AuthRequest,
       return;
     }
 
-    const guruId = parseInt(req.params.guruId, 10);
+    const rawGuruId = req.params.guruId;
+    const guruId = parseInt(Array.isArray(rawGuruId) ? rawGuruId[0] : rawGuruId, 10);
     if (isNaN(guruId)) {
       res.status(400).json({ error: "Invalid guru ID." });
       return;

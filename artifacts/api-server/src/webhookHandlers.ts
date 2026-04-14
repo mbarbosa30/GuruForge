@@ -144,6 +144,16 @@ export class WebhookHandlers {
         await handleCheckoutCompleted(session);
         break;
       }
+      case "checkout.session.expired":
+      case "checkout.session.async_payment_failed": {
+        const session = event.data.object as unknown as StripeCheckoutSessionEvent;
+        console.info("Checkout session failed/expired", {
+          sessionId: session.id,
+          type: eventType,
+          metadata: session.metadata,
+        });
+        break;
+      }
     }
   }
 }

@@ -37,7 +37,11 @@ async function getCredentials(): Promise<StripeCredentials> {
     throw new Error(`Failed to fetch Stripe credentials: ${response.status} ${response.statusText}`);
   }
 
-  const data = await response.json();
+  const data = (await response.json()) as {
+    items?: Array<{
+      settings: { publishable?: string; secret?: string };
+    }>;
+  };
   const connectionSettings = data.items?.[0];
 
   if (
@@ -71,8 +75,8 @@ export async function getStripeSecretKey(): Promise<string> {
 
 interface StripeSyncInstance {
   processWebhook(payload: Buffer, signature: string): Promise<void>;
-  findOrCreateManagedWebhook(url: string): Promise<void>;
-  syncBackfill(): Promise<void>;
+  findOrCreateManagedWebhook(url: string): Promise<unknown>;
+  syncBackfill(): Promise<unknown>;
 }
 
 let stripeSync: StripeSyncInstance | null = null;
