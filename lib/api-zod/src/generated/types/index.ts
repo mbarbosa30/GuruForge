@@ -7,6 +7,8 @@
  */
 
 export * from "./category";
+export * from "./checkoutInput";
+export * from "./checkoutSession";
 export * from "./createGuruInput";
 export * from "./createGuruInputModelTier";
 export * from "./createGuruInputPersonalityStyle";
@@ -20,7 +22,9 @@ export * from "./guruRating";
 export * from "./healthStatus";
 export * from "./listGurusParams";
 export * from "./listGurusSort";
+export * from "./portalSession";
 export * from "./rating";
+export * from "./subscriptionCheck";
 export * from "./updateGuruInput";
 export * from "./updateGuruInputModelTier";
 export * from "./updateGuruInputPersonalityStyle";
@@ -28,3 +32,4 @@ export * from "./updateGuruInputPriceInterval";
 export * from "./updateGuruInputStatus";
 export * from "./updateUserInput";
 export * from "./user";
+export * from "./userSubscription";

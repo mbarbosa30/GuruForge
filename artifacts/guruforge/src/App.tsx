@@ -10,6 +10,7 @@ import Home from "@/pages/home";
 import Marketplace from "@/pages/marketplace";
 import GuruProfile from "@/pages/guru-profile";
 import CreateGuru from "@/pages/create-guru";
+import Dashboard from "@/pages/dashboard";
 import NotFound from "@/pages/not-found";
 
 const clerkPubKey = import.meta.env.VITE_CLERK_PUBLISHABLE_KEY;
@@ -77,6 +78,9 @@ function LayoutGuruProfile() {
   return <Layout><GuruProfile /></Layout>;
 }
 
+function LayoutDashboard() {
+  return <Layout><Dashboard /></Layout>;
+}
 
 function Router() {
   return (
@@ -85,6 +89,7 @@ function Router() {
       <Route path="/marketplace" component={LayoutMarketplace} />
       <Route path="/guru/:slug" component={LayoutGuruProfile} />
       <Route path="/create" component={CreateGuru} />
+      <Route path="/dashboard" component={LayoutDashboard} />
       <Route path="/sign-in/*?" component={SignInPage} />
       <Route path="/sign-up/*?" component={SignUpPage} />
       <Route component={NotFound} />

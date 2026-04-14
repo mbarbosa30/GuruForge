@@ -18,6 +18,8 @@ tags:
     description: User operations
   - name: ratings
     description: Rating operations
+  - name: subscriptions
+    description: Subscription operations
 paths:
   /healthz:
     get:
@@ -255,6 +257,92 @@ paths:
             application/json:
               schema:
                 $ref: "#/components/schemas/User"
+        "401":
+          description: Unauthorized
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ErrorResponse"
+  /subscriptions/checkout:
+    post:
+      operationId: createCheckoutSession
+      tags: [subscriptions]
+      summary: Create a Stripe checkout session for a Guru subscription
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/CheckoutInput"
+      responses:
+        "200":
+          description: Checkout session URL
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/CheckoutSession"
+        "401":
+          description: Unauthorized
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ErrorResponse"
+  /subscriptions/me:
+    get:
+      operationId: listMySubscriptions
+      tags: [subscriptions]
+      summary: List current user's active subscriptions
+      responses:
+        "200":
+          description: Active subscriptions
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: "#/components/schemas/UserSubscription"
+        "401":
+          description: Unauthorized
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ErrorResponse"
+  /subscriptions/portal:
+    post:
+      operationId: createPortalSession
+      tags: [subscriptions]
+      summary: Create a Stripe billing portal session
+      responses:
+        "200":
+          description: Portal session URL
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/PortalSession"
+        "401":
+          description: Unauthorized
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ErrorResponse"
+  /subscriptions/check/{guruId}:
+    get:
+      operationId: checkSubscription
+      tags: [subscriptions]
+      summary: Check if user is subscribed to a guru
+      parameters:
+        - name: guruId
+          in: path
+          required: true
+          schema:
+            type: integer
+      responses:
+        "200":
+          description: Subscription status
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/SubscriptionCheck"
         "401":
           description: Unauthorized
           content:
@@ -691,3 +779,71 @@ components:
           type: string
       required:
         - rating
+    CheckoutInput:
+      type: object
+      properties:
+        guruId:
+          type: integer
+      required:
+        - guruId
+    CheckoutSession:
+      type: object
+      properties:
+        url:
+          type: string
+          nullable: true
+      required:
+        - url
+    UserSubscription:
+      type: object
+      properties:
+        id:
+          type: integer
+        guruId:
+          type: integer
+        status:
+          type: string
+        startedAt:
+          type: string
+          format: date-time
+        expiresAt:
+          type: string
+          format: date-time
+          nullable: true
+        stripeSubscriptionId:
+          type: string
+          nullable: true
+        guruName:
+          type: string
+        guruSlug:
+          type: string
+        guruAvatarUrl:
+          type: string
+          nullable: true
+        guruPriceCents:
+          type: integer
+        guruPriceInterval:
+          type: string
+      required:
+        - id
+        - guruId
+        - status
+        - startedAt
+        - guruName
+        - guruSlug
+        - guruPriceCents
+        - guruPriceInterval
+    PortalSession:
+      type: object
+      properties:
+        url:
+          type: string
+      required:
+        - url
+    SubscriptionCheck:
+      type: object
+      properties:
+        subscribed:
+          type: boolean
+      required:
+        - subscribed

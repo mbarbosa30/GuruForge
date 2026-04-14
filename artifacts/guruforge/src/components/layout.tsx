@@ -34,6 +34,9 @@ export default function Layout({ children }: { children: React.ReactNode }) {
               <Link href="/create" className={linkClass("/create")} data-testid="link-create">
                 Create a Guru
               </Link>
+              <Link href="/dashboard" className={linkClass("/dashboard")} data-testid="link-dashboard">
+                Dashboard
+              </Link>
             </Show>
           </nav>
         </div>

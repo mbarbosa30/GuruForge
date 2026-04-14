@@ -18,6 +18,8 @@ import type {
 
 import type {
   Category,
+  CheckoutInput,
+  CheckoutSession,
   CreateGuruInput,
   CreateRatingInput,
   ErrorResponse,
@@ -27,10 +29,13 @@ import type {
   GuruRating,
   HealthStatus,
   ListGurusParams,
+  PortalSession,
   Rating,
+  SubscriptionCheck,
   UpdateGuruInput,
   UpdateUserInput,
   User,
+  UserSubscription,
 } from "./api.schemas";
 
 import { customFetch } from "../custom-fetch";
@@ -859,3 +864,333 @@ export const useUpdateMe = <
 > => {
   return useMutation(getUpdateMeMutationOptions(options));
 };
+
+/**
+ * @summary Create a Stripe checkout session for a Guru subscription
+ */
+export const getCreateCheckoutSessionUrl = () => {
+  return `/api/subscriptions/checkout`;
+};
+
+export const createCheckoutSession = async (
+  checkoutInput: CheckoutInput,
+  options?: RequestInit,
+): Promise<CheckoutSession> => {
+  return customFetch<CheckoutSession>(getCreateCheckoutSessionUrl(), {
+    ...options,
+    method: "POST",
+    headers: { "Content-Type": "application/json", ...options?.headers },
+    body: JSON.stringify(checkoutInput),
+  });
+};
+
+export const getCreateCheckoutSessionMutationOptions = <
+  TError = ErrorType<ErrorResponse>,
+  TContext = unknown,
+>(options?: {
+  mutation?: UseMutationOptions<
+    Awaited<ReturnType<typeof createCheckoutSession>>,
+    TError,
+    { data: BodyType<CheckoutInput> },
+    TContext
+  >;
+  request?: SecondParameter<typeof customFetch>;
+}): UseMutationOptions<
+  Awaited<ReturnType<typeof createCheckoutSession>>,
+  TError,
+  { data: BodyType<CheckoutInput> },
+  TContext
+> => {
+  const mutationKey = ["createCheckoutSession"];
+  const { mutation: mutationOptions, request: requestOptions } = options
+    ? options.mutation &&
+      "mutationKey" in options.mutation &&
+      options.mutation.mutationKey
+      ? options
+      : { ...options, mutation: { ...options.mutation, mutationKey } }
+    : { mutation: { mutationKey }, request: undefined };
+
+  const mutationFn: MutationFunction<
+    Awaited<ReturnType<typeof createCheckoutSession>>,
+    { data: BodyType<CheckoutInput> }
+  > = (props) => {
+    const { data } = props ?? {};
+
+    return createCheckoutSession(data, requestOptions);
+  };
+
+  return { mutationFn, ...mutationOptions };
+};
+
+export type CreateCheckoutSessionMutationResult = NonNullable<
+  Awaited<ReturnType<typeof createCheckoutSession>>
+>;
+export type CreateCheckoutSessionMutationBody = BodyType<CheckoutInput>;
+export type CreateCheckoutSessionMutationError = ErrorType<ErrorResponse>;
+
+/**
+ * @summary Create a Stripe checkout session for a Guru subscription
+ */
+export const useCreateCheckoutSession = <
+  TError = ErrorType<ErrorResponse>,
+  TContext = unknown,
+>(options?: {
+  mutation?: UseMutationOptions<
+    Awaited<ReturnType<typeof createCheckoutSession>>,
+    TError,
+    { data: BodyType<CheckoutInput> },
+    TContext
+  >;
+  request?: SecondParameter<typeof customFetch>;
+}): UseMutationResult<
+  Awaited<ReturnType<typeof createCheckoutSession>>,
+  TError,
+  { data: BodyType<CheckoutInput> },
+  TContext
+> => {
+  return useMutation(getCreateCheckoutSessionMutationOptions(options));
+};
+
+/**
+ * @summary List current user's active subscriptions
+ */
+export const getListMySubscriptionsUrl = () => {
+  return `/api/subscriptions/me`;
+};
+
+export const listMySubscriptions = async (
+  options?: RequestInit,
+): Promise<UserSubscription[]> => {
+  return customFetch<UserSubscription[]>(getListMySubscriptionsUrl(), {
+    ...options,
+    method: "GET",
+  });
+};
+
+export const getListMySubscriptionsQueryKey = () => {
+  return [`/api/subscriptions/me`] as const;
+};
+
+export const getListMySubscriptionsQueryOptions = <
+  TData = Awaited<ReturnType<typeof listMySubscriptions>>,
+  TError = ErrorType<ErrorResponse>,
+>(options?: {
+  query?: UseQueryOptions<
+    Awaited<ReturnType<typeof listMySubscriptions>>,
+    TError,
+    TData
+  >;
+  request?: SecondParameter<typeof customFetch>;
+}) => {
+  const { query: queryOptions, request: requestOptions } = options ?? {};
+
+  const queryKey = queryOptions?.queryKey ?? getListMySubscriptionsQueryKey();
+
+  const queryFn: QueryFunction<
+    Awaited<ReturnType<typeof listMySubscriptions>>
+  > = ({ signal }) => listMySubscriptions({ signal, ...requestOptions });
+
+  return { queryKey, queryFn, ...queryOptions } as UseQueryOptions<
+    Awaited<ReturnType<typeof listMySubscriptions>>,
+    TError,
+    TData
+  > & { queryKey: QueryKey };
+};
+
+export type ListMySubscriptionsQueryResult = NonNullable<
+  Awaited<ReturnType<typeof listMySubscriptions>>
+>;
+export type ListMySubscriptionsQueryError = ErrorType<ErrorResponse>;
+
+/**
+ * @summary List current user's active subscriptions
+ */
+
+export function useListMySubscriptions<
+  TData = Awaited<ReturnType<typeof listMySubscriptions>>,
+  TError = ErrorType<ErrorResponse>,
+>(options?: {
+  query?: UseQueryOptions<
+    Awaited<ReturnType<typeof listMySubscriptions>>,
+    TError,
+    TData
+  >;
+  request?: SecondParameter<typeof customFetch>;
+}): UseQueryResult<TData, TError> & { queryKey: QueryKey } {
+  const queryOptions = getListMySubscriptionsQueryOptions(options);
+
+  const query = useQuery(queryOptions) as UseQueryResult<TData, TError> & {
+    queryKey: QueryKey;
+  };
+
+  return { ...query, queryKey: queryOptions.queryKey };
+}
+
+/**
+ * @summary Create a Stripe billing portal session
+ */
+export const getCreatePortalSessionUrl = () => {
+  return `/api/subscriptions/portal`;
+};
+
+export const createPortalSession = async (
+  options?: RequestInit,
+): Promise<PortalSession> => {
+  return customFetch<PortalSession>(getCreatePortalSessionUrl(), {
+    ...options,
+    method: "POST",
+  });
+};
+
+export const getCreatePortalSessionMutationOptions = <
+  TError = ErrorType<ErrorResponse>,
+  TContext = unknown,
+>(options?: {
+  mutation?: UseMutationOptions<
+    Awaited<ReturnType<typeof createPortalSession>>,
+    TError,
+    void,
+    TContext
+  >;
+  request?: SecondParameter<typeof customFetch>;
+}): UseMutationOptions<
+  Awaited<ReturnType<typeof createPortalSession>>,
+  TError,
+  void,
+  TContext
+> => {
+  const mutationKey = ["createPortalSession"];
+  const { mutation: mutationOptions, request: requestOptions } = options
+    ? options.mutation &&
+      "mutationKey" in options.mutation &&
+      options.mutation.mutationKey
+      ? options
+      : { ...options, mutation: { ...options.mutation, mutationKey } }
+    : { mutation: { mutationKey }, request: undefined };
+
+  const mutationFn: MutationFunction<
+    Awaited<ReturnType<typeof createPortalSession>>,
+    void
+  > = () => {
+    return createPortalSession(requestOptions);
+  };
+
+  return { mutationFn, ...mutationOptions };
+};
+
+export type CreatePortalSessionMutationResult = NonNullable<
+  Awaited<ReturnType<typeof createPortalSession>>
+>;
+
+export type CreatePortalSessionMutationError = ErrorType<ErrorResponse>;
+
+/**
+ * @summary Create a Stripe billing portal session
+ */
+export const useCreatePortalSession = <
+  TError = ErrorType<ErrorResponse>,
+  TContext = unknown,
+>(options?: {
+  mutation?: UseMutationOptions<
+    Awaited<ReturnType<typeof createPortalSession>>,
+    TError,
+    void,
+    TContext
+  >;
+  request?: SecondParameter<typeof customFetch>;
+}): UseMutationResult<
+  Awaited<ReturnType<typeof createPortalSession>>,
+  TError,
+  void,
+  TContext
+> => {
+  return useMutation(getCreatePortalSessionMutationOptions(options));
+};
+
+/**
+ * @summary Check if user is subscribed to a guru
+ */
+export const getCheckSubscriptionUrl = (guruId: number) => {
+  return `/api/subscriptions/check/${guruId}`;
+};
+
+export const checkSubscription = async (
+  guruId: number,
+  options?: RequestInit,
+): Promise<SubscriptionCheck> => {
+  return customFetch<SubscriptionCheck>(getCheckSubscriptionUrl(guruId), {
+    ...options,
+    method: "GET",
+  });
+};
+
+export const getCheckSubscriptionQueryKey = (guruId: number) => {
+  return [`/api/subscriptions/check/${guruId}`] as const;
+};
+
+export const getCheckSubscriptionQueryOptions = <
+  TData = Awaited<ReturnType<typeof checkSubscription>>,
+  TError = ErrorType<ErrorResponse>,
+>(
+  guruId: number,
+  options?: {
+    query?: UseQueryOptions<
+      Awaited<ReturnType<typeof checkSubscription>>,
+      TError,
+      TData
+    >;
+    request?: SecondParameter<typeof customFetch>;
+  },
+) => {
+  const { query: queryOptions, request: requestOptions } = options ?? {};
+
+  const queryKey =
+    queryOptions?.queryKey ?? getCheckSubscriptionQueryKey(guruId);
+
+  const queryFn: QueryFunction<
+    Awaited<ReturnType<typeof checkSubscription>>
+  > = ({ signal }) => checkSubscription(guruId, { signal, ...requestOptions });
+
+  return {
+    queryKey,
+    queryFn,
+    enabled: !!guruId,
+    ...queryOptions,
+  } as UseQueryOptions<
+    Awaited<ReturnType<typeof checkSubscription>>,
+    TError,
+    TData
+  > & { queryKey: QueryKey };
+};
+
+export type CheckSubscriptionQueryResult = NonNullable<
+  Awaited<ReturnType<typeof checkSubscription>>
+>;
+export type CheckSubscriptionQueryError = ErrorType<ErrorResponse>;
+
+/**
+ * @summary Check if user is subscribed to a guru
+ */
+
+export function useCheckSubscription<
+  TData = Awaited<ReturnType<typeof checkSubscription>>,
+  TError = ErrorType<ErrorResponse>,
+>(
+  guruId: number,
+  options?: {
+    query?: UseQueryOptions<
+      Awaited<ReturnType<typeof checkSubscription>>,
+      TError,
+      TData
+    >;
+    request?: SecondParameter<typeof customFetch>;
+  },
+): UseQueryResult<TData, TError> & { queryKey: QueryKey } {
+  const queryOptions = getCheckSubscriptionQueryOptions(guruId, options);
+
+  const query = useQuery(queryOptions) as UseQueryResult<TData, TError> & {
+    queryKey: QueryKey;
+  };
+
+  return { ...query, queryKey: queryOptions.queryKey };
+}

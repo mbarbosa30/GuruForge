@@ -250,3 +250,52 @@ export const UpdateMeResponse = zod.object({
   createdAt: zod.coerce.date(),
   updatedAt: zod.coerce.date(),
 });
+
+/**
+ * @summary Create a Stripe checkout session for a Guru subscription
+ */
+export const CreateCheckoutSessionBody = zod.object({
+  guruId: zod.number(),
+});
+
+export const CreateCheckoutSessionResponse = zod.object({
+  url: zod.string().nullable(),
+});
+
+/**
+ * @summary List current user's active subscriptions
+ */
+export const ListMySubscriptionsResponseItem = zod.object({
+  id: zod.number(),
+  guruId: zod.number(),
+  status: zod.string(),
+  startedAt: zod.coerce.date(),
+  expiresAt: zod.coerce.date().nullish(),
+  stripeSubscriptionId: zod.string().nullish(),
+  guruName: zod.string(),
+  guruSlug: zod.string(),
+  guruAvatarUrl: zod.string().nullish(),
+  guruPriceCents: zod.number(),
+  guruPriceInterval: zod.string(),
+});
+export const ListMySubscriptionsResponse = zod.array(
+  ListMySubscriptionsResponseItem,
+);
+
+/**
+ * @summary Create a Stripe billing portal session
+ */
+export const CreatePortalSessionResponse = zod.object({
+  url: zod.string(),
+});
+
+/**
+ * @summary Check if user is subscribed to a guru
+ */
+export const CheckSubscriptionParams = zod.object({
+  guruId: zod.coerce.number(),
+});
+
+export const CheckSubscriptionResponse = zod.object({
+  subscribed: zod.boolean(),
+});

@@ -34,7 +34,7 @@ pnpm workspace monorepo using TypeScript. Each package manages its own dependenc
 - `lib/api-client-react` — Generated React Query hooks from OpenAPI
 
 ### Database Schema
-- `users` — id, clerk_id, email, name, avatar_url, role (user/creator/admin)
+- `users` — id, clerk_id, email, name, avatar_url, role (user/creator/admin), stripe_customer_id
 - `categories` — id, name, slug, description, icon, display_order
 - `gurus` — id, creator_id (FK users), name, slug, tagline, description, category_id (FK categories), avatar_url, status, price_cents, price_interval, topics, personality_style, model_tier, memory_policy, intro_enabled, wisdom_score, satisfaction_score, user_count, stripe_product_id, stripe_price_id
 - `subscriptions` — id, user_id, guru_id, status, started_at, expires_at, stripe_subscription_id
@@ -51,6 +51,11 @@ pnpm workspace monorepo using TypeScript. Each package manages its own dependenc
 - `PATCH /api/users/me` — Update current user (auth required)
 - `GET /api/gurus/:id/ratings` — List ratings for a guru
 - `POST /api/gurus/:id/ratings` — Rate/update rating (auth required, upsert)
+- `POST /api/subscriptions/checkout` — Create Stripe checkout session (auth required)
+- `GET /api/subscriptions/me` — List user's active subscriptions (auth required)
+- `POST /api/subscriptions/portal` — Create Stripe billing portal session (auth required)
+- `GET /api/subscriptions/check/:guruId` — Check subscription status for a guru (auth required)
+- `POST /api/webhooks/stripe` — Stripe webhook (raw body, before express.json())
 
 ### Auth
 - Clerk middleware validates JWT tokens
@@ -64,7 +69,16 @@ pnpm workspace monorepo using TypeScript. Each package manages its own dependenc
 - `/marketplace` — Guru discovery page with search, category filters, sort, and responsive 3-col grid
 - `/guru/:slug` — Guru profile page with stats, description, topics, trust indicators, ratings, CTAs
 - `/create` — 6-step Guru creator wizard (Identity, Purpose, Intelligence, Memory, Pricing, Review) with auth gate
+- `/dashboard` — User subscriptions dashboard with Manage Billing link (auth required)
 - `/sign-in`, `/sign-up` — Clerk auth pages
+
+### Payments (Stripe)
+- **Integration**: Replit Stripe connector (`stripe-replit-sync` + `stripe` packages at workspace root)
+- **Stripe client**: `artifacts/api-server/src/lib/stripeClient.ts` (credentials via Replit connector API)
+- **Webhook**: `/api/webhooks/stripe` registered BEFORE `express.json()` in app.ts; processes via `stripe-replit-sync` and syncs subscription status to local DB
+- **Checkout flow**: Subscribe button → creates Stripe customer (if needed) → creates Stripe product/price (if needed) → creates checkout session → redirects to Stripe → webhook updates subscription status
+- **Billing portal**: Manage Billing button on dashboard → creates portal session → redirects to Stripe portal
+- **Startup**: `runMigrations` (stripe schema) → `getStripeSync` → `findOrCreateManagedWebhook` → `syncBackfill`
 
 ### Design System
 - Neo-minimal flat UI: pure white bg, sharp edges, uppercase micro-labels, numbered cards, clean typography

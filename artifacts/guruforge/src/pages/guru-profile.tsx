@@ -1,5 +1,15 @@
-import { useRoute, Link } from "wouter";
-import { useGetGuru, useListGuruRatings, getGetGuruQueryOptions, getListGuruRatingsQueryOptions } from "@workspace/api-client-react";
+import { useRoute, Link, useSearch } from "wouter";
+import { useState, useEffect } from "react";
+import { useAuth } from "@clerk/react";
+import {
+  useGetGuru,
+  useListGuruRatings,
+  useCheckSubscription,
+  useCreateCheckoutSession,
+  getGetGuruQueryOptions,
+  getListGuruRatingsQueryOptions,
+  getCheckSubscriptionQueryOptions,
+} from "@workspace/api-client-react";
 import type { Rating } from "@workspace/api-client-react";
 
 function formatPrice(cents: number, interval: string) {
@@ -57,6 +67,15 @@ function ProfileSkeleton() {
 export default function GuruProfile() {
   const [, params] = useRoute("/guru/:slug");
   const slug = params?.slug ?? "";
+  const searchString = useSearch();
+  const [checkoutResult] = useState(() => {
+    const params = new URLSearchParams(searchString);
+    return params.get("checkout");
+  });
+
+  const { isSignedIn } = useAuth();
+  const [checkoutLoading, setCheckoutLoading] = useState(false);
+  const [checkoutError, setCheckoutError] = useState<string | null>(null);
 
   const { data: guru, isLoading, isError } = useGetGuru(slug, {
     query: { ...getGetGuruQueryOptions(slug), enabled: !!slug },
@@ -66,6 +85,50 @@ export default function GuruProfile() {
   const { data: ratings, isLoading: ratingsLoading, isError: ratingsError } = useListGuruRatings(guruId, {
     query: { ...getListGuruRatingsQueryOptions(guruId), enabled: !!guru?.id },
   });
+
+  const { data: subCheck, isLoading: subCheckLoading } = useCheckSubscription(guruId, {
+    query: {
+      ...getCheckSubscriptionQueryOptions(guruId),
+      enabled: !!guru?.id && !!isSignedIn,
+    },
+  });
+
+  const checkoutMutation = useCreateCheckoutSession();
+
+  const isSubscribed = subCheck?.subscribed === true;
+
+  useEffect(() => {
+    if (checkoutResult === "success") {
+      const url = new URL(window.location.href);
+      url.searchParams.delete("checkout");
+      window.history.replaceState({}, "", url.pathname + url.search);
+    }
+  }, [checkoutResult]);
+
+  async function handleSubscribe() {
+    if (!isSignedIn) {
+      window.location.href = import.meta.env.BASE_URL + "sign-in";
+      return;
+    }
+    if (!guru?.id) return;
+
+    setCheckoutLoading(true);
+    setCheckoutError(null);
+
+    try {
+      const result = await checkoutMutation.mutateAsync({ data: { guruId: guru.id } });
+      if (result.url) {
+        window.location.href = result.url;
+      } else {
+        setCheckoutError("Unable to start checkout. Please try again.");
+      }
+    } catch (err: any) {
+      const msg = err?.response?.data?.error || "Something went wrong. Please try again.";
+      setCheckoutError(msg);
+    } finally {
+      setCheckoutLoading(false);
+    }
+  }
 
   if (isLoading) return <ProfileSkeleton />;
 
@@ -94,6 +157,20 @@ export default function GuruProfile() {
       >
         Back to Marketplace
       </Link>
+
+      {checkoutResult === "success" && (
+        <div className="border border-[#d0e8d0] bg-[#f7fdf7] px-5 py-4 mb-6">
+          <p className="text-[13px] font-medium text-[#2a7a2a]">Subscription activated</p>
+          <p className="text-[12px] text-[#5a9a5a] mt-1">You now have access to this Guru.</p>
+        </div>
+      )}
+
+      {checkoutResult === "cancel" && (
+        <div className="border border-[#e0d8c8] bg-[#fdfbf5] px-5 py-4 mb-6">
+          <p className="text-[13px] font-medium text-[#8a7a4a]">Checkout cancelled</p>
+          <p className="text-[12px] text-[#aaa080] mt-1">You can subscribe anytime.</p>
+        </div>
+      )}
 
       <section className="mb-10">
         {guru.categoryName && (
@@ -164,12 +241,23 @@ export default function GuruProfile() {
 
       <section className="mb-10">
         <div className="flex flex-col sm:flex-row gap-3">
-          <button
-            className="text-[13px] font-medium tracking-[0.04em] uppercase text-white bg-[#111] px-7 py-3 border border-[#111] hover:bg-[#333] transition-colors cursor-pointer"
-            data-testid="button-subscribe"
-          >
-            Subscribe — {formatPrice(guru.priceCents, guru.priceInterval)}
-          </button>
+          {isSubscribed ? (
+            <div
+              className="text-[13px] font-medium tracking-[0.04em] uppercase text-[#2a7a2a] bg-[#f0f8f0] px-7 py-3 border border-[#c8e0c8] text-center"
+              data-testid="badge-subscribed"
+            >
+              Subscribed
+            </div>
+          ) : (
+            <button
+              onClick={handleSubscribe}
+              disabled={checkoutLoading || subCheckLoading}
+              className="text-[13px] font-medium tracking-[0.04em] uppercase text-white bg-[#111] px-7 py-3 border border-[#111] hover:bg-[#333] transition-colors cursor-pointer disabled:opacity-50 disabled:cursor-not-allowed"
+              data-testid="button-subscribe"
+            >
+              {checkoutLoading ? "Redirecting..." : `Subscribe — ${formatPrice(guru.priceCents, guru.priceInterval)}`}
+            </button>
+          )}
           <button
             className="text-[13px] font-medium tracking-[0.04em] uppercase text-[#555] bg-white px-7 py-3 border border-[#ddd] hover:border-[#999] hover:text-[#333] transition-colors cursor-pointer"
             data-testid="button-telegram"
@@ -177,7 +265,12 @@ export default function GuruProfile() {
             Connect on Telegram
           </button>
         </div>
-        <p className="text-[11px] text-[#aaa] mt-2">Payments and Telegram connection are coming soon.</p>
+        {checkoutError && (
+          <p className="text-[12px] text-[#c44] mt-2">{checkoutError}</p>
+        )}
+        {!isSubscribed && (
+          <p className="text-[11px] text-[#aaa] mt-2">Secure payments powered by Stripe.</p>
+        )}
       </section>
 
       <section>

@@ -11,6 +11,7 @@ export const usersTable = pgTable("users", {
   name: varchar("name", { length: 255 }),
   avatarUrl: text("avatar_url"),
   role: varchar("role", { length: 20 }).notNull().default("user"),
+  stripeCustomerId: varchar("stripe_customer_id", { length: 255 }),
   createdAt: timestamp("created_at").defaultNow().notNull(),
   updatedAt: timestamp("updated_at").defaultNow().notNull(),
 });

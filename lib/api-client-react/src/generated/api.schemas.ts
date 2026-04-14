@@ -237,6 +237,36 @@ export interface CreateRatingInput {
   comment?: string;
 }
 
+export interface CheckoutInput {
+  guruId: number;
+}
+
+export interface CheckoutSession {
+  url: string | null;
+}
+
+export interface UserSubscription {
+  id: number;
+  guruId: number;
+  status: string;
+  startedAt: string;
+  expiresAt?: string | null;
+  stripeSubscriptionId?: string | null;
+  guruName: string;
+  guruSlug: string;
+  guruAvatarUrl?: string | null;
+  guruPriceCents: number;
+  guruPriceInterval: string;
+}
+
+export interface PortalSession {
+  url: string;
+}
+
+export interface SubscriptionCheck {
+  subscribed: boolean;
+}
+
 export type ListGurusParams = {
   /**
    * Filter by category slug

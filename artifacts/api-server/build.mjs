@@ -97,6 +97,7 @@ async function buildAll() {
       "zeromq",
       "zeromq-prebuilt",
       "playwright",
+      "stripe-replit-sync",
       "puppeteer",
       "puppeteer-core",
       "electron",
