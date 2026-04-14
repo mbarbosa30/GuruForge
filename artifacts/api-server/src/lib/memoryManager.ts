@@ -192,6 +192,8 @@ Respond ONLY with a valid JSON array, no other text.`;
 
 const PATTERN_EXTRACTION_INTERVAL = 10;
 
+// Triggers collective pattern extraction every N user messages per guru.
+// Uses DB count for durability across restarts.
 export async function maybeExtractCollectivePatterns(guruId: number): Promise<void> {
   try {
     const [result] = await db
