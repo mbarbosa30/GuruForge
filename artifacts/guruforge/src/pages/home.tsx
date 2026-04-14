@@ -1,6 +1,5 @@
 import { useEffect } from "react";
 import { Link } from "wouter";
-import { Show } from "@clerk/react";
 import Layout from "@/components/layout";
 import GuruCard from "@/components/guru-card";
 import GuruCardSkeleton from "@/components/guru-card-skeleton";
@@ -63,7 +62,7 @@ export default function Home() {
 
   return (
     <Layout>
-      <section className="px-6 md:px-10 pt-20 md:pt-24 pb-16 md:pb-20 max-w-[680px]">
+      <section className="px-6 md:px-10 pt-20 md:pt-24 pb-16 md:pb-20 max-w-[820px]">
         <p className="text-[11px] font-medium tracking-[0.12em] uppercase text-[#888] mb-7">
           The wisdom economy
         </p>
@@ -72,7 +71,7 @@ export default function Home() {
           compounds with<br />
           every conversation.
         </h1>
-        <p className="text-base font-normal leading-[1.7] text-[#666] max-w-[520px] mb-12">
+        <p className="text-base font-normal leading-[1.7] text-[#666] max-w-[620px] mb-12">
           GuruForge is a marketplace of specialized AI Gurus forged by real
           experts inside Telegram. They learn from human experience, remember
           your journey, and get wiser every day.
@@ -85,15 +84,13 @@ export default function Home() {
           >
             Browse Marketplace
           </Link>
-          <Show when="signed-in">
-            <Link
-              href="/create"
-              className="text-[13px] font-medium tracking-[0.04em] text-[#777] no-underline border-b border-[#bbb] pb-px hover:text-[#444] hover:border-[#888] transition-colors"
-              data-testid="button-create-guru"
-            >
-              Create a Guru
-            </Link>
-          </Show>
+          <Link
+            href="/create"
+            className="text-[13px] font-medium tracking-[0.04em] text-[#777] no-underline border-b border-[#bbb] pb-px hover:text-[#444] hover:border-[#888] transition-colors"
+            data-testid="button-create-guru"
+          >
+            Create a Guru
+          </Link>
         </div>
       </section>
 
