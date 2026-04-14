@@ -10,10 +10,10 @@ export default function Home() {
   const featured = gurus?.slice(0, 6);
 
   useEffect(() => {
-    document.title = "GuruForge — The world's first wisdom network";
+    document.title = "GuruForge — The World's First Wisdom Network";
     const meta = document.querySelector('meta[name="description"]');
     const content =
-      "A network of private wisdom circles where specialized AI agents synthesize collective intelligence from every conversation — growing wiser without ever exposing personal data.";
+      "Subscribe to AI Gurus that learn from every conversation. Private 1-on-1 chats on Telegram where collective intelligence grows without exposing personal data.";
     if (meta) {
       meta.setAttribute("content", content);
     } else {
