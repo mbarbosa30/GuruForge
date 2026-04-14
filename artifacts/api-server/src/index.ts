@@ -4,6 +4,10 @@ import app from "./app";
 import { logger } from "./lib/logger";
 import { startAllPublishedBots } from "./lib/botManager";
 
+process.on("unhandledRejection", (reason) => {
+  logger.error({ err: reason }, "Unhandled rejection");
+});
+
 async function initStripe() {
   const databaseUrl = process.env.DATABASE_URL;
   if (!databaseUrl) {

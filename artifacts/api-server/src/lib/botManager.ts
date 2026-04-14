@@ -37,13 +37,17 @@ export async function startBot(guruId: number): Promise<boolean> {
         await ctx.reply(response);
       } catch (err) {
         console.error(`Bot ${guruId} message error:`, err);
-        await ctx.reply("I'm having trouble processing your message right now. Please try again in a moment.");
+        try {
+          await ctx.reply("I'm having trouble processing your message right now. Please try again in a moment.");
+        } catch (replyErr) {
+          console.error(`Bot ${guruId} failed to send error reply:`, replyErr);
+        }
       }
     });
 
     await bot.init();
 
-    const handler = webhookCallback(bot, "express");
+    const handler = webhookCallback(bot, "express", { timeoutMilliseconds: 55_000 });
     activeBots.set(guruId, { bot, handler });
     return true;
   } catch (err) {
