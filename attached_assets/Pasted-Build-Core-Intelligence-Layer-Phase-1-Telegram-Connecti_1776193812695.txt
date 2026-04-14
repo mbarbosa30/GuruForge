@@ -1,0 +1,70 @@
+Build Core Intelligence Layer – Phase 1 (Telegram Connection + Conversation Engine + 3-Tier Memory + Triage/Conversation/Calibration)
+This is the most important phase yet. We are no longer building a storefront — we are now building the actual living Guru brain.
+Important Vision Clarification (must be followed exactly):
+A Guru is not a teaching tool or expert-created product. It is a specialized AI agent focused on a domain (e.g. DeFi, startup scaling, philosophy, health optimization, etc.) that acts as a private community catalyst.
+
+Every user talks privately 1-on-1 with the Guru.
+The Guru learns collectively from all its users (synthesizing patterns across conversations).
+The real value comes from this collective wisdom over time, not from the creator’s knowledge.
+The Guru can propose safe, consent-based introductions between users when it intuitively sees mutual benefit — but users never talk directly to each other.
+Creator is only the curator/architect (defines domain, personality, boundaries, and memory policies).
+
+What you must build now:
+1. Telegram Secure Connection Flow (use our existing code-based handshake)
+
+When user clicks “Connect to Telegram” on a Guru profile → generate a unique, time-limited 8-character code + QR code.
+User opens the official Guru Telegram bot (one bot per Guru — created automatically when Guru is published).
+User pastes the code → bot verifies it → links the Telegram user ID to the GuruForge account + specific Guru.
+After successful handshake, the bot immediately sends: “I am now your [Guru Name]. I remember everything and I’m learning from everyone in this private community. How can I help you today?”
+
+2. Conversation Engine (the brain)
+Every message from the user must go through the exact 3-tier intelligence system:
+
+Triage (fast first step)
+Understand intent and urgency
+Decide which memory tiers to pull
+Check privacy boundaries
+Decide if tools or intro proposals are relevant
+
+Conversation (main response)
+Pull relevant context from Tier 1 + Tier 2 + Tier 3
+Generate helpful, wise, contextual reply
+Use the Guru’s defined personality and domain focus
+
+Calibration (post-response learning — critical)
+Extract anonymized insights (“what worked / why not” patterns)
+Update the user’s personal Tier 2 memory
+Feed redacted, anonymized patterns into Tier 3 collective wisdom
+Calculate/update the user’s Contribution Score for this Guru
+
+
+3. 3-Tier Memory System (privacy-first)
+
+Tier 1 (Live): Current conversation context (short-term, per session)
+Tier 2 (Personal): Long-term private memory for this specific user only (goals, history, preferences, past decisions)
+Tier 3 (Collective Wisdom): Anonymized patterns learned from all users of this Guru. Strong PII redaction must happen before anything enters Tier 3. Users can toggle contribution on/off.
+
+Use vector embeddings + simple summarization for memory storage and retrieval.
+4. Technical Requirements
+
+Use the existing database (Guru, User, Subscription models)
+Store memory securely and per-Guru
+All LLM calls must go through a proxy (we already have creator API keys)
+Log usage for cost tracking per Guru
+Start simple: support one model first (creator’s chosen model), then make it flexible
+Keep responses fast (< 2 seconds when possible)
+
+5. Success Criteria for this task
+
+A user can connect to a Guru via Telegram code and start a real conversation
+The Guru remembers personal details from previous conversations (Tier 2)
+The Guru shows early signs of collective learning (Tier 3 patterns begin to appear in responses)
+Privacy is strictly protected
+Calibration runs after every message and starts calculating basic Contribution Score
+
+Style & Tone
+Keep everything clean, elegant, calm and thoughtful — matching the light/minimalistic design of the current site.
+Next step after this task is done:
+We will add Wisdom Score calculation, dynamic pricing, safe intro proposals, and the token launch logic.
+
+Start building this core intelligence layer exactly as described above. Prioritize the Telegram handshake + conversation engine with the full Triage → Conversation → Calibration loop and basic 3-tier memory.
