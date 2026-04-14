@@ -310,6 +310,10 @@ export default function GuruProfile() {
             <span className="text-[11px] font-medium tracking-[0.04em] uppercase text-[#888] block mb-1">Personality</span>
             <span className="text-[14px] text-[#333] capitalize">{guru.personalityStyle ?? "Friendly"}</span>
           </div>
+          <div className="bg-white px-5 py-4">
+            <span className="text-[11px] font-medium tracking-[0.04em] uppercase text-[#888] block mb-1">AI model</span>
+            <span className="text-[14px] text-[#333]">Powered by {guru.modelTier === "grok" ? "Grok" : "GPT"}</span>
+          </div>
         </div>
       </section>
 

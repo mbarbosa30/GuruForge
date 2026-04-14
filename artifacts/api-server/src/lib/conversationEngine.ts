@@ -360,8 +360,8 @@ export async function handleTelegramMessage(
   let modelConfig;
   try {
     modelConfig = getModelConfig(guru.modelTier);
-  } catch (err: any) {
-    console.error("Model config error:", err.message);
+  } catch (err) {
+    console.error("Model config error:", err instanceof Error ? err.message : err);
     return "This Guru's AI model is not currently available. Please try again later or contact the Guru creator.";
   }
 
