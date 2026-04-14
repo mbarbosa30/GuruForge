@@ -21,6 +21,10 @@ function useDebounce<T>(value: T, delay: number): T {
 }
 
 export default function Marketplace() {
+  useEffect(() => {
+    document.title = "Marketplace — GuruForge";
+  }, []);
+
   const [search, setSearch] = useState("");
   const [category, setCategory] = useState<string>("");
   const [sort, setSort] = useState<ListGurusSort>("wisdom");

@@ -155,6 +155,12 @@ export default function GuruProfile() {
   }
 
   useEffect(() => {
+    if (guru?.name) {
+      document.title = `${guru.name} — GuruForge`;
+    }
+  }, [guru?.name]);
+
+  useEffect(() => {
     if (checkoutResult === "success") {
       const url = new URL(window.location.href);
       url.searchParams.delete("checkout");
