@@ -61,27 +61,30 @@ const INITIAL: FormData = {
   freeTrial: false,
 };
 
-function StepIndicator({ current, onJump }: { current: number; onJump: (i: number) => void }) {
+function StepIndicator({ current, maxCompleted, onJump }: { current: number; maxCompleted: number; onJump: (i: number) => void }) {
   return (
     <div className="flex items-center gap-1 mb-10 overflow-x-auto pb-2">
-      {STEPS.map((step, i) => (
-        <button
-          key={step}
-          onClick={() => i < current && onJump(i)}
-          disabled={i > current}
-          className={`flex items-center gap-2 px-3 py-1.5 text-[11px] font-medium tracking-[0.04em] uppercase transition-colors whitespace-nowrap ${
-            i === current
-              ? "text-[#111] border-b-2 border-[#111]"
-              : i < current
-                ? "text-[#555] border-b-2 border-[#ccc] cursor-pointer hover:text-[#111]"
-                : "text-[#bbb] border-b-2 border-transparent cursor-default"
-          }`}
-          data-testid={`step-${i}`}
-        >
-          <span className="text-[10px] font-semibold">{String(i + 1).padStart(2, "0")}</span>
-          <span className="hidden sm:inline">{step}</span>
-        </button>
-      ))}
+      {STEPS.map((step, i) => {
+        const isReachable = i <= maxCompleted;
+        return (
+          <button
+            key={step}
+            onClick={() => isReachable && i !== current && onJump(i)}
+            disabled={!isReachable}
+            className={`flex items-center gap-2 px-3 py-1.5 text-[11px] font-medium tracking-[0.04em] uppercase transition-colors whitespace-nowrap ${
+              i === current
+                ? "text-[#111] border-b-2 border-[#111]"
+                : isReachable
+                  ? "text-[#555] border-b-2 border-[#ccc] cursor-pointer hover:text-[#111]"
+                  : "text-[#bbb] border-b-2 border-transparent cursor-default"
+            }`}
+            data-testid={`step-${i}`}
+          >
+            <span className="text-[10px] font-semibold">{String(i + 1).padStart(2, "0")}</span>
+            <span className="hidden sm:inline">{step}</span>
+          </button>
+        );
+      })}
     </div>
   );
 }
@@ -470,6 +473,7 @@ function buildDescription(data: FormData): string {
   if (data.description.trim()) parts.push(data.description.trim());
   if (data.targetUsers.trim()) parts.push(`Target users: ${data.targetUsers.trim()}`);
   if (data.notFor.trim()) parts.push(`Not for: ${data.notFor.trim()}`);
+  if (data.freeTrial && data.priceCents > 0) parts.push("Free trial available.");
   return parts.join("\n\n");
 }
 
@@ -533,6 +537,7 @@ export default function CreateGuru() {
 
 function CreateGuruWizard() {
   const [step, setStep] = useState(0);
+  const [maxStep, setMaxStep] = useState(0);
   const [data, setData] = useState<FormData>(INITIAL);
   const [error, setError] = useState<string | null>(null);
 
@@ -547,7 +552,9 @@ function CreateGuruWizard() {
   const next = () => {
     const err = validateStep(step, data);
     if (err) { setError(err); return; }
-    setStep((s) => Math.min(s + 1, STEPS.length - 1));
+    const nextStep = Math.min(step + 1, STEPS.length - 1);
+    setStep(nextStep);
+    setMaxStep((m) => Math.max(m, nextStep));
     setError(null);
   };
 
@@ -603,7 +610,7 @@ function CreateGuruWizard() {
         {STEPS[step]}
       </h1>
 
-      <StepIndicator current={step} onJump={(i) => { setStep(i); setError(null); }} />
+      <StepIndicator current={step} maxCompleted={maxStep} onJump={(i) => { setStep(i); setError(null); }} />
 
       {step === 0 && <StepIdentity data={data} onChange={update} categories={categories} />}
       {step === 1 && <StepPurpose data={data} onChange={update} />}
