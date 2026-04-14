@@ -1,6 +1,6 @@
 import { useRoute, Link, useSearch } from "wouter";
 import { useState, useEffect } from "react";
-import { useAuth } from "@clerk/react";
+import { usePrivy } from "@privy-io/react-auth";
 import {
   useGetGuru,
   useListGuruRatings,
@@ -93,7 +93,7 @@ export default function GuruProfile() {
     return params.get("checkout");
   });
 
-  const { isSignedIn } = useAuth();
+  const { authenticated, login } = usePrivy();
   const [checkoutLoading, setCheckoutLoading] = useState(false);
   const [checkoutError, setCheckoutError] = useState<string | null>(null);
   const [showTelegramModal, setShowTelegramModal] = useState(false);
@@ -110,7 +110,7 @@ export default function GuruProfile() {
   const { data: subCheck, isLoading: subCheckLoading } = useCheckSubscription(guruId, {
     query: {
       ...getCheckSubscriptionQueryOptions(guruId),
-      enabled: !!guru?.id && !!isSignedIn,
+      enabled: !!guru?.id && !!authenticated,
     },
   });
 
@@ -121,7 +121,7 @@ export default function GuruProfile() {
   const { data: telegramStatus } = useGetTelegramStatus(guruId, {
     query: {
       ...getGetTelegramStatusQueryOptions(guruId),
-      enabled: !!guru?.id && !!isSignedIn && isSubscribed,
+      enabled: !!guru?.id && !!authenticated && isSubscribed,
     },
   });
 
@@ -130,7 +130,7 @@ export default function GuruProfile() {
   const wisdomToggleMutation = useToggleWisdomContribution();
 
   const { data: contributionScore } = useGetContributionScore(guruId, {
-    query: { enabled: !!guru?.id && !!isSignedIn && isSubscribed },
+    query: { enabled: !!guru?.id && !!authenticated && isSubscribed },
   });
 
 
@@ -169,8 +169,8 @@ export default function GuruProfile() {
   }, [checkoutResult]);
 
   async function handleSubscribe() {
-    if (!isSignedIn) {
-      window.location.href = import.meta.env.BASE_URL + "sign-in";
+    if (!authenticated) {
+      login();
       return;
     }
     if (!guru?.id) return;

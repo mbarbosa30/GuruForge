@@ -1,10 +1,11 @@
 import { useEffect, useRef } from "react";
 import { Switch, Route, useLocation, Router as WouterRouter } from "wouter";
-import { ClerkProvider, SignIn, SignUp, useClerk } from "@clerk/react";
+import { PrivyProvider, usePrivy } from "@privy-io/react-auth";
 import { QueryClientProvider, useQueryClient } from "@tanstack/react-query";
 import { Toaster } from "@/components/ui/toaster";
 import { TooltipProvider } from "@/components/ui/tooltip";
 import { queryClient } from "@/lib/queryClient";
+import { AuthTokenSync } from "@/lib/authTokenSync";
 import Layout from "@/components/layout";
 import Home from "@/pages/home";
 import Marketplace from "@/pages/marketplace";
@@ -15,59 +16,25 @@ import WisdomFeed from "@/pages/wisdom-feed";
 import GuruJournal from "@/pages/guru-journal";
 import NotFound from "@/pages/not-found";
 
-const clerkPubKey = import.meta.env.VITE_CLERK_PUBLISHABLE_KEY;
-const clerkProxyUrl = import.meta.env.VITE_CLERK_PROXY_URL;
+const privyAppId = import.meta.env.VITE_PRIVY_APP_ID;
 const basePath = import.meta.env.BASE_URL.replace(/\/$/, "");
 
-function stripBase(path: string): string {
-  return basePath && path.startsWith(basePath)
-    ? path.slice(basePath.length) || "/"
-    : path;
+if (!privyAppId) {
+  throw new Error("Missing VITE_PRIVY_APP_ID");
 }
 
-if (!clerkPubKey) {
-  throw new Error("Missing VITE_CLERK_PUBLISHABLE_KEY");
-}
-
-function SignInPage() {
-  // To update login providers, app branding, or OAuth settings use the Auth
-  // pane in the workspace toolbar. More information can be found in the Replit docs.
-  return (
-    <Layout>
-      <div className="flex justify-center py-12">
-        <SignIn routing="path" path={`${basePath}/sign-in`} signUpUrl={`${basePath}/sign-up`} />
-      </div>
-    </Layout>
-  );
-}
-
-function SignUpPage() {
-  // To update login providers, app branding, or OAuth settings use the Auth
-  // pane in the workspace toolbar. More information can be found in the Replit docs.
-  return (
-    <Layout>
-      <div className="flex justify-center py-12">
-        <SignUp routing="path" path={`${basePath}/sign-up`} signInUrl={`${basePath}/sign-in`} />
-      </div>
-    </Layout>
-  );
-}
-
-function ClerkQueryClientCacheInvalidator() {
-  const { addListener } = useClerk();
+function PrivyQueryClientCacheInvalidator() {
+  const { user } = usePrivy();
   const qc = useQueryClient();
   const prevUserIdRef = useRef<string | null | undefined>(undefined);
 
   useEffect(() => {
-    const unsubscribe = addListener(({ user }) => {
-      const userId = user?.id ?? null;
-      if (prevUserIdRef.current !== undefined && prevUserIdRef.current !== userId) {
-        qc.clear();
-      }
-      prevUserIdRef.current = userId;
-    });
-    return unsubscribe;
-  }, [addListener, qc]);
+    const userId = user?.id ?? null;
+    if (prevUserIdRef.current !== undefined && prevUserIdRef.current !== userId) {
+      qc.clear();
+    }
+    prevUserIdRef.current = userId;
+  }, [user?.id, qc]);
 
   return null;
 }
@@ -102,38 +69,39 @@ function Router() {
       <Route path="/guru/:slug" component={LayoutGuruProfile} />
       <Route path="/create" component={CreateGuru} />
       <Route path="/dashboard" component={LayoutDashboard} />
-      <Route path="/sign-in/*?" component={SignInPage} />
-      <Route path="/sign-up/*?" component={SignUpPage} />
       <Route component={NotFound} />
     </Switch>
   );
 }
 
-function ClerkProviderWithRoutes() {
-  const [, setLocation] = useLocation();
-
+function PrivyProviderWithRoutes() {
   return (
-    <ClerkProvider
-      publishableKey={clerkPubKey}
-      proxyUrl={clerkProxyUrl}
-      routerPush={(to) => setLocation(stripBase(to))}
-      routerReplace={(to) => setLocation(stripBase(to), { replace: true })}
+    <PrivyProvider
+      appId={privyAppId}
+      config={{
+        loginMethods: ["google", "apple", "twitter", "discord", "email", "sms"],
+        appearance: {
+          theme: "light",
+          accentColor: "#111111",
+        },
+      }}
     >
       <QueryClientProvider client={queryClient}>
         <TooltipProvider>
-          <ClerkQueryClientCacheInvalidator />
+          <AuthTokenSync />
+          <PrivyQueryClientCacheInvalidator />
           <Router />
           <Toaster />
         </TooltipProvider>
       </QueryClientProvider>
-    </ClerkProvider>
+    </PrivyProvider>
   );
 }
 
 function App() {
   return (
     <WouterRouter base={basePath}>
-      <ClerkProviderWithRoutes />
+      <PrivyProviderWithRoutes />
     </WouterRouter>
   );
 }

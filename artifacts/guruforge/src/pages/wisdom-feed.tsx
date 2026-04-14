@@ -1,6 +1,6 @@
 import { useRoute, Link } from "wouter";
 import { useState, useMemo, type FormEvent } from "react";
-import { useAuth } from "@clerk/react";
+import { usePrivy } from "@privy-io/react-auth";
 import {
   useGetWisdomFeed,
   useGetGuru,
@@ -95,7 +95,7 @@ function MemoryItem({
 export default function WisdomFeed() {
   const [, params] = useRoute("/guru/:slug/wisdom");
   const slug = params?.slug ?? "";
-  const { isSignedIn } = useAuth();
+  const { authenticated, login } = usePrivy();
   const queryClient = useQueryClient();
 
   const [category, setCategory] = useState("");
@@ -128,7 +128,7 @@ export default function WisdomFeed() {
           page,
           limit: 20,
         }),
-        enabled: !!guru?.id && !!isSignedIn,
+        enabled: !!guru?.id && !!authenticated,
       },
     },
   );
@@ -169,17 +169,17 @@ export default function WisdomFeed() {
     setPage(1);
   }
 
-  if (!isSignedIn) {
+  if (!authenticated) {
     return (
       <div className="px-6 md:px-10 py-16 text-center max-w-[600px] mx-auto">
         <p className="text-[11px] font-medium tracking-[0.12em] uppercase text-[#888] mb-3">Wisdom Feed</p>
         <p className="text-[15px] text-[#777] mb-8">Sign in to view your personal wisdom feed.</p>
-        <Link
-          href="/sign-in"
-          className="text-[13px] font-medium tracking-[0.04em] uppercase text-white bg-[#111] px-7 py-3 no-underline inline-block hover:bg-[#333] transition-colors"
+        <button
+          onClick={() => login()}
+          className="text-[13px] font-medium tracking-[0.04em] uppercase text-white bg-[#111] px-7 py-3 no-underline inline-block hover:bg-[#333] transition-colors cursor-pointer border-none"
         >
           Sign In
-        </Link>
+        </button>
       </div>
     );
   }

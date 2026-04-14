@@ -1,10 +1,11 @@
 import { Link, useLocation } from "wouter";
-import { Show, UserButton } from "@clerk/react";
+import { usePrivy } from "@privy-io/react-auth";
 
 const basePath = import.meta.env.BASE_URL.replace(/\/$/, "");
 
 export default function Layout({ children }: { children: React.ReactNode }) {
   const [location] = useLocation();
+  const { authenticated, login, logout, user } = usePrivy();
 
   const linkClass = (path: string) => {
     const active = location === path;
@@ -14,6 +15,9 @@ export default function Layout({ children }: { children: React.ReactNode }) {
         : "text-[#777] border-b border-transparent hover:text-[#444] hover:border-[#bbb]"
     }`;
   };
+
+  const displayName = user?.google?.name || user?.apple?.name || user?.twitter?.name || user?.discord?.name || user?.email?.address || null;
+  const initials = displayName ? displayName.charAt(0).toUpperCase() : "?";
 
   return (
     <div className="min-h-[100dvh] bg-white text-[#111] font-sans text-[15px] leading-relaxed selection:bg-neutral-200 flex flex-col">
@@ -30,35 +34,44 @@ export default function Layout({ children }: { children: React.ReactNode }) {
             <Link href="/marketplace" className={linkClass("/marketplace")} data-testid="link-marketplace">
               Marketplace
             </Link>
-            <Show when="signed-in">
-              <Link href="/create" className={linkClass("/create")} data-testid="link-create">
-                Create a Guru
-              </Link>
-              <Link href="/dashboard" className={linkClass("/dashboard")} data-testid="link-dashboard">
-                Dashboard
-              </Link>
-            </Show>
+            {authenticated && (
+              <>
+                <Link href="/create" className={linkClass("/create")} data-testid="link-create">
+                  Create a Guru
+                </Link>
+                <Link href="/dashboard" className={linkClass("/dashboard")} data-testid="link-dashboard">
+                  Dashboard
+                </Link>
+              </>
+            )}
           </nav>
         </div>
         <div className="flex items-center gap-4">
-          <Show when="signed-out">
-            <Link
-              href="/sign-in"
-              className="text-[11px] font-medium tracking-[0.06em] uppercase text-[#777] no-underline border-b border-[#bbb] pb-0.5 hover:text-[#444] hover:border-[#888] transition-colors"
+          {!authenticated ? (
+            <button
+              onClick={() => login()}
+              className="text-[11px] font-medium tracking-[0.06em] uppercase text-[#777] no-underline border-b border-[#bbb] pb-0.5 hover:text-[#444] hover:border-[#888] transition-colors cursor-pointer bg-transparent"
               data-testid="link-sign-in"
             >
               Sign in
-            </Link>
-          </Show>
-          <Show when="signed-in">
-            <UserButton
-              appearance={{
-                elements: {
-                  avatarBox: "w-7 h-7",
-                },
-              }}
-            />
-          </Show>
+            </button>
+          ) : (
+            <div className="flex items-center gap-3">
+              {displayName && (
+                <span className="text-[12px] text-[#666] hidden sm:inline">{displayName}</span>
+              )}
+              <div className="w-7 h-7 bg-[#111] text-white flex items-center justify-center text-[11px] font-semibold">
+                {initials}
+              </div>
+              <button
+                onClick={() => logout()}
+                className="text-[10px] font-medium tracking-[0.06em] uppercase text-[#999] hover:text-[#555] transition-colors cursor-pointer bg-transparent border-none"
+                data-testid="button-sign-out"
+              >
+                Sign out
+              </button>
+            </div>
+          )}
         </div>
       </header>
       <main className="flex-1">{children}</main>

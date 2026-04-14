@@ -1,6 +1,6 @@
 import { Link } from "wouter";
 import { useState } from "react";
-import { useAuth } from "@clerk/react";
+import { usePrivy } from "@privy-io/react-auth";
 import {
   useListMySubscriptions,
   useCreatePortalSession,
@@ -153,19 +153,19 @@ function DashboardContent() {
 }
 
 export default function Dashboard() {
-  const { isSignedIn } = useAuth();
+  const { authenticated, login } = usePrivy();
 
-  if (!isSignedIn) {
+  if (!authenticated) {
     return (
       <div className="px-6 md:px-10 py-16 text-center max-w-[600px] mx-auto">
         <p className="text-[11px] font-medium tracking-[0.12em] uppercase text-[#888] mb-3">Dashboard</p>
         <p className="text-[15px] text-[#777] mb-8">Sign in to view your subscriptions.</p>
-        <Link
-          href="/sign-in"
-          className="text-[13px] font-medium tracking-[0.04em] uppercase text-white bg-[#111] px-7 py-3 no-underline inline-block hover:bg-[#333] transition-colors"
+        <button
+          onClick={() => login()}
+          className="text-[13px] font-medium tracking-[0.04em] uppercase text-white bg-[#111] px-7 py-3 no-underline inline-block hover:bg-[#333] transition-colors cursor-pointer border-none"
         >
           Sign In
-        </Link>
+        </button>
       </div>
     );
   }

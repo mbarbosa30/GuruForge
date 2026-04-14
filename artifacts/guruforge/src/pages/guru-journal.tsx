@@ -1,6 +1,6 @@
 import { useRoute, Link } from "wouter";
 import { useState, useEffect } from "react";
-import { useAuth } from "@clerk/react";
+import { usePrivy } from "@privy-io/react-auth";
 import {
   useGetGuruJournal,
   useGetGuru,
@@ -45,7 +45,7 @@ function confidenceLabel(c: number): { text: string; className: string } {
 export default function GuruJournal() {
   const [, params] = useRoute("/guru/:slug/journal");
   const slug = params?.slug ?? "";
-  const { isSignedIn } = useAuth();
+  const { authenticated } = usePrivy();
   const queryClient = useQueryClient();
 
   const [patternType, setPatternType] = useState("");
@@ -75,14 +75,14 @@ export default function GuruJournal() {
   const { data: myVotes } = useGetJournalMyVotes(guruId, {
     query: {
       ...getGetJournalMyVotesQueryOptions(guruId),
-      enabled: !!guru?.id && !!isSignedIn,
+      enabled: !!guru?.id && !!authenticated,
     },
   });
 
   const feedbackMutation = useSubmitFeedback();
 
   async function handleVote(targetId: number, vote: "up" | "down") {
-    if (!isSignedIn) return;
+    if (!authenticated) return;
     try {
       await feedbackMutation.mutateAsync({ data: { targetType: "pattern" as const, targetId, vote } });
       queryClient.invalidateQueries({ queryKey: getGetGuruJournalQueryOptions(guruId).queryKey?.slice(0, 2) });
@@ -198,9 +198,9 @@ export default function GuruJournal() {
                     <div className="flex flex-col gap-1.5 shrink-0">
                       <button
                         onClick={() => handleVote(item.id, "up")}
-                        disabled={!isSignedIn}
+                        disabled={!authenticated}
                         className={`p-1.5 border transition-colors ${
-                          !isSignedIn
+                          !authenticated
                             ? "border-[#f0f0f0] text-[#e0e0e0] cursor-not-allowed"
                             : userVote === "up"
                               ? "border-[#2a7a2a] text-[#2a7a2a] bg-[#f0f8f0] cursor-pointer"
@@ -212,9 +212,9 @@ export default function GuruJournal() {
                       <span className="text-[10px] text-center text-[#bbb]">{item.votesUp}</span>
                       <button
                         onClick={() => handleVote(item.id, "down")}
-                        disabled={!isSignedIn}
+                        disabled={!authenticated}
                         className={`p-1.5 border transition-colors ${
-                          !isSignedIn
+                          !authenticated
                             ? "border-[#f0f0f0] text-[#e0e0e0] cursor-not-allowed"
                             : userVote === "down"
                               ? "border-[#aa3a3a] text-[#aa3a3a] bg-[#fff0f0] cursor-pointer"

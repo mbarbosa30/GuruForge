@@ -1,6 +1,6 @@
 import { useState, useEffect } from "react";
 import { Link, useLocation } from "wouter";
-import { Show, useAuth } from "@clerk/react";
+import { usePrivy } from "@privy-io/react-auth";
 import { useCreateGuru, useListCategories, useUpdateTelegramBotToken } from "@workspace/api-client-react";
 import type { Category, CreateGuruInput } from "@workspace/api-client-react";
 import Layout from "@/components/layout";
@@ -504,33 +504,37 @@ function validateStep(step: number, data: FormData): string | null {
   }
 }
 
-function AuthRedirect() {
-  const { isSignedIn, isLoaded } = useAuth();
+export default function CreateGuru() {
+  const { authenticated, ready, login } = usePrivy();
   const [, navigate] = useLocation();
 
   useEffect(() => {
-    if (isLoaded && !isSignedIn) {
-      navigate("/sign-in");
+    if (ready && !authenticated) {
+      login();
     }
-  }, [isLoaded, isSignedIn, navigate]);
+  }, [ready, authenticated, login]);
 
-  return null;
-}
-
-export default function CreateGuru() {
-  return (
-    <Layout>
-      <Show when="signed-in">
-        <CreateGuruWizard />
-      </Show>
-      <Show when="signed-out">
-        <AuthRedirect />
+  if (!authenticated) {
+    return (
+      <Layout>
         <div className="px-6 md:px-10 py-16 text-center max-w-[500px] mx-auto">
-          <p className="text-[11px] font-medium tracking-[0.12em] uppercase text-[#888] mb-3">Redirecting to sign in</p>
+          <p className="text-[11px] font-medium tracking-[0.12em] uppercase text-[#888] mb-3">Sign in required</p>
           <h1 className="text-[32px] font-light tracking-[-0.03em] text-[#111] mb-3">Create a Guru</h1>
           <p className="text-[15px] text-[#777] mb-8">You need to sign in to create a Guru.</p>
+          <button
+            onClick={() => login()}
+            className="text-[13px] font-medium tracking-[0.04em] uppercase text-white bg-[#111] px-7 py-3 no-underline inline-block hover:bg-[#333] transition-colors cursor-pointer border-none"
+          >
+            Sign In
+          </button>
         </div>
-      </Show>
+      </Layout>
+    );
+  }
+
+  return (
+    <Layout>
+      <CreateGuruWizard />
     </Layout>
   );
 }
