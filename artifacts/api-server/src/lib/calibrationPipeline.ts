@@ -26,8 +26,8 @@ export async function runCalibration(input: CalibrationInput): Promise<void> {
     const { fastModel, client } = getModelConfig(input.modelTier);
 
     const prompt = `Analyze this conversation turn and extract learning. Return a JSON object with:
-- "personalMemories": array of objects with "category" (goals/preferences/history/decisions/context), "summary" (concise one-sentence), "importance" (0.0-1.0). Only include genuinely useful memories.
-- "collectiveInsights": array of objects with "patternType" (common_questions/successful_strategies/pitfalls/trends), "summary" (anonymized pattern description), "confidence" (0.0-1.0). Only if the exchange reveals patterns useful for other users.
+- "personalMemories": array of objects with "category" (goals/preferences/history/decisions/context), "summary" (concise one-sentence), "displayTitle" (short 3-8 word title for display), "topic" (a short topic tag like "career", "investing", "health", "productivity"), "importance" (0.0-1.0). Only include genuinely useful memories.
+- "collectiveInsights": array of objects with "patternType" (common_questions/successful_strategies/pitfalls/trends), "summary" (anonymized pattern description), "publishTitle" (compelling 5-12 word title for public display, like a blog headline), "confidence" (0.0-1.0). Only if the exchange reveals patterns useful for other users.
 - "contributionQuality": number 0.0-1.0 rating how much this turn contributes to the guru's collective wisdom (0=trivial greeting, 1=highly novel insight)
 
 User message: ${input.userMessage}
@@ -55,8 +55,8 @@ Respond ONLY with valid JSON, no other text.`;
 
     const content = completion.choices[0]?.message?.content?.trim() ?? "{}";
     let parsed: {
-      personalMemories?: Array<{ category: string; summary: string; importance: number }>;
-      collectiveInsights?: Array<{ patternType: string; summary: string; confidence: number }>;
+      personalMemories?: Array<{ category: string; summary: string; displayTitle?: string; topic?: string; importance: number }>;
+      collectiveInsights?: Array<{ patternType: string; summary: string; publishTitle?: string; confidence: number }>;
       contributionQuality?: number;
     };
     try {
@@ -102,7 +102,7 @@ Respond ONLY with valid JSON, no other text.`;
 async function upsertPersonalMemories(
   userId: number,
   guruId: number,
-  memories: Array<{ category: string; summary: string; importance: number }>,
+  memories: Array<{ category: string; summary: string; displayTitle?: string; topic?: string; importance: number }>,
 ): Promise<void> {
   const validCategories = ["goals", "preferences", "history", "decisions", "context"];
 
@@ -137,6 +137,8 @@ async function upsertPersonalMemories(
         .update(userMemoriesTable)
         .set({
           summary: mem.summary,
+          displayTitle: mem.displayTitle || duplicate.displayTitle,
+          topic: mem.topic || duplicate.topic,
           importance: Math.max(duplicate.importance, importance),
           updatedAt: new Date(),
         })
@@ -147,6 +149,8 @@ async function upsertPersonalMemories(
         guruId,
         category: mem.category,
         summary: mem.summary,
+        displayTitle: mem.displayTitle || null,
+        topic: mem.topic || null,
         importance,
       });
     }
@@ -155,7 +159,7 @@ async function upsertPersonalMemories(
 
 async function upsertCollectiveInsights(
   guruId: number,
-  insights: Array<{ patternType: string; summary: string; confidence: number }>,
+  insights: Array<{ patternType: string; summary: string; publishTitle?: string; confidence: number }>,
 ): Promise<void> {
   const validTypes = ["common_questions", "successful_strategies", "pitfalls", "trends"];
 
@@ -204,6 +208,8 @@ async function upsertCollectiveInsights(
         .update(collectivePatternsTable)
         .set({
           summary: redactionResult.redacted,
+          redactedSummary: redactionResult.redacted,
+          publishTitle: p.publishTitle || duplicate.publishTitle,
           confidence: Math.max(duplicate.confidence, confidence),
           frequency: duplicate.frequency + 1,
           updatedAt: new Date(),
@@ -214,6 +220,8 @@ async function upsertCollectiveInsights(
         guruId,
         patternType: p.patternType,
         summary: redactionResult.redacted,
+        redactedSummary: redactionResult.redacted,
+        publishTitle: p.publishTitle || null,
         confidence,
         sourceCount: 1,
       });

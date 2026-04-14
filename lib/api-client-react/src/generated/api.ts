@@ -24,11 +24,17 @@ import type {
   CreateGuruInput,
   CreateRatingInput,
   ErrorResponse,
+  FeedbackInput,
+  FeedbackResult,
+  GetGuruJournalParams,
+  GetWisdomFeedParams,
   Guru,
   GuruDetail,
   GuruListItem,
   GuruRating,
   HealthStatus,
+  JournalMyVotesResponse,
+  JournalResponse,
   ListGurusParams,
   PortalSession,
   Rating,
@@ -42,6 +48,7 @@ import type {
   UpdateUserInput,
   User,
   UserSubscription,
+  WisdomFeedResponse,
   WisdomToggleInput,
   WisdomToggleResponse,
 } from "./api.schemas";
@@ -1739,4 +1746,399 @@ export const useUpdateTelegramBotToken = <
   TContext
 > => {
   return useMutation(getUpdateTelegramBotTokenMutationOptions(options));
+};
+
+/**
+ * @summary Get personal wisdom feed for a guru
+ */
+export const getGetWisdomFeedUrl = (
+  guruId: number,
+  params?: GetWisdomFeedParams,
+) => {
+  const normalizedParams = new URLSearchParams();
+
+  Object.entries(params || {}).forEach(([key, value]) => {
+    if (value !== undefined) {
+      normalizedParams.append(key, value === null ? "null" : value.toString());
+    }
+  });
+
+  const stringifiedParams = normalizedParams.toString();
+
+  return stringifiedParams.length > 0
+    ? `/api/gurus/${guruId}/wisdom-feed?${stringifiedParams}`
+    : `/api/gurus/${guruId}/wisdom-feed`;
+};
+
+export const getWisdomFeed = async (
+  guruId: number,
+  params?: GetWisdomFeedParams,
+  options?: RequestInit,
+): Promise<WisdomFeedResponse> => {
+  return customFetch<WisdomFeedResponse>(getGetWisdomFeedUrl(guruId, params), {
+    ...options,
+    method: "GET",
+  });
+};
+
+export const getGetWisdomFeedQueryKey = (
+  guruId: number,
+  params?: GetWisdomFeedParams,
+) => {
+  return [
+    `/api/gurus/${guruId}/wisdom-feed`,
+    ...(params ? [params] : []),
+  ] as const;
+};
+
+export const getGetWisdomFeedQueryOptions = <
+  TData = Awaited<ReturnType<typeof getWisdomFeed>>,
+  TError = ErrorType<ErrorResponse>,
+>(
+  guruId: number,
+  params?: GetWisdomFeedParams,
+  options?: {
+    query?: UseQueryOptions<
+      Awaited<ReturnType<typeof getWisdomFeed>>,
+      TError,
+      TData
+    >;
+    request?: SecondParameter<typeof customFetch>;
+  },
+) => {
+  const { query: queryOptions, request: requestOptions } = options ?? {};
+
+  const queryKey =
+    queryOptions?.queryKey ?? getGetWisdomFeedQueryKey(guruId, params);
+
+  const queryFn: QueryFunction<Awaited<ReturnType<typeof getWisdomFeed>>> = ({
+    signal,
+  }) => getWisdomFeed(guruId, params, { signal, ...requestOptions });
+
+  return {
+    queryKey,
+    queryFn,
+    enabled: !!guruId,
+    ...queryOptions,
+  } as UseQueryOptions<
+    Awaited<ReturnType<typeof getWisdomFeed>>,
+    TError,
+    TData
+  > & { queryKey: QueryKey };
+};
+
+export type GetWisdomFeedQueryResult = NonNullable<
+  Awaited<ReturnType<typeof getWisdomFeed>>
+>;
+export type GetWisdomFeedQueryError = ErrorType<ErrorResponse>;
+
+/**
+ * @summary Get personal wisdom feed for a guru
+ */
+
+export function useGetWisdomFeed<
+  TData = Awaited<ReturnType<typeof getWisdomFeed>>,
+  TError = ErrorType<ErrorResponse>,
+>(
+  guruId: number,
+  params?: GetWisdomFeedParams,
+  options?: {
+    query?: UseQueryOptions<
+      Awaited<ReturnType<typeof getWisdomFeed>>,
+      TError,
+      TData
+    >;
+    request?: SecondParameter<typeof customFetch>;
+  },
+): UseQueryResult<TData, TError> & { queryKey: QueryKey } {
+  const queryOptions = getGetWisdomFeedQueryOptions(guruId, params, options);
+
+  const query = useQuery(queryOptions) as UseQueryResult<TData, TError> & {
+    queryKey: QueryKey;
+  };
+
+  return { ...query, queryKey: queryOptions.queryKey };
+}
+
+/**
+ * @summary Get public guru journal
+ */
+export const getGetGuruJournalUrl = (
+  guruId: number,
+  params?: GetGuruJournalParams,
+) => {
+  const normalizedParams = new URLSearchParams();
+
+  Object.entries(params || {}).forEach(([key, value]) => {
+    if (value !== undefined) {
+      normalizedParams.append(key, value === null ? "null" : value.toString());
+    }
+  });
+
+  const stringifiedParams = normalizedParams.toString();
+
+  return stringifiedParams.length > 0
+    ? `/api/gurus/${guruId}/journal?${stringifiedParams}`
+    : `/api/gurus/${guruId}/journal`;
+};
+
+export const getGuruJournal = async (
+  guruId: number,
+  params?: GetGuruJournalParams,
+  options?: RequestInit,
+): Promise<JournalResponse> => {
+  return customFetch<JournalResponse>(getGetGuruJournalUrl(guruId, params), {
+    ...options,
+    method: "GET",
+  });
+};
+
+export const getGetGuruJournalQueryKey = (
+  guruId: number,
+  params?: GetGuruJournalParams,
+) => {
+  return [`/api/gurus/${guruId}/journal`, ...(params ? [params] : [])] as const;
+};
+
+export const getGetGuruJournalQueryOptions = <
+  TData = Awaited<ReturnType<typeof getGuruJournal>>,
+  TError = ErrorType<unknown>,
+>(
+  guruId: number,
+  params?: GetGuruJournalParams,
+  options?: {
+    query?: UseQueryOptions<
+      Awaited<ReturnType<typeof getGuruJournal>>,
+      TError,
+      TData
+    >;
+    request?: SecondParameter<typeof customFetch>;
+  },
+) => {
+  const { query: queryOptions, request: requestOptions } = options ?? {};
+
+  const queryKey =
+    queryOptions?.queryKey ?? getGetGuruJournalQueryKey(guruId, params);
+
+  const queryFn: QueryFunction<Awaited<ReturnType<typeof getGuruJournal>>> = ({
+    signal,
+  }) => getGuruJournal(guruId, params, { signal, ...requestOptions });
+
+  return {
+    queryKey,
+    queryFn,
+    enabled: !!guruId,
+    ...queryOptions,
+  } as UseQueryOptions<
+    Awaited<ReturnType<typeof getGuruJournal>>,
+    TError,
+    TData
+  > & { queryKey: QueryKey };
+};
+
+export type GetGuruJournalQueryResult = NonNullable<
+  Awaited<ReturnType<typeof getGuruJournal>>
+>;
+export type GetGuruJournalQueryError = ErrorType<unknown>;
+
+/**
+ * @summary Get public guru journal
+ */
+
+export function useGetGuruJournal<
+  TData = Awaited<ReturnType<typeof getGuruJournal>>,
+  TError = ErrorType<unknown>,
+>(
+  guruId: number,
+  params?: GetGuruJournalParams,
+  options?: {
+    query?: UseQueryOptions<
+      Awaited<ReturnType<typeof getGuruJournal>>,
+      TError,
+      TData
+    >;
+    request?: SecondParameter<typeof customFetch>;
+  },
+): UseQueryResult<TData, TError> & { queryKey: QueryKey } {
+  const queryOptions = getGetGuruJournalQueryOptions(guruId, params, options);
+
+  const query = useQuery(queryOptions) as UseQueryResult<TData, TError> & {
+    queryKey: QueryKey;
+  };
+
+  return { ...query, queryKey: queryOptions.queryKey };
+}
+
+/**
+ * @summary Get current user votes on journal entries
+ */
+export const getGetJournalMyVotesUrl = (guruId: number) => {
+  return `/api/gurus/${guruId}/journal/my-votes`;
+};
+
+export const getJournalMyVotes = async (
+  guruId: number,
+  options?: RequestInit,
+): Promise<JournalMyVotesResponse> => {
+  return customFetch<JournalMyVotesResponse>(getGetJournalMyVotesUrl(guruId), {
+    ...options,
+    method: "GET",
+  });
+};
+
+export const getGetJournalMyVotesQueryKey = (guruId: number) => {
+  return [`/api/gurus/${guruId}/journal/my-votes`] as const;
+};
+
+export const getGetJournalMyVotesQueryOptions = <
+  TData = Awaited<ReturnType<typeof getJournalMyVotes>>,
+  TError = ErrorType<ErrorResponse>,
+>(
+  guruId: number,
+  options?: {
+    query?: UseQueryOptions<
+      Awaited<ReturnType<typeof getJournalMyVotes>>,
+      TError,
+      TData
+    >;
+    request?: SecondParameter<typeof customFetch>;
+  },
+) => {
+  const { query: queryOptions, request: requestOptions } = options ?? {};
+
+  const queryKey =
+    queryOptions?.queryKey ?? getGetJournalMyVotesQueryKey(guruId);
+
+  const queryFn: QueryFunction<
+    Awaited<ReturnType<typeof getJournalMyVotes>>
+  > = ({ signal }) => getJournalMyVotes(guruId, { signal, ...requestOptions });
+
+  return {
+    queryKey,
+    queryFn,
+    enabled: !!guruId,
+    ...queryOptions,
+  } as UseQueryOptions<
+    Awaited<ReturnType<typeof getJournalMyVotes>>,
+    TError,
+    TData
+  > & { queryKey: QueryKey };
+};
+
+export type GetJournalMyVotesQueryResult = NonNullable<
+  Awaited<ReturnType<typeof getJournalMyVotes>>
+>;
+export type GetJournalMyVotesQueryError = ErrorType<ErrorResponse>;
+
+/**
+ * @summary Get current user votes on journal entries
+ */
+
+export function useGetJournalMyVotes<
+  TData = Awaited<ReturnType<typeof getJournalMyVotes>>,
+  TError = ErrorType<ErrorResponse>,
+>(
+  guruId: number,
+  options?: {
+    query?: UseQueryOptions<
+      Awaited<ReturnType<typeof getJournalMyVotes>>,
+      TError,
+      TData
+    >;
+    request?: SecondParameter<typeof customFetch>;
+  },
+): UseQueryResult<TData, TError> & { queryKey: QueryKey } {
+  const queryOptions = getGetJournalMyVotesQueryOptions(guruId, options);
+
+  const query = useQuery(queryOptions) as UseQueryResult<TData, TError> & {
+    queryKey: QueryKey;
+  };
+
+  return { ...query, queryKey: queryOptions.queryKey };
+}
+
+/**
+ * @summary Submit thumbs up/down feedback
+ */
+export const getSubmitFeedbackUrl = () => {
+  return `/api/feedback`;
+};
+
+export const submitFeedback = async (
+  feedbackInput: FeedbackInput,
+  options?: RequestInit,
+): Promise<FeedbackResult> => {
+  return customFetch<FeedbackResult>(getSubmitFeedbackUrl(), {
+    ...options,
+    method: "POST",
+    headers: { "Content-Type": "application/json", ...options?.headers },
+    body: JSON.stringify(feedbackInput),
+  });
+};
+
+export const getSubmitFeedbackMutationOptions = <
+  TError = ErrorType<ErrorResponse>,
+  TContext = unknown,
+>(options?: {
+  mutation?: UseMutationOptions<
+    Awaited<ReturnType<typeof submitFeedback>>,
+    TError,
+    { data: BodyType<FeedbackInput> },
+    TContext
+  >;
+  request?: SecondParameter<typeof customFetch>;
+}): UseMutationOptions<
+  Awaited<ReturnType<typeof submitFeedback>>,
+  TError,
+  { data: BodyType<FeedbackInput> },
+  TContext
+> => {
+  const mutationKey = ["submitFeedback"];
+  const { mutation: mutationOptions, request: requestOptions } = options
+    ? options.mutation &&
+      "mutationKey" in options.mutation &&
+      options.mutation.mutationKey
+      ? options
+      : { ...options, mutation: { ...options.mutation, mutationKey } }
+    : { mutation: { mutationKey }, request: undefined };
+
+  const mutationFn: MutationFunction<
+    Awaited<ReturnType<typeof submitFeedback>>,
+    { data: BodyType<FeedbackInput> }
+  > = (props) => {
+    const { data } = props ?? {};
+
+    return submitFeedback(data, requestOptions);
+  };
+
+  return { mutationFn, ...mutationOptions };
+};
+
+export type SubmitFeedbackMutationResult = NonNullable<
+  Awaited<ReturnType<typeof submitFeedback>>
+>;
+export type SubmitFeedbackMutationBody = BodyType<FeedbackInput>;
+export type SubmitFeedbackMutationError = ErrorType<ErrorResponse>;
+
+/**
+ * @summary Submit thumbs up/down feedback
+ */
+export const useSubmitFeedback = <
+  TError = ErrorType<ErrorResponse>,
+  TContext = unknown,
+>(options?: {
+  mutation?: UseMutationOptions<
+    Awaited<ReturnType<typeof submitFeedback>>,
+    TError,
+    { data: BodyType<FeedbackInput> },
+    TContext
+  >;
+  request?: SecondParameter<typeof customFetch>;
+}): UseMutationResult<
+  Awaited<ReturnType<typeof submitFeedback>>,
+  TError,
+  { data: BodyType<FeedbackInput> },
+  TContext
+> => {
+  return useMutation(getSubmitFeedbackMutationOptions(options));
 };

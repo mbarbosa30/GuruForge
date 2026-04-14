@@ -45,8 +45,9 @@ pnpm workspace monorepo using TypeScript. Each package manages its own dependenc
 - `messages` — id, conversation_id, role (user/assistant/system), content, input_tokens, output_tokens
 - `telegram_connections` — id, user_id, guru_id, telegram_user_id, telegram_chat_id, status, contributes_to_wisdom (bool, default true), connected_at (unique per user+guru, unique per guru+telegram_user_id)
 - `connection_codes` — id, user_id, guru_id, code, expires_at, used
-- `user_memories` — id, user_id, guru_id, category (goals/preferences/history/decisions/context), summary, details (jsonb), importance (0-1), last_accessed_at, created_at, updated_at
-- `collective_patterns` — id, guru_id, pattern_type (common_questions/successful_strategies/pitfalls/trends), summary, frequency, confidence (0-1), source_count, created_at, updated_at
+- `user_memories` — id, user_id, guru_id, category (goals/preferences/history/decisions/context), summary, display_title, topic, details (jsonb), importance (0-1), last_accessed_at, created_at, updated_at
+- `collective_patterns` — id, guru_id, pattern_type (common_questions/successful_strategies/pitfalls/trends), summary, publish_title, redacted_summary, frequency, confidence (0-1), source_count, created_at, updated_at
+- `feedback` — id, user_id, target_type (memory/pattern), target_id, vote (up/down), created_at, updated_at
 - `contribution_scores` — id, user_id, guru_id, score, turn_count, patterns_contributed, last_updated_at (unique per user+guru)
 - `usage_logs` — id, guru_id, user_id, conversation_id, call_type (triage/conversation/calibration/memory_extraction), model, prompt_tokens, completion_tokens, total_tokens, estimated_cost_cents, created_at
 
@@ -73,6 +74,10 @@ pnpm workspace monorepo using TypeScript. Each package manages its own dependenc
 - `PATCH /api/telegram/bot-token/:guruId` — Set/update bot token (auth required, creator only)
 - `PATCH /api/telegram/wisdom-toggle/:guruId` — Toggle wisdom contribution (auth required)
 - `GET /api/gurus/:guruId/contribution-score` — Get user's contribution score for a guru (auth required)
+- `GET /api/gurus/:guruId/wisdom-feed` — Personal wisdom feed for a guru (auth required, pagination, category/topic/search filters)
+- `GET /api/gurus/:guruId/journal` — Public guru journal with collective patterns (public, pagination, pattern type filter)
+- `GET /api/gurus/:guruId/journal/my-votes` — Get user's votes on journal entries (auth required)
+- `POST /api/feedback` — Submit thumbs up/down on memory or pattern (auth required, toggles)
 
 ### Auth
 - Clerk middleware validates JWT tokens
@@ -86,7 +91,9 @@ pnpm workspace monorepo using TypeScript. Each package manages its own dependenc
 - `/marketplace` — Guru discovery page with search, category filters, sort, and responsive 3-col grid
 - `/guru/:slug` — Guru profile page with stats, description, topics, trust indicators, ratings, CTAs
 - `/create` — 6-step Guru creator wizard (Identity, Purpose, Intelligence, Memory, Pricing, Review) with auth gate
-- `/dashboard` — User subscriptions dashboard with Manage Billing link (auth required)
+- `/dashboard` — User subscriptions dashboard with Manage Billing link and Wisdom Feed links (auth required)
+- `/guru/:slug/wisdom` — Personal Wisdom Feed page for a subscribed guru (auth required, search, category filter, thumbs up/down)
+- `/guru/:slug/journal` — Public Guru Journal page showing collective patterns (public, pattern type filter, thumbs up/down for auth users)
 - `/sign-in`, `/sign-up` — Clerk auth pages
 
 ### Payments (Stripe)

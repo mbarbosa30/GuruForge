@@ -339,6 +339,81 @@ export interface UpdateBotTokenResponse {
   botName?: string | null;
 }
 
+export interface WisdomFeedItem {
+  id: number;
+  category: string;
+  summary: string;
+  displayTitle?: string | null;
+  topic?: string | null;
+  importance: number;
+  userVote?: string | null;
+  createdAt: string;
+  updatedAt: string;
+}
+
+export interface WisdomFeedResponse {
+  items: WisdomFeedItem[];
+  total: number;
+  page: number;
+  limit: number;
+  totalPages: number;
+}
+
+export interface JournalEntry {
+  id: number;
+  patternType: string;
+  publishTitle?: string | null;
+  redactedSummary: string;
+  frequency: number;
+  confidence: number;
+  sourceCount: number;
+  votesUp: number;
+  votesDown: number;
+  createdAt: string;
+  updatedAt: string;
+}
+
+export interface JournalResponse {
+  items: JournalEntry[];
+  total: number;
+  page: number;
+  limit: number;
+  totalPages: number;
+}
+
+export type JournalMyVotesResponseVotes = { [key: string]: string };
+
+export interface JournalMyVotesResponse {
+  votes: JournalMyVotesResponseVotes;
+}
+
+export type FeedbackInputTargetType =
+  (typeof FeedbackInputTargetType)[keyof typeof FeedbackInputTargetType];
+
+export const FeedbackInputTargetType = {
+  memory: "memory",
+  pattern: "pattern",
+} as const;
+
+export type FeedbackInputVote =
+  (typeof FeedbackInputVote)[keyof typeof FeedbackInputVote];
+
+export const FeedbackInputVote = {
+  up: "up",
+  down: "down",
+} as const;
+
+export interface FeedbackInput {
+  targetType: FeedbackInputTargetType;
+  targetId: number;
+  vote: FeedbackInputVote;
+}
+
+export interface FeedbackResult {
+  action: string;
+  vote?: string | null;
+}
+
 export type ListGurusParams = {
   /**
    * Filter by category slug
@@ -367,3 +442,17 @@ export const ListGurusSort = {
   price_desc: "price_desc",
   users: "users",
 } as const;
+
+export type GetWisdomFeedParams = {
+  category?: string;
+  topic?: string;
+  search?: string;
+  page?: number;
+  limit?: number;
+};
+
+export type GetGuruJournalParams = {
+  patternType?: string;
+  page?: number;
+  limit?: number;
+};

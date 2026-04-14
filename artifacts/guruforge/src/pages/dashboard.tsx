@@ -123,9 +123,17 @@ function DashboardContent() {
                     </Link>
                     <TelegramStatusBadge guruId={sub.guruId} guruName={sub.guruName} guruSlug={sub.guruSlug} />
                   </div>
-                  <p className="text-[12px] text-[#999] mt-0.5">
-                    Since {formatDate(sub.startedAt)}
-                  </p>
+                  <div className="flex items-center gap-3 mt-1">
+                    <p className="text-[12px] text-[#999]">
+                      Since {formatDate(sub.startedAt)}
+                    </p>
+                    <Link
+                      href={`/guru/${sub.guruSlug}/wisdom`}
+                      className="text-[11px] font-medium tracking-[0.04em] uppercase text-[#5a5aaa] no-underline hover:text-[#3a3a8a] transition-colors"
+                    >
+                      Wisdom Feed
+                    </Link>
+                  </div>
                 </div>
               </div>
               <div className="text-right">

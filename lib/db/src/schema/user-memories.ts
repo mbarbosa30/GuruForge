@@ -10,6 +10,8 @@ export const userMemoriesTable = pgTable("user_memories", {
   guruId: integer("guru_id").notNull().references(() => gurusTable.id),
   category: varchar("category", { length: 50 }).notNull(),
   summary: text("summary").notNull(),
+  displayTitle: varchar("display_title", { length: 200 }),
+  topic: varchar("topic", { length: 100 }),
   details: jsonb("details"),
   importance: real("importance").notNull().default(0.5),
   lastAccessedAt: timestamp("last_accessed_at", { withTimezone: true }).defaultNow().notNull(),

@@ -296,6 +296,25 @@ export default function GuruProfile() {
       )}
 
       <section className="mb-10">
+        <div className="flex flex-col sm:flex-row gap-3">
+          <Link
+            href={`/guru/${slug}/journal`}
+            className="text-[13px] font-medium tracking-[0.04em] uppercase text-[#555] bg-white px-7 py-3 border border-[#ddd] hover:border-[#999] hover:text-[#333] transition-colors no-underline text-center"
+          >
+            View Guru Journal
+          </Link>
+          {isSubscribed && (
+            <Link
+              href={`/guru/${slug}/wisdom`}
+              className="text-[13px] font-medium tracking-[0.04em] uppercase text-[#5a5aaa] bg-[#f0f0ff] px-7 py-3 border border-[#c8c8e8] hover:border-[#9a9aca] transition-colors no-underline text-center"
+            >
+              My Wisdom Feed
+            </Link>
+          )}
+        </div>
+      </section>
+
+      <section className="mb-10">
         <p className="text-[11px] font-medium tracking-[0.12em] uppercase text-[#888] mb-4">Trust & capabilities</p>
         <div className="grid grid-cols-1 sm:grid-cols-3 gap-px bg-[#e0e0e0]">
           <div className="bg-white px-5 py-4">

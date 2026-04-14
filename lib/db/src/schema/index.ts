@@ -11,3 +11,4 @@ export * from "./user-memories";
 export * from "./collective-patterns";
 export * from "./contribution-scores";
 export * from "./usage-logs";
+export * from "./feedback";

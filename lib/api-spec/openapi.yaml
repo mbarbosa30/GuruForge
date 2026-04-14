@@ -22,6 +22,8 @@ tags:
     description: Subscription operations
   - name: telegram
     description: Telegram connection operations
+  - name: wisdom
+    description: Wisdom feed and journal operations
 paths:
   /healthz:
     get:
@@ -509,6 +511,132 @@ paths:
                 $ref: "#/components/schemas/ErrorResponse"
         "403":
           description: Forbidden
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ErrorResponse"
+  /gurus/{guruId}/wisdom-feed:
+    get:
+      operationId: getWisdomFeed
+      tags: [wisdom]
+      summary: Get personal wisdom feed for a guru
+      parameters:
+        - name: guruId
+          in: path
+          required: true
+          schema:
+            type: integer
+        - name: category
+          in: query
+          schema:
+            type: string
+        - name: topic
+          in: query
+          schema:
+            type: string
+        - name: search
+          in: query
+          schema:
+            type: string
+        - name: page
+          in: query
+          schema:
+            type: integer
+            default: 1
+        - name: limit
+          in: query
+          schema:
+            type: integer
+            default: 20
+      responses:
+        "200":
+          description: Wisdom feed entries
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/WisdomFeedResponse"
+        "401":
+          description: Unauthorized
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ErrorResponse"
+  /gurus/{guruId}/journal:
+    get:
+      operationId: getGuruJournal
+      tags: [wisdom]
+      summary: Get public guru journal
+      parameters:
+        - name: guruId
+          in: path
+          required: true
+          schema:
+            type: integer
+        - name: patternType
+          in: query
+          schema:
+            type: string
+        - name: page
+          in: query
+          schema:
+            type: integer
+            default: 1
+        - name: limit
+          in: query
+          schema:
+            type: integer
+            default: 20
+      responses:
+        "200":
+          description: Journal entries
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/JournalResponse"
+  /gurus/{guruId}/journal/my-votes:
+    get:
+      operationId: getJournalMyVotes
+      tags: [wisdom]
+      summary: Get current user votes on journal entries
+      parameters:
+        - name: guruId
+          in: path
+          required: true
+          schema:
+            type: integer
+      responses:
+        "200":
+          description: User votes
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/JournalMyVotesResponse"
+        "401":
+          description: Unauthorized
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ErrorResponse"
+  /feedback:
+    post:
+      operationId: submitFeedback
+      tags: [wisdom]
+      summary: Submit thumbs up/down feedback
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/FeedbackInput"
+      responses:
+        "200":
+          description: Feedback result
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/FeedbackResult"
+        "401":
+          description: Unauthorized
           content:
             application/json:
               schema:
@@ -1113,3 +1241,151 @@ components:
           nullable: true
       required:
         - success
+    WisdomFeedItem:
+      type: object
+      properties:
+        id:
+          type: integer
+        category:
+          type: string
+        summary:
+          type: string
+        displayTitle:
+          type: string
+          nullable: true
+        topic:
+          type: string
+          nullable: true
+        importance:
+          type: number
+        userVote:
+          type: string
+          nullable: true
+        createdAt:
+          type: string
+          format: date-time
+        updatedAt:
+          type: string
+          format: date-time
+      required:
+        - id
+        - category
+        - summary
+        - importance
+        - createdAt
+        - updatedAt
+    WisdomFeedResponse:
+      type: object
+      properties:
+        items:
+          type: array
+          items:
+            $ref: "#/components/schemas/WisdomFeedItem"
+        total:
+          type: integer
+        page:
+          type: integer
+        limit:
+          type: integer
+        totalPages:
+          type: integer
+      required:
+        - items
+        - total
+        - page
+        - limit
+        - totalPages
+    JournalEntry:
+      type: object
+      properties:
+        id:
+          type: integer
+        patternType:
+          type: string
+        publishTitle:
+          type: string
+          nullable: true
+        redactedSummary:
+          type: string
+        frequency:
+          type: integer
+        confidence:
+          type: number
+        sourceCount:
+          type: integer
+        votesUp:
+          type: integer
+        votesDown:
+          type: integer
+        createdAt:
+          type: string
+          format: date-time
+        updatedAt:
+          type: string
+          format: date-time
+      required:
+        - id
+        - patternType
+        - redactedSummary
+        - frequency
+        - confidence
+        - sourceCount
+        - votesUp
+        - votesDown
+        - createdAt
+        - updatedAt
+    JournalResponse:
+      type: object
+      properties:
+        items:
+          type: array
+          items:
+            $ref: "#/components/schemas/JournalEntry"
+        total:
+          type: integer
+        page:
+          type: integer
+        limit:
+          type: integer
+        totalPages:
+          type: integer
+      required:
+        - items
+        - total
+        - page
+        - limit
+        - totalPages
+    JournalMyVotesResponse:
+      type: object
+      properties:
+        votes:
+          type: object
+          additionalProperties:
+            type: string
+      required:
+        - votes
+    FeedbackInput:
+      type: object
+      properties:
+        targetType:
+          type: string
+          enum: [memory, pattern]
+        targetId:
+          type: integer
+        vote:
+          type: string
+          enum: [up, down]
+      required:
+        - targetType
+        - targetId
+        - vote
+    FeedbackResult:
+      type: object
+      properties:
+        action:
+          type: string
+        vote:
+          type: string
+          nullable: true
+      required:
+        - action

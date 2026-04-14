@@ -6,6 +6,7 @@ import usersRouter from "./users";
 import ratingsRouter from "./ratings";
 import subscriptionsRouter from "./subscriptions";
 import telegramRouter from "./telegram";
+import wisdomRouter from "./wisdom";
 
 const router: IRouter = Router();
 
@@ -16,5 +17,6 @@ router.use(usersRouter);
 router.use(ratingsRouter);
 router.use(subscriptionsRouter);
 router.use(telegramRouter);
+router.use(wisdomRouter);
 
 export default router;

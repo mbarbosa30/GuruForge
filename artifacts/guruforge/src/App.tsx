@@ -11,6 +11,8 @@ import Marketplace from "@/pages/marketplace";
 import GuruProfile from "@/pages/guru-profile";
 import CreateGuru from "@/pages/create-guru";
 import Dashboard from "@/pages/dashboard";
+import WisdomFeed from "@/pages/wisdom-feed";
+import GuruJournal from "@/pages/guru-journal";
 import NotFound from "@/pages/not-found";
 
 const clerkPubKey = import.meta.env.VITE_CLERK_PUBLISHABLE_KEY;
@@ -82,11 +84,21 @@ function LayoutDashboard() {
   return <Layout><Dashboard /></Layout>;
 }
 
+function LayoutWisdomFeed() {
+  return <Layout><WisdomFeed /></Layout>;
+}
+
+function LayoutGuruJournal() {
+  return <Layout><GuruJournal /></Layout>;
+}
+
 function Router() {
   return (
     <Switch>
       <Route path="/" component={Home} />
       <Route path="/marketplace" component={LayoutMarketplace} />
+      <Route path="/guru/:slug/wisdom" component={LayoutWisdomFeed} />
+      <Route path="/guru/:slug/journal" component={LayoutGuruJournal} />
       <Route path="/guru/:slug" component={LayoutGuruProfile} />
       <Route path="/create" component={CreateGuru} />
       <Route path="/dashboard" component={LayoutDashboard} />

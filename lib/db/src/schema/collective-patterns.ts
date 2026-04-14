@@ -8,6 +8,8 @@ export const collectivePatternsTable = pgTable("collective_patterns", {
   guruId: integer("guru_id").notNull().references(() => gurusTable.id),
   patternType: varchar("pattern_type", { length: 50 }).notNull(),
   summary: text("summary").notNull(),
+  publishTitle: varchar("publish_title", { length: 300 }),
+  redactedSummary: text("redacted_summary"),
   frequency: integer("frequency").notNull().default(1),
   confidence: real("confidence").notNull().default(0.5),
   sourceCount: integer("source_count").notNull().default(1),

@@ -388,3 +388,104 @@ export const UpdateTelegramBotTokenResponse = zod.object({
   botUsername: zod.string().nullish(),
   botName: zod.string().nullish(),
 });
+
+/**
+ * @summary Get personal wisdom feed for a guru
+ */
+export const GetWisdomFeedParams = zod.object({
+  guruId: zod.coerce.number(),
+});
+
+export const getWisdomFeedQueryPageDefault = 1;
+export const getWisdomFeedQueryLimitDefault = 20;
+
+export const GetWisdomFeedQueryParams = zod.object({
+  category: zod.coerce.string().optional(),
+  topic: zod.coerce.string().optional(),
+  search: zod.coerce.string().optional(),
+  page: zod.coerce.number().default(getWisdomFeedQueryPageDefault),
+  limit: zod.coerce.number().default(getWisdomFeedQueryLimitDefault),
+});
+
+export const GetWisdomFeedResponse = zod.object({
+  items: zod.array(
+    zod.object({
+      id: zod.number(),
+      category: zod.string(),
+      summary: zod.string(),
+      displayTitle: zod.string().nullish(),
+      topic: zod.string().nullish(),
+      importance: zod.number(),
+      userVote: zod.string().nullish(),
+      createdAt: zod.coerce.date(),
+      updatedAt: zod.coerce.date(),
+    }),
+  ),
+  total: zod.number(),
+  page: zod.number(),
+  limit: zod.number(),
+  totalPages: zod.number(),
+});
+
+/**
+ * @summary Get public guru journal
+ */
+export const GetGuruJournalParams = zod.object({
+  guruId: zod.coerce.number(),
+});
+
+export const getGuruJournalQueryPageDefault = 1;
+export const getGuruJournalQueryLimitDefault = 20;
+
+export const GetGuruJournalQueryParams = zod.object({
+  patternType: zod.coerce.string().optional(),
+  page: zod.coerce.number().default(getGuruJournalQueryPageDefault),
+  limit: zod.coerce.number().default(getGuruJournalQueryLimitDefault),
+});
+
+export const GetGuruJournalResponse = zod.object({
+  items: zod.array(
+    zod.object({
+      id: zod.number(),
+      patternType: zod.string(),
+      publishTitle: zod.string().nullish(),
+      redactedSummary: zod.string(),
+      frequency: zod.number(),
+      confidence: zod.number(),
+      sourceCount: zod.number(),
+      votesUp: zod.number(),
+      votesDown: zod.number(),
+      createdAt: zod.coerce.date(),
+      updatedAt: zod.coerce.date(),
+    }),
+  ),
+  total: zod.number(),
+  page: zod.number(),
+  limit: zod.number(),
+  totalPages: zod.number(),
+});
+
+/**
+ * @summary Get current user votes on journal entries
+ */
+export const GetJournalMyVotesParams = zod.object({
+  guruId: zod.coerce.number(),
+});
+
+export const GetJournalMyVotesResponse = zod.object({
+  votes: zod.record(zod.string(), zod.string()),
+});
+
+/**
+ * @summary Submit thumbs up/down feedback
+ */
+export const SubmitFeedbackBody = zod.object({
+  targetType: zod.enum(["memory", "pattern"]),
+  targetId: zod.number(),
+  vote: zod.enum(["up", "down"]),
+});
+
+export const SubmitFeedbackResponse = zod.object({
+  action: zod.string(),
+  vote: zod.string().nullish(),
+});
