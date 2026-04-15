@@ -456,7 +456,12 @@ router.get("/gurus/:guruId/leaderboard/creator", requireAuth, async (req: AuthRe
       .where(eq(gurusTable.id, guruId))
       .limit(1);
 
-    if (!guru || guru.creatorId !== req.dbUserId) {
+    if (!guru) {
+      res.status(404).json({ error: "Guru not found" });
+      return;
+    }
+
+    if (guru.creatorId !== req.dbUserId) {
       res.status(403).json({ error: "Only the guru creator can view this data" });
       return;
     }
@@ -577,7 +582,12 @@ router.get("/gurus/:guruId/leaderboard/rewards", requireAuth, async (req: AuthRe
       .where(eq(gurusTable.id, guruId))
       .limit(1);
 
-    if (!guru || guru.creatorId !== req.dbUserId) {
+    if (!guru) {
+      res.status(404).json({ error: "Guru not found" });
+      return;
+    }
+
+    if (guru.creatorId !== req.dbUserId) {
       res.status(403).json({ error: "Only the guru creator can view reward data" });
       return;
     }
