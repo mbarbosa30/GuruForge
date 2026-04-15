@@ -83,6 +83,7 @@ The frontend follows a strict neo-minimal design language. Please adhere to thes
 - **Font-weight 300** for headlines, semibold for labels
 - **Uppercase micro-labels** — `text-[11px] font-medium tracking-[0.12em] uppercase`
 - **No link underlines** — use border-bottom for active states
+- **No emojis** — do not use emojis in product UI or content
 - **Color palette** — `#111` primary text, `#555`/`#666` body text, `#777`/`#888`/`#999` secondary, `#e0e0e0` borders
 
 ## Database Changes

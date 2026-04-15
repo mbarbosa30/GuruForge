@@ -22,6 +22,15 @@
 
 GuruForge is the infrastructure for a new category: domain-focused AI agents ("Gurus") delivered via Telegram that remember every user personally, synthesize anonymized patterns across the entire community, and reward the people who make the collective intelligence possible through on-chain token economics.
 
+## At a Glance
+
+| | |
+|---|---|
+| **7 Domain Gurus** | Fundraising, Operations, DeFi, Tokenomics, Leadership, Research, Audience Growth |
+| **Collective Intelligence** | Every conversation makes every Guru smarter through anonymized pattern synthesis |
+| **Token Economics** | Contributors earn on-chain token rewards proportional to their wisdom contributions |
+| **Private by Default** | All conversations are 1-on-1 on Telegram with full PII redaction before collective learning |
+
 ## How It Works
 
 ```
@@ -188,6 +197,32 @@ pnpm run build                                  # Typecheck + build everything
 pnpm --filter @workspace/api-spec run codegen   # Regenerate API hooks from OpenAPI
 pnpm --filter @workspace/db run push            # Push schema changes to DB
 ```
+
+## Screenshots
+
+<p align="center">
+  <em>Marketplace — discover and subscribe to domain-focused Gurus</em>
+</p>
+
+<!-- TODO: Add marketplace screenshot -->
+
+<p align="center">
+  <em>How It Works — the intelligence stack and token economics explained</em>
+</p>
+
+<!-- TODO: Add how-it-works screenshot -->
+
+<p align="center">
+  <em>Wisdom Feed — collective insights surfaced across all Gurus</em>
+</p>
+
+<!-- TODO: Add wisdom-feed screenshot -->
+
+<p align="center">
+  <em>Telegram — private 1-on-1 conversation with a Guru</em>
+</p>
+
+<!-- TODO: Add telegram-conversation screenshot -->
 
 ## API Overview
 
