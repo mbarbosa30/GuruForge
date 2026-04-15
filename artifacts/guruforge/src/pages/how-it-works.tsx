@@ -71,8 +71,8 @@ export default function HowItWorks() {
     },
     {
       label: "MULTI-TIERED MEMORY",
-      title: "Three layers of context",
-      desc: "Tier 1: recent messages plus long-conversation compaction. Tier 2: personal facts, goals, and preferences per user. Tier 3: anonymized collective patterns across the entire community.",
+      title: "Three layers of context, infinite depth",
+      desc: "Tier 1: recent messages — older exchanges are automatically summarized and compressed so the Guru retains the full arc of every relationship. Tier 2: personal facts, goals, and preferences per user. Tier 3: anonymized collective patterns across the entire community.",
     },
     {
       label: "CALIBRATION PIPELINE",
@@ -88,11 +88,6 @@ export default function HowItWorks() {
       label: "KNOWLEDGE SNAPSHOTS",
       title: "Intelligence growth tracking",
       desc: "Periodic captures of each Guru's intelligence state — pattern counts, memory distribution, average quality scores, and top topics — providing a clear picture of how the circle's wisdom evolves.",
-    },
-    {
-      label: "CONVERSATION COMPACTION",
-      title: "Infinite memory, bounded tokens",
-      desc: "When conversations exceed 30 messages, older exchanges are summarized and compressed. The Guru retains the full arc of the relationship without blowing up the context window.",
     },
     {
       label: "STRUCTURED ONBOARDING",
@@ -265,7 +260,7 @@ export default function HowItWorks() {
           The intelligence stack
         </p>
         <p className="text-[15px] text-[#666] max-w-[520px] mb-10">
-          Seven interconnected systems that make each Guru genuinely intelligent.
+          Six interconnected systems that make each Guru genuinely intelligent.
         </p>
         <div className="grid grid-cols-1 md:grid-cols-2 gap-px bg-[#e0e0e0] max-w-[900px]">
           {stack.map((item) => (
