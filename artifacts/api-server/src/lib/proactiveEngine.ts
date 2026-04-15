@@ -400,10 +400,13 @@ export function startProactiveScheduler(): void {
 
     try {
       const cutoff = new Date(Date.now() - 24 * 60 * 60 * 1000);
-      await db
+      const deleted = await db
         .delete(processedTelegramUpdatesTable)
-        .where(lte(processedTelegramUpdatesTable.processedAt, cutoff));
-      logger.info("Cleaned up old processed Telegram update records");
+        .where(lte(processedTelegramUpdatesTable.processedAt, cutoff))
+        .returning({ updateId: processedTelegramUpdatesTable.updateId });
+      if (deleted.length > 0) {
+        logger.info({ count: deleted.length }, "Cleaned up old processed Telegram update records");
+      }
     } catch (cleanupErr) {
       logger.error({ err: cleanupErr }, "Failed to clean up processed Telegram updates");
     }
