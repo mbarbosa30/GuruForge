@@ -14,6 +14,8 @@ export const telegramConnectionsTable = pgTable("telegram_connections", {
   telegramChatId: varchar("telegram_chat_id", { length: 64 }).notNull(),
   status: varchar("status", { length: 20 }).notNull().default("active"),
   contributesToWisdom: boolean("contributes_to_wisdom").notNull().default(true),
+  onboardingCompleted: boolean("onboarding_completed").notNull().default(false),
+  onboardingStep: integer("onboarding_step").notNull().default(0),
   connectedAt: timestamp("connected_at", { withTimezone: true }).defaultNow().notNull(),
 }, (table) => [
   uniqueIndex("telegram_conn_user_guru_idx").on(table.userId, table.guruId),

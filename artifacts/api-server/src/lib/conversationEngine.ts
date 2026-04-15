@@ -15,6 +15,11 @@ import { logUsage } from "./usageLogger";
 import { runTriage, type TriageResult } from "./triagePipeline";
 import { runCalibration } from "./calibrationPipeline";
 import { maybeRecalculateScores } from "./scoreCalculator";
+import {
+  getOnboardingState,
+  generateWelcomeWithFirstQuestion,
+  handleOnboardingResponse,
+} from "./onboardingManager";
 
 interface MemoryPolicyFlags {
   personalMemory: boolean;
@@ -207,15 +212,46 @@ export async function handleCodeVerification(
   }
 
   const [guru] = await db
-    .select({ name: gurusTable.name })
+    .select()
     .from(gurusTable)
     .where(eq(gurusTable.id, guruId))
     .limit(1);
 
   const guruName = guru?.name ?? "your Guru";
+
+  let userName: string | null = null;
+  try {
+    const [user] = await db
+      .select({ name: usersTable.name })
+      .from(usersTable)
+      .where(eq(usersTable.id, codeEntry.userId))
+      .limit(1);
+    userName = user?.name || null;
+  } catch {}
+
+  let welcomeMessage: string;
+  try {
+    welcomeMessage = await generateWelcomeWithFirstQuestion(
+      {
+        id: guru.id,
+        name: guru.name,
+        description: guru.description,
+        tagline: guru.tagline,
+        personalityStyle: guru.personalityStyle,
+        topics: guru.topics,
+        modelTier: guru.modelTier,
+        priceCents: guru.priceCents,
+      },
+      userName,
+    );
+  } catch (err) {
+    console.error("Failed to generate onboarding welcome:", err);
+    welcomeMessage = `Connected! I'm ${guruName}. I remember everything and I learn from everyone in this private community. To get started, could you tell me a bit about your background and experience in my area of focus?`;
+  }
+
   return {
     success: true,
-    message: `Connected! I am now your ${guruName}. I remember everything and I'm learning from everyone in this private community. How can I help you today?`,
+    message: welcomeMessage,
   };
 }
 
@@ -279,6 +315,45 @@ export async function handleTelegramMessage(
 
     if (!activeSub) {
       return "Your subscription to this Guru is not active. Please visit GuruForge to resubscribe.";
+    }
+  }
+
+  const onboarding = getOnboardingState(connection);
+  if (!onboarding.completed) {
+    try {
+      let userName: string | null = null;
+      try {
+        const [user] = await db
+          .select({ name: usersTable.name })
+          .from(usersTable)
+          .where(eq(usersTable.id, connection.userId))
+          .limit(1);
+        userName = user?.name || null;
+      } catch {}
+
+      return await handleOnboardingResponse(
+        {
+          id: guru.id,
+          name: guru.name,
+          description: guru.description,
+          tagline: guru.tagline,
+          personalityStyle: guru.personalityStyle,
+          topics: guru.topics,
+          modelTier: guru.modelTier,
+          priceCents: guru.priceCents,
+        },
+        connection.userId,
+        connection.id,
+        onboarding.step,
+        text,
+        userName,
+      );
+    } catch (err) {
+      console.error("Onboarding flow error, falling through to normal conversation:", err);
+      await db
+        .update(telegramConnectionsTable)
+        .set({ onboardingCompleted: true })
+        .where(eq(telegramConnectionsTable.id, connection.id));
     }
   }
 
