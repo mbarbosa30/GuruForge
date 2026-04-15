@@ -36,6 +36,7 @@ interface FormData {
   memoryPersonal: boolean;
   memoryShared: boolean;
   introEnabled: boolean;
+  proactiveCadence: "none" | "daily" | "weekly" | "biweekly";
   priceCents: number;
   freeTrial: boolean;
 }
@@ -56,6 +57,7 @@ const INITIAL: FormData = {
   memoryPersonal: true,
   memoryShared: true,
   introEnabled: false,
+  proactiveCadence: "none",
   priceCents: 2900,
   freeTrial: false,
 };
@@ -339,6 +341,13 @@ function Toggle({ checked, onChange, label, desc, testId }: {
   );
 }
 
+const CADENCE_OPTIONS = [
+  { value: "none", label: "Off", desc: "No proactive messages" },
+  { value: "daily", label: "Daily", desc: "Check in once per day" },
+  { value: "weekly", label: "Weekly", desc: "Check in once per week" },
+  { value: "biweekly", label: "Biweekly", desc: "Check in every two weeks" },
+] as const;
+
 function StepMemory({ data, onChange }: { data: FormData; onChange: (d: Partial<FormData>) => void }) {
   return (
     <div className="space-y-6 max-w-[560px]">
@@ -369,6 +378,24 @@ function StepMemory({ data, onChange }: { data: FormData; onChange: (d: Partial<
             desc="Suggest warm introductions between users when relevant (consent-based)."
             testId="toggle-intro"
           />
+        </div>
+      </div>
+      <div>
+        <FieldLabel>Proactive engagement</FieldLabel>
+        <p className="text-[13px] text-[#777] mb-4 leading-[1.6]">
+          Your Guru can proactively reach out to users with personalized check-ins, wisdom nudges, and relevant insights based on their context and community patterns.
+        </p>
+        <div className="grid grid-cols-2 sm:grid-cols-4 gap-px bg-[#e0e0e0]">
+          {CADENCE_OPTIONS.map((opt) => (
+            <OptionCard
+              key={opt.value}
+              selected={data.proactiveCadence === opt.value}
+              onClick={() => onChange({ proactiveCadence: opt.value })}
+              label={opt.label}
+              desc={opt.desc}
+              testId={`option-cadence-${opt.value}`}
+            />
+          ))}
         </div>
       </div>
     </div>
@@ -453,6 +480,7 @@ function StepReview({ data, categories }: { data: FormData; categories: Category
         <ReviewRow label="Personal memory" value={data.memoryPersonal ? "On" : "Off"} />
         <ReviewRow label="Shared learning" value={data.memoryShared ? "On" : "Off"} />
         <ReviewRow label="Introductions" value={data.introEnabled ? "Enabled" : "Disabled"} />
+        <ReviewRow label="Proactive check-ins" value={data.proactiveCadence === "none" ? "Off" : data.proactiveCadence.charAt(0).toUpperCase() + data.proactiveCadence.slice(1)} />
         <ReviewRow label="Price" value={data.priceCents === 0 ? "Free" : `$${(data.priceCents / 100).toFixed(2)}/month`} />
         {data.priceCents > 0 && <ReviewRow label="Free trial" value={data.freeTrial ? "Enabled" : "Disabled"} />}
       </div>
@@ -584,6 +612,7 @@ function CreateGuruWizard() {
       modelTier: data.modelTier,
       memoryPolicy: buildMemoryPolicy(data),
       introEnabled: data.introEnabled,
+      proactiveCadence: data.proactiveCadence,
     };
 
     createMutation.mutate({ data: body });

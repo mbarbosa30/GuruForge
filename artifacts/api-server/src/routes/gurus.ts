@@ -185,7 +185,7 @@ router.post("/gurus", requireAuth, async (req: AuthRequest, res) => {
       return;
     }
 
-    const { name, tagline, description, categoryId, avatarUrl, priceCents, priceInterval, topics, personalityStyle, modelTier, memoryPolicy, introEnabled } = parsed.data;
+    const { name, tagline, description, categoryId, avatarUrl, priceCents, priceInterval, topics, personalityStyle, modelTier, memoryPolicy, introEnabled, proactiveCadence } = parsed.data;
 
     let slug = slugify(name);
     const existing = await db.select({ id: gurusTable.id }).from(gurusTable).where(eq(gurusTable.slug, slug)).limit(1);
@@ -209,6 +209,7 @@ router.post("/gurus", requireAuth, async (req: AuthRequest, res) => {
       modelTier: modelTier ?? "gpt",
       memoryPolicy: memoryPolicy ?? null,
       introEnabled: introEnabled ?? false,
+      proactiveCadence: proactiveCadence ?? "none",
     }).returning();
 
     await db.update(usersTable).set({ role: "creator" }).where(eq(usersTable.id, req.dbUserId));
@@ -261,6 +262,7 @@ router.patch("/gurus/:id", requireAuth, async (req: AuthRequest, res) => {
     if (data.modelTier !== undefined) updates.modelTier = data.modelTier;
     if (data.memoryPolicy !== undefined) updates.memoryPolicy = data.memoryPolicy;
     if (data.introEnabled !== undefined) updates.introEnabled = data.introEnabled;
+    if (data.proactiveCadence !== undefined) updates.proactiveCadence = data.proactiveCadence;
     if (data.telegramBotToken !== undefined) updates.telegramBotToken = data.telegramBotToken;
 
     const [updated] = await db.update(gurusTable).set(updates).where(eq(gurusTable.id, guruId)).returning();

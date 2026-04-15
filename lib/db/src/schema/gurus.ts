@@ -9,6 +9,8 @@ export const modelTierEnum = ["grok", "gpt"] as const;
 export const personalityStyleEnum = ["professional", "friendly", "direct", "academic"] as const;
 export const priceIntervalEnum = ["monthly", "yearly"] as const;
 
+export const proactiveCadenceEnum = ["none", "daily", "weekly", "biweekly"] as const;
+
 export const gurusTable = pgTable("gurus", {
   id: serial("id").primaryKey(),
   creatorId: integer("creator_id").notNull().references(() => usersTable.id),
@@ -26,6 +28,7 @@ export const gurusTable = pgTable("gurus", {
   modelTier: varchar("model_tier", { length: 20 }).default("gpt"),
   memoryPolicy: text("memory_policy"),
   introEnabled: boolean("intro_enabled").default(false),
+  proactiveCadence: varchar("proactive_cadence", { length: 20 }).notNull().default("none"),
   wisdomScore: real("wisdom_score").default(0),
   satisfactionScore: real("satisfaction_score").default(0),
   userCount: integer("user_count").default(0),

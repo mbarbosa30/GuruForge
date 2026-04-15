@@ -153,6 +153,16 @@ export const CreateGuruInputModelTier = {
   gpt: "gpt",
 } as const;
 
+export type CreateGuruInputProactiveCadence =
+  (typeof CreateGuruInputProactiveCadence)[keyof typeof CreateGuruInputProactiveCadence];
+
+export const CreateGuruInputProactiveCadence = {
+  none: "none",
+  daily: "daily",
+  weekly: "weekly",
+  biweekly: "biweekly",
+} as const;
+
 export interface CreateGuruInput {
   name: string;
   tagline?: string;
@@ -166,6 +176,7 @@ export interface CreateGuruInput {
   modelTier?: CreateGuruInputModelTier;
   memoryPolicy?: string;
   introEnabled?: boolean;
+  proactiveCadence?: CreateGuruInputProactiveCadence;
 }
 
 export type UpdateGuruInputStatus =
@@ -203,6 +214,16 @@ export const UpdateGuruInputModelTier = {
   gpt: "gpt",
 } as const;
 
+export type UpdateGuruInputProactiveCadence =
+  (typeof UpdateGuruInputProactiveCadence)[keyof typeof UpdateGuruInputProactiveCadence];
+
+export const UpdateGuruInputProactiveCadence = {
+  none: "none",
+  daily: "daily",
+  weekly: "weekly",
+  biweekly: "biweekly",
+} as const;
+
 export interface UpdateGuruInput {
   name?: string;
   tagline?: string;
@@ -217,6 +238,7 @@ export interface UpdateGuruInput {
   modelTier?: UpdateGuruInputModelTier;
   memoryPolicy?: string;
   introEnabled?: boolean;
+  proactiveCadence?: UpdateGuruInputProactiveCadence;
   telegramBotToken?: string;
 }
 

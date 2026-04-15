@@ -8,6 +8,7 @@
 import type { CreateGuruInputModelTier } from "./createGuruInputModelTier";
 import type { CreateGuruInputPersonalityStyle } from "./createGuruInputPersonalityStyle";
 import type { CreateGuruInputPriceInterval } from "./createGuruInputPriceInterval";
+import type { CreateGuruInputProactiveCadence } from "./createGuruInputProactiveCadence";
 
 export interface CreateGuruInput {
   name: string;
@@ -22,4 +23,5 @@ export interface CreateGuruInput {
   modelTier?: CreateGuruInputModelTier;
   memoryPolicy?: string;
   introEnabled?: boolean;
+  proactiveCadence?: CreateGuruInputProactiveCadence;
 }

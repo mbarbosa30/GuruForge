@@ -38,12 +38,12 @@ pnpm workspace monorepo using TypeScript. Each package manages its own dependenc
 ### Database Schema
 - `users` — id, privy_id, email, name, avatar_url, role (user/creator/admin), stripe_customer_id
 - `categories` — id, name, slug, description, icon, display_order
-- `gurus` — id, creator_id (FK users), name, slug, tagline, description, category_id (FK categories), avatar_url, status, price_cents, price_interval, topics, personality_style, model_tier, memory_policy, intro_enabled, wisdom_score, satisfaction_score, user_count, stripe_product_id, stripe_price_id, telegram_bot_token
+- `gurus` — id, creator_id (FK users), name, slug, tagline, description, category_id (FK categories), avatar_url, status, price_cents, price_interval, topics, personality_style, model_tier, memory_policy, intro_enabled, proactive_cadence (none/daily/weekly/biweekly, default none), wisdom_score, satisfaction_score, user_count, stripe_product_id, stripe_price_id, telegram_bot_token
 - `subscriptions` — id, user_id, guru_id, status, started_at, expires_at, stripe_subscription_id
 - `guru_ratings` — id, user_id, guru_id, rating (1-5), comment (unique constraint on user_id + guru_id)
 - `conversations` — id, user_id, guru_id, title, message_count, total_input_tokens, total_output_tokens, last_message_at, status
 - `messages` — id, conversation_id, role (user/assistant/system), content, input_tokens, output_tokens
-- `telegram_connections` — id, user_id, guru_id, telegram_user_id, telegram_chat_id, status, contributes_to_wisdom (bool, default true), connected_at (unique per user+guru, unique per guru+telegram_user_id)
+- `telegram_connections` — id, user_id, guru_id, telegram_user_id, telegram_chat_id, status, contributes_to_wisdom (bool, default true), onboarding_completed, onboarding_step, last_proactive_at (nullable timestamp), connected_at (unique per user+guru, unique per guru+telegram_user_id)
 - `connection_codes` — id, user_id, guru_id, code, expires_at, used
 - `user_memories` — id, user_id, guru_id, category (goals/preferences/history/decisions/context), summary, display_title, topic, details (jsonb), importance (0-1), last_accessed_at, created_at, updated_at
 - `collective_patterns` — id, guru_id, pattern_type (common_questions/successful_strategies/pitfalls/trends), summary, publish_title, redacted_summary, frequency, confidence (0-1), source_count, created_at, updated_at

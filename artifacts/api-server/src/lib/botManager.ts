@@ -121,6 +121,19 @@ export async function setupWebhook(guruId: number, webhookUrl: string): Promise<
   }
 }
 
+export async function sendBotMessage(guruId: number, chatId: string, text: string): Promise<boolean> {
+  const entry = activeBots.get(guruId);
+  if (!entry) return false;
+
+  try {
+    await entry.bot.api.sendMessage(chatId, text);
+    return true;
+  } catch (err) {
+    logger.error({ err, guruId, chatId }, "Failed to send proactive message");
+    return false;
+  }
+}
+
 export async function clearWebhook(guruId: number): Promise<boolean> {
   const entry = activeBots.get(guruId);
   if (!entry) return false;

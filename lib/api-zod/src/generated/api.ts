@@ -89,6 +89,7 @@ export const CreateGuruBody = zod.object({
   modelTier: zod.enum(["grok", "gpt"]).optional(),
   memoryPolicy: zod.string().optional(),
   introEnabled: zod.boolean().optional(),
+  proactiveCadence: zod.enum(["none", "daily", "weekly", "biweekly"]).optional(),
 });
 
 /**
@@ -150,6 +151,7 @@ export const UpdateGuruBody = zod.object({
   modelTier: zod.enum(["grok", "gpt"]).optional(),
   memoryPolicy: zod.string().optional(),
   introEnabled: zod.boolean().optional(),
+  proactiveCadence: zod.enum(["none", "daily", "weekly", "biweekly"]).optional(),
   telegramBotToken: zod.string().optional(),
 });
 

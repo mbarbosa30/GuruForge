@@ -8,6 +8,7 @@
 import type { UpdateGuruInputModelTier } from "./updateGuruInputModelTier";
 import type { UpdateGuruInputPersonalityStyle } from "./updateGuruInputPersonalityStyle";
 import type { UpdateGuruInputPriceInterval } from "./updateGuruInputPriceInterval";
+import type { UpdateGuruInputProactiveCadence } from "./updateGuruInputProactiveCadence";
 import type { UpdateGuruInputStatus } from "./updateGuruInputStatus";
 
 export interface UpdateGuruInput {
@@ -24,5 +25,6 @@ export interface UpdateGuruInput {
   modelTier?: UpdateGuruInputModelTier;
   memoryPolicy?: string;
   introEnabled?: boolean;
+  proactiveCadence?: UpdateGuruInputProactiveCadence;
   telegramBotToken?: string;
 }

@@ -3,6 +3,7 @@ import { getStripeSync } from "./lib/stripeClient";
 import app from "./app";
 import { logger } from "./lib/logger";
 import { startAllPublishedBots } from "./lib/botManager";
+import { startProactiveScheduler } from "./lib/proactiveEngine";
 
 process.on("unhandledRejection", (reason) => {
   logger.error({ err: reason }, "Unhandled rejection");
@@ -63,6 +64,9 @@ app.listen(port, (err) => {
   logger.info({ port }, "Server listening");
 
   startAllPublishedBots()
-    .then(() => logger.info("Telegram bots initialized"))
+    .then(() => {
+      logger.info("Telegram bots initialized");
+      startProactiveScheduler();
+    })
     .catch((err: unknown) => logger.error({ err }, "Failed to start Telegram bots"));
 });

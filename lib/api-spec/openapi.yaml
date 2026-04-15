@@ -973,6 +973,9 @@ components:
           type: string
         introEnabled:
           type: boolean
+        proactiveCadence:
+          type: string
+          enum: [none, daily, weekly, biweekly]
       required:
         - name
     UpdateGuruInput:
@@ -1010,6 +1013,9 @@ components:
           type: string
         introEnabled:
           type: boolean
+        proactiveCadence:
+          type: string
+          enum: [none, daily, weekly, biweekly]
         telegramBotToken:
           type: string
     User:
