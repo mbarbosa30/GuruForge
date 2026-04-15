@@ -1931,12 +1931,15 @@ components:
           type: array
           items:
             type: string
+        failedCount:
+          type: integer
       required:
         - distributionId
         - status
         - recipientCount
         - totalAmount
         - transactionHashes
+        - failedCount
     RewardDistributionItem:
       type: object
       properties:

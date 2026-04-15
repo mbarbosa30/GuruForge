@@ -552,6 +552,7 @@ export interface DistributeRewardsResponse {
   recipientCount: number;
   totalAmount: string;
   transactionHashes: string[];
+  failedCount: number;
 }
 
 export interface RewardDistributionItem {
