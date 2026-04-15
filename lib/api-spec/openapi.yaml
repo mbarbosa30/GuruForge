@@ -1695,6 +1695,22 @@ components:
         - patternsContributed
         - avgContributionQuality
         - avgDomainRelevance
+    QualityTrendPoint:
+      type: object
+      properties:
+        week:
+          type: string
+        avgContributionQuality:
+          type: number
+        avgDomainRelevance:
+          type: number
+        turnCount:
+          type: integer
+      required:
+        - week
+        - avgContributionQuality
+        - avgDomainRelevance
+        - turnCount
     CreatorLeaderboardResponse:
       type: object
       properties:
@@ -1708,11 +1724,16 @@ components:
           type: integer
         offset:
           type: integer
+        qualityOverTime:
+          type: array
+          items:
+            $ref: "#/components/schemas/QualityTrendPoint"
       required:
         - contributors
         - total
         - limit
         - offset
+        - qualityOverTime
     RewardRecipient:
       type: object
       properties:

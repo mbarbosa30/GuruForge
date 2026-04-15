@@ -512,11 +512,19 @@ export interface CreatorContributor {
   lastUpdatedAt?: string | null;
 }
 
+export interface QualityTrendPoint {
+  week: string;
+  avgContributionQuality: number;
+  avgDomainRelevance: number;
+  turnCount: number;
+}
+
 export interface CreatorLeaderboardResponse {
   contributors: CreatorContributor[];
   total: number;
   limit: number;
   offset: number;
+  qualityOverTime: QualityTrendPoint[];
 }
 
 export interface RewardRecipient {

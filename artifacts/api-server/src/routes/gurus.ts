@@ -529,11 +529,29 @@ router.get("/gurus/:guruId/leaderboard/creator", requireAuth, async (req: AuthRe
       lastUpdatedAt: row.lastUpdatedAt,
     }));
 
+    const qualityTrend = await db
+      .select({
+        week: sql<string>`to_char(date_trunc('week', ${conversationAnnotationsTable.createdAt}), 'YYYY-MM-DD')`,
+        avgQuality: avg(conversationAnnotationsTable.contributionQuality),
+        avgRelevance: avg(conversationAnnotationsTable.domainRelevance),
+        turnCount: count(),
+      })
+      .from(conversationAnnotationsTable)
+      .where(eq(conversationAnnotationsTable.guruId, guruId))
+      .groupBy(sql`date_trunc('week', ${conversationAnnotationsTable.createdAt})`)
+      .orderBy(sql`date_trunc('week', ${conversationAnnotationsTable.createdAt})`);
+
     res.json({
       contributors,
       total: totalResult?.count ?? 0,
       limit,
       offset,
+      qualityOverTime: qualityTrend.map((row) => ({
+        week: row.week,
+        avgContributionQuality: Math.round((Number(row.avgQuality) || 0) * 100) / 100,
+        avgDomainRelevance: Math.round((Number(row.avgRelevance) || 0) * 100) / 100,
+        turnCount: row.turnCount,
+      })),
     });
   } catch (err) {
     res.status(500).json({ error: "Failed to fetch creator leaderboard" });

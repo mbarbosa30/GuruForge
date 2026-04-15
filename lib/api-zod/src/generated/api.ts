@@ -428,6 +428,14 @@ export const GetCreatorLeaderboardResponse = zod.object({
   total: zod.number(),
   limit: zod.number(),
   offset: zod.number(),
+  qualityOverTime: zod.array(
+    zod.object({
+      week: zod.string(),
+      avgContributionQuality: zod.number(),
+      avgDomainRelevance: zod.number(),
+      turnCount: zod.number(),
+    }),
+  ),
 });
 
 /**

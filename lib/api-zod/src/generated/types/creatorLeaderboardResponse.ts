@@ -6,10 +6,12 @@
  * OpenAPI spec version: 0.1.0
  */
 import type { CreatorContributor } from "./creatorContributor";
+import type { QualityTrendPoint } from "./qualityTrendPoint";
 
 export interface CreatorLeaderboardResponse {
   contributors: CreatorContributor[];
   total: number;
   limit: number;
   offset: number;
+  qualityOverTime: QualityTrendPoint[];
 }

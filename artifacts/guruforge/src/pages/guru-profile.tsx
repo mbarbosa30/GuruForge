@@ -547,6 +547,33 @@ export default function GuruProfile() {
               </div>
             </div>
           )}
+
+          {leaderboardView === "creator" && guru.isCreator && creatorLeaderboard && creatorLeaderboard.qualityOverTime.length > 0 && (
+            <div className="border border-[#e0e0e0] mt-4">
+              <div className="px-4 py-2 bg-[#fafafa] border-b border-[#e0e0e0]">
+                <span className="text-[10px] font-medium tracking-[0.08em] uppercase text-[#aaa]">Quality over time</span>
+              </div>
+              <div className="overflow-x-auto">
+                <div className="grid grid-cols-[120px_80px_80px_60px] min-w-[340px] px-4 py-2 border-b border-[#e0e0e0] bg-[#fafafa]">
+                  <span className="text-[10px] font-medium tracking-[0.08em] uppercase text-[#aaa]">Week</span>
+                  <span className="text-[10px] font-medium tracking-[0.08em] uppercase text-[#aaa] text-right">Quality</span>
+                  <span className="text-[10px] font-medium tracking-[0.08em] uppercase text-[#aaa] text-right">Relevance</span>
+                  <span className="text-[10px] font-medium tracking-[0.08em] uppercase text-[#aaa] text-right">Turns</span>
+                </div>
+                {creatorLeaderboard.qualityOverTime.map((point) => (
+                  <div
+                    key={point.week}
+                    className="grid grid-cols-[120px_80px_80px_60px] min-w-[340px] px-4 py-2.5 border-b border-[#f0f0f0] last:border-0"
+                  >
+                    <span className="text-[12px] text-[#555]">{point.week}</span>
+                    <span className="text-[12px] text-[#333] text-right">{point.avgContributionQuality}</span>
+                    <span className="text-[12px] text-[#333] text-right">{point.avgDomainRelevance}</span>
+                    <span className="text-[12px] text-[#888] text-right">{point.turnCount}</span>
+                  </div>
+                ))}
+              </div>
+            </div>
+          )}
         </section>
       )}
 

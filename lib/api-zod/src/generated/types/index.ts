@@ -49,6 +49,7 @@ export * from "./listGurusParams";
 export * from "./listGurusSort";
 export * from "./myPosition";
 export * from "./portalSession";
+export * from "./qualityTrendPoint";
 export * from "./rating";
 export * from "./rewardReadinessResponse";
 export * from "./rewardRecipient";
