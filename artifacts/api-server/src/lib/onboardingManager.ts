@@ -89,9 +89,6 @@ export async function handleOnboardingResponse(
   userName: string | null,
 ): Promise<string> {
   const { fastModel, client } = getModelConfig(guru.modelTier);
-  const personality = guru.personalityStyle ?? "professional";
-  const topicsStr = guru.topics?.length ? guru.topics.join(", ") : "general guidance";
-
   await extractMemoryFromAnswer(guru.id, userId, currentStep, userAnswer, fastModel, client);
 
   const nextStep = currentStep + 1;

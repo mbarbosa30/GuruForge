@@ -169,9 +169,11 @@ export async function handleCodeVerification(
     .limit(1);
 
   let alreadyOnboarded = false;
+  let midOnboarding = false;
 
   if (existingByUser.length > 0) {
     alreadyOnboarded = existingByUser[0].onboardingCompleted;
+    midOnboarding = !alreadyOnboarded && existingByUser[0].onboardingStep > 0;
     await db
       .update(telegramConnectionsTable)
       .set({
@@ -195,6 +197,7 @@ export async function handleCodeVerification(
 
     if (existingByTelegram.length > 0) {
       alreadyOnboarded = existingByTelegram[0].onboardingCompleted;
+      midOnboarding = !alreadyOnboarded && existingByTelegram[0].onboardingStep > 0;
       await db
         .update(telegramConnectionsTable)
         .set({
@@ -230,6 +233,13 @@ export async function handleCodeVerification(
     };
   }
 
+  if (midOnboarding) {
+    return {
+      success: true,
+      message: `Welcome back! I'm ${guruName}. We were getting to know each other — just send me a message and we'll pick up where we left off.`,
+    };
+  }
+
   let userName: string | null = null;
   try {
     const [user] = await db
@@ -238,7 +248,9 @@ export async function handleCodeVerification(
       .where(eq(usersTable.id, codeEntry.userId))
       .limit(1);
     userName = user?.name || null;
-  } catch {}
+  } catch (err) {
+    console.error("Failed to fetch user name for onboarding:", err);
+  }
 
   let welcomeMessage: string;
   try {
@@ -340,7 +352,9 @@ export async function handleTelegramMessage(
           .where(eq(usersTable.id, connection.userId))
           .limit(1);
         userName = user?.name || null;
-      } catch {}
+      } catch (err) {
+        console.error("Failed to fetch user name for onboarding:", err);
+      }
 
       return await handleOnboardingResponse(
         {
@@ -360,11 +374,8 @@ export async function handleTelegramMessage(
         userName,
       );
     } catch (err) {
-      console.error("Onboarding flow error, falling through to normal conversation:", err);
-      await db
-        .update(telegramConnectionsTable)
-        .set({ onboardingCompleted: true })
-        .where(eq(telegramConnectionsTable.id, connection.id));
+      console.error("Onboarding flow error, will retry on next message:", err);
+      return "I had a momentary hiccup — could you send that again? I want to make sure I capture your answer properly.";
     }
   }
 
