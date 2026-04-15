@@ -19,3 +19,4 @@ export * from "./training-exports";
 export * from "./reward-distributions";
 export * from "./guru-wallets";
 export * from "./processed-telegram-updates";
+export * from "./conversation-summaries";

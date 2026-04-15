@@ -20,6 +20,7 @@ import {
   generateWelcomeWithFirstQuestion,
   handleOnboardingResponse,
 } from "./onboardingManager";
+import { compactConversation, getConversationSummary } from "./conversationCompactor";
 
 interface MemoryPolicyFlags {
   personalMemory: boolean;
@@ -67,6 +68,7 @@ function buildSystemPrompt(
   collectivePatterns: string,
   triage: TriageResult | null,
   userName: string | null,
+  conversationSummary: string | null = null,
 ): string {
   const personality = guru.personalityStyle ?? "professional";
   const personalityDescriptions: Record<string, string> = {
@@ -100,6 +102,15 @@ function buildSystemPrompt(
     if (triage.urgency === "high") {
       parts.push(`\nThis appears to be an urgent matter. Prioritize actionable, direct advice.`);
     }
+  }
+
+  if (conversationSummary) {
+    parts.push(
+      `\n--- PREVIOUS CONVERSATION CONTEXT ---`,
+      conversationSummary,
+      `--- END PREVIOUS CONVERSATION CONTEXT ---`,
+      `This summarizes earlier parts of your conversation with this user. Reference it naturally when relevant. Do not repeat or list it unprompted.`,
+    );
   }
 
   if (personalMemories) {
@@ -475,7 +486,14 @@ export async function handleTelegramMessage(
     console.error("Failed to fetch user name:", err);
   }
 
-  const systemPrompt = buildSystemPrompt(guru, personalMemories, collectivePatterns, triage, userName);
+  let conversationSummary: string | null = null;
+  try {
+    conversationSummary = await getConversationSummary(conversation.id);
+  } catch (err) {
+    console.error("Failed to fetch conversation summary:", err);
+  }
+
+  const systemPrompt = buildSystemPrompt(guru, personalMemories, collectivePatterns, triage, userName, conversationSummary);
 
   const chatMessages: Array<{ role: "system" | "user" | "assistant"; content: string }> = [
     { role: "system", content: systemPrompt },
@@ -563,6 +581,12 @@ export async function handleTelegramMessage(
       await maybeRecalculateScores(guruId);
     } catch (err) {
       console.error("Background calibration/score recalculation failed:", err);
+    }
+
+    try {
+      await compactConversation(conversation.id, guruId, guru.modelTier);
+    } catch (err) {
+      console.error("Background conversation compaction failed:", err);
     }
   })();
 
