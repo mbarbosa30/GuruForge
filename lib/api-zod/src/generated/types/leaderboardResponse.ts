@@ -6,10 +6,12 @@
  * OpenAPI spec version: 0.1.0
  */
 import type { LeaderboardContributor } from "./leaderboardContributor";
+import type { MyPosition } from "./myPosition";
 
 export interface LeaderboardResponse {
   contributors: LeaderboardContributor[];
   total: number;
   limit: number;
   offset: number;
+  myPosition?: MyPosition | null;
 }

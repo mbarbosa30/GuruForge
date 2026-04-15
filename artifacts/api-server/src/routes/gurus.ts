@@ -1,6 +1,6 @@
 import { Router, type IRouter } from "express";
 import { db } from "@workspace/db";
-import { gurusTable, usersTable, categoriesTable, guruRatingsTable, contributionScoresTable } from "@workspace/db/schema";
+import { gurusTable, usersTable, categoriesTable, guruRatingsTable, contributionScoresTable, conversationsTable, conversationAnnotationsTable } from "@workspace/db/schema";
 import { eq, desc, asc, and, sql, avg, count, or } from "drizzle-orm";
 import { requireAuth, optionalAuth, type AuthRequest } from "../middlewares/auth";
 import { CreateGuruBody, UpdateGuruBody, UpdateGuruParams, ListGurusQueryParams } from "@workspace/api-zod";
@@ -388,11 +388,49 @@ router.get("/gurus/:guruId/leaderboard", optionalAuth, async (req: AuthRequest, 
       };
     });
 
+    let myPosition: { rank: number; score: number; patternsContributed: number } | null = null;
+    if (req.dbUserId) {
+      const alreadyInPage = contributors.some((c) => c.isYou);
+      if (!alreadyInPage) {
+        const [myScore] = await db
+          .select({
+            score: contributionScoresTable.score,
+            patternsContributed: contributionScoresTable.patternsContributed,
+          })
+          .from(contributionScoresTable)
+          .where(
+            and(
+              eq(contributionScoresTable.guruId, guruId),
+              eq(contributionScoresTable.userId, req.dbUserId),
+            ),
+          )
+          .limit(1);
+
+        if (myScore) {
+          const [rankResult] = await db
+            .select({ count: count() })
+            .from(contributionScoresTable)
+            .where(
+              and(
+                eq(contributionScoresTable.guruId, guruId),
+                sql`${contributionScoresTable.score} > ${myScore.score}`,
+              ),
+            );
+          myPosition = {
+            rank: (rankResult?.count ?? 0) + 1,
+            score: Math.round(myScore.score),
+            patternsContributed: myScore.patternsContributed,
+          };
+        }
+      }
+    }
+
     res.json({
       contributors,
       total: totalResult?.count ?? 0,
       limit,
       offset,
+      myPosition,
     });
   } catch (err) {
     res.status(500).json({ error: "Failed to fetch leaderboard" });
@@ -451,6 +489,33 @@ router.get("/gurus/:guruId/leaderboard/creator", requireAuth, async (req: AuthRe
       .from(contributionScoresTable)
       .where(eq(contributionScoresTable.guruId, guruId));
 
+    const userIds = rows.map((r) => r.userId);
+    let qualityMap: Record<number, { avgQuality: number; avgRelevance: number }> = {};
+    if (userIds.length > 0) {
+      const qualityRows = await db
+        .select({
+          userId: conversationsTable.userId,
+          avgQuality: avg(conversationAnnotationsTable.contributionQuality),
+          avgRelevance: avg(conversationAnnotationsTable.domainRelevance),
+        })
+        .from(conversationAnnotationsTable)
+        .innerJoin(conversationsTable, eq(conversationAnnotationsTable.conversationId, conversationsTable.id))
+        .where(
+          and(
+            eq(conversationAnnotationsTable.guruId, guruId),
+            sql`${conversationsTable.userId} IN (${sql.join(userIds.map((id) => sql`${id}`), sql`, `)})`,
+          ),
+        )
+        .groupBy(conversationsTable.userId);
+
+      for (const qr of qualityRows) {
+        qualityMap[qr.userId] = {
+          avgQuality: Math.round((Number(qr.avgQuality) || 0) * 100) / 100,
+          avgRelevance: Math.round((Number(qr.avgRelevance) || 0) * 100) / 100,
+        };
+      }
+    }
+
     const contributors = rows.map((row, idx) => ({
       rank: offset + idx + 1,
       name: row.name || "Anonymous",
@@ -459,6 +524,8 @@ router.get("/gurus/:guruId/leaderboard/creator", requireAuth, async (req: AuthRe
       score: Math.round(row.score),
       turnCount: row.turnCount,
       patternsContributed: row.patternsContributed,
+      avgContributionQuality: qualityMap[row.userId]?.avgQuality ?? 0,
+      avgDomainRelevance: qualityMap[row.userId]?.avgRelevance ?? 0,
       lastUpdatedAt: row.lastUpdatedAt,
     }));
 

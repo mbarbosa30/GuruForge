@@ -425,7 +425,7 @@ export default function GuruProfile() {
         </section>
       )}
 
-      {leaderboard && leaderboard.contributors.length > 0 && (
+      {leaderboard && (
         <section className="mb-10">
           <div className="flex items-center justify-between mb-4">
             <p className="text-[11px] font-medium tracking-[0.12em] uppercase text-[#888]">Top contributors</p>
@@ -455,7 +455,13 @@ export default function GuruProfile() {
             )}
           </div>
 
-          {leaderboardView === "public" && (
+          {leaderboardView === "public" && leaderboard.contributors.length === 0 && (
+            <div className="border border-[#e0e0e0] px-5 py-8 text-center">
+              <p className="text-[13px] text-[#aaa]">No contributions yet. Start a conversation to be the first contributor.</p>
+            </div>
+          )}
+
+          {leaderboardView === "public" && leaderboard.contributors.length > 0 && (
             <div className="border border-[#e0e0e0]">
               <div className="grid grid-cols-[48px_1fr_80px_80px] bg-[#fafafa] px-4 py-2 border-b border-[#e0e0e0]">
                 <span className="text-[10px] font-medium tracking-[0.08em] uppercase text-[#aaa]">#</span>
@@ -481,6 +487,17 @@ export default function GuruProfile() {
                   <span className="text-[13px] text-[#888] text-right">{c.patternsContributed}</span>
                 </div>
               ))}
+              {leaderboard.myPosition && !leaderboard.contributors.some((c: LeaderboardContributor) => c.isYou) && (
+                <div className="grid grid-cols-[48px_1fr_80px_80px] px-4 py-3 bg-[#f8f8ff] border-t border-[#e0e0e0]">
+                  <span className="text-[13px] text-[#999]">{leaderboard.myPosition.rank}</span>
+                  <span className="text-[13px] text-[#555]">
+                    You
+                    <span className="text-[10px] font-medium tracking-[0.06em] uppercase text-[#7a7acc] ml-2">Your rank</span>
+                  </span>
+                  <span className="text-[13px] text-[#333] text-right font-medium">{leaderboard.myPosition.score}</span>
+                  <span className="text-[13px] text-[#888] text-right">{leaderboard.myPosition.patternsContributed}</span>
+                </div>
+              )}
               <div className="px-4 py-2 bg-[#fafafa] border-t border-[#e0e0e0]">
                 <span className="text-[11px] text-[#aaa]">{leaderboard.total} total contributor{leaderboard.total !== 1 ? "s" : ""}</span>
               </div>
@@ -489,20 +506,27 @@ export default function GuruProfile() {
 
           {leaderboardView === "creator" && guru.isCreator && creatorLeaderboard && (
             <div className="border border-[#e0e0e0]">
-              <div className="grid grid-cols-[48px_1fr_1fr_140px_60px_60px_60px] bg-[#fafafa] px-4 py-2 border-b border-[#e0e0e0] overflow-x-auto">
-                <span className="text-[10px] font-medium tracking-[0.08em] uppercase text-[#aaa]">#</span>
-                <span className="text-[10px] font-medium tracking-[0.08em] uppercase text-[#aaa]">Name</span>
-                <span className="text-[10px] font-medium tracking-[0.08em] uppercase text-[#aaa]">Email</span>
-                <span className="text-[10px] font-medium tracking-[0.08em] uppercase text-[#aaa]">Wallet</span>
-                <span className="text-[10px] font-medium tracking-[0.08em] uppercase text-[#aaa] text-right">Score</span>
-                <span className="text-[10px] font-medium tracking-[0.08em] uppercase text-[#aaa] text-right">Turns</span>
-                <span className="text-[10px] font-medium tracking-[0.08em] uppercase text-[#aaa] text-right">Ptns</span>
-              </div>
               <div className="overflow-x-auto">
+                <div className="grid grid-cols-[40px_1fr_1fr_120px_56px_56px_56px_56px_56px] min-w-[700px] bg-[#fafafa] px-4 py-2 border-b border-[#e0e0e0]">
+                  <span className="text-[10px] font-medium tracking-[0.08em] uppercase text-[#aaa]">#</span>
+                  <span className="text-[10px] font-medium tracking-[0.08em] uppercase text-[#aaa]">Name</span>
+                  <span className="text-[10px] font-medium tracking-[0.08em] uppercase text-[#aaa]">Email</span>
+                  <span className="text-[10px] font-medium tracking-[0.08em] uppercase text-[#aaa]">Wallet</span>
+                  <span className="text-[10px] font-medium tracking-[0.08em] uppercase text-[#aaa] text-right">Score</span>
+                  <span className="text-[10px] font-medium tracking-[0.08em] uppercase text-[#aaa] text-right">Turns</span>
+                  <span className="text-[10px] font-medium tracking-[0.08em] uppercase text-[#aaa] text-right">Ptns</span>
+                  <span className="text-[10px] font-medium tracking-[0.08em] uppercase text-[#aaa] text-right">Qual</span>
+                  <span className="text-[10px] font-medium tracking-[0.08em] uppercase text-[#aaa] text-right">Rel</span>
+                </div>
+                {creatorLeaderboard.contributors.length === 0 && (
+                  <div className="px-5 py-8 text-center">
+                    <p className="text-[13px] text-[#aaa]">No contributors yet.</p>
+                  </div>
+                )}
                 {creatorLeaderboard.contributors.map((c: CreatorContributor) => (
                   <div
                     key={c.rank}
-                    className="grid grid-cols-[48px_1fr_1fr_140px_60px_60px_60px] px-4 py-3 border-b border-[#f0f0f0] last:border-0"
+                    className="grid grid-cols-[40px_1fr_1fr_120px_56px_56px_56px_56px_56px] min-w-[700px] px-4 py-3 border-b border-[#f0f0f0] last:border-0"
                   >
                     <span className="text-[13px] text-[#999]">{c.rank}</span>
                     <span className="text-[13px] text-[#333] truncate">{c.name}</span>
@@ -513,6 +537,8 @@ export default function GuruProfile() {
                     <span className="text-[13px] text-[#333] text-right font-medium">{c.score}</span>
                     <span className="text-[13px] text-[#888] text-right">{c.turnCount}</span>
                     <span className="text-[13px] text-[#888] text-right">{c.patternsContributed}</span>
+                    <span className="text-[13px] text-[#888] text-right">{c.avgContributionQuality}</span>
+                    <span className="text-[13px] text-[#888] text-right">{c.avgDomainRelevance}</span>
                   </div>
                 ))}
               </div>

@@ -47,6 +47,7 @@ export * from "./leaderboardContributor";
 export * from "./leaderboardResponse";
 export * from "./listGurusParams";
 export * from "./listGurusSort";
+export * from "./myPosition";
 export * from "./portalSession";
 export * from "./rating";
 export * from "./rewardReadinessResponse";

@@ -386,6 +386,13 @@ export const GetLeaderboardResponse = zod.object({
   total: zod.number(),
   limit: zod.number(),
   offset: zod.number(),
+  myPosition: zod
+    .object({
+      rank: zod.number(),
+      score: zod.number(),
+      patternsContributed: zod.number(),
+    })
+    .nullish(),
 });
 
 /**
@@ -413,6 +420,8 @@ export const GetCreatorLeaderboardResponse = zod.object({
       score: zod.number(),
       turnCount: zod.number(),
       patternsContributed: zod.number(),
+      avgContributionQuality: zod.number(),
+      avgDomainRelevance: zod.number(),
       lastUpdatedAt: zod.coerce.date().nullish(),
     }),
   ),

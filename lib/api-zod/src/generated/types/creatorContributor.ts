@@ -14,5 +14,7 @@ export interface CreatorContributor {
   score: number;
   turnCount: number;
   patternsContributed: number;
+  avgContributionQuality: number;
+  avgDomainRelevance: number;
   lastUpdatedAt?: Date | null;
 }

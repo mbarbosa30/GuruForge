@@ -485,11 +485,18 @@ export interface LeaderboardContributor {
   isYou: boolean;
 }
 
+export interface MyPosition {
+  rank: number;
+  score: number;
+  patternsContributed: number;
+}
+
 export interface LeaderboardResponse {
   contributors: LeaderboardContributor[];
   total: number;
   limit: number;
   offset: number;
+  myPosition?: MyPosition | null;
 }
 
 export interface CreatorContributor {
@@ -500,6 +507,8 @@ export interface CreatorContributor {
   score: number;
   turnCount: number;
   patternsContributed: number;
+  avgContributionQuality: number;
+  avgDomainRelevance: number;
   lastUpdatedAt?: string | null;
 }
 

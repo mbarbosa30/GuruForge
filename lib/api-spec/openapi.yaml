@@ -1626,6 +1626,19 @@ components:
         - score
         - patternsContributed
         - isYou
+    MyPosition:
+      type: object
+      properties:
+        rank:
+          type: integer
+        score:
+          type: integer
+        patternsContributed:
+          type: integer
+      required:
+        - rank
+        - score
+        - patternsContributed
     LeaderboardResponse:
       type: object
       properties:
@@ -1639,6 +1652,9 @@ components:
           type: integer
         offset:
           type: integer
+        myPosition:
+          $ref: "#/components/schemas/MyPosition"
+          nullable: true
       required:
         - contributors
         - total
@@ -1662,6 +1678,10 @@ components:
           type: integer
         patternsContributed:
           type: integer
+        avgContributionQuality:
+          type: number
+        avgDomainRelevance:
+          type: number
         lastUpdatedAt:
           type: string
           format: date-time
@@ -1673,6 +1693,8 @@ components:
         - score
         - turnCount
         - patternsContributed
+        - avgContributionQuality
+        - avgDomainRelevance
     CreatorLeaderboardResponse:
       type: object
       properties:
