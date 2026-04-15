@@ -85,6 +85,11 @@ export default function HowItWorks() {
       desc: "Periodic personalized check-ins reference specific user goals and new community insights. Not generic notifications — contextually relevant messages that drive genuine engagement.",
     },
     {
+      label: "KNOWLEDGE SNAPSHOTS",
+      title: "Intelligence growth tracking",
+      desc: "Periodic captures of each Guru's intelligence state — pattern counts, memory distribution, average quality scores, and top topics — providing a clear picture of how the circle's wisdom evolves.",
+    },
+    {
       label: "CONVERSATION COMPACTION",
       title: "Infinite memory, bounded tokens",
       desc: "When conversations exceed 30 messages, older exchanges are summarized and compressed. The Guru retains the full arc of the relationship without blowing up the context window.",
@@ -173,7 +178,7 @@ export default function HowItWorks() {
     <>
       <section className="px-6 md:px-10 pt-20 md:pt-24 pb-16 md:pb-20 max-w-[820px]">
         <p className="text-[11px] font-medium tracking-[0.12em] uppercase text-[#777] mb-7">
-          How it works
+          The world's first wisdom network
         </p>
         <h1 className="text-[40px] md:text-[48px] font-light tracking-[-0.03em] leading-[1.1] mb-8 text-[#111]">
           AI agents that learn<br />
@@ -260,7 +265,7 @@ export default function HowItWorks() {
           The intelligence stack
         </p>
         <p className="text-[15px] text-[#666] max-w-[520px] mb-10">
-          Six interconnected systems that make each Guru genuinely intelligent.
+          Seven interconnected systems that make each Guru genuinely intelligent.
         </p>
         <div className="grid grid-cols-1 md:grid-cols-2 gap-px bg-[#e0e0e0] max-w-[900px]">
           {stack.map((item) => (
