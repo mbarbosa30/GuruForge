@@ -2,13 +2,13 @@ import { db } from "./index";
 import { categoriesTable, usersTable, gurusTable } from "./schema";
 import { eq } from "drizzle-orm";
 
-async function seed() {
+export async function seedBase() {
   console.log("Seeding database...");
 
   const existingCategories = await db.select().from(categoriesTable);
   if (existingCategories.length > 0) {
     console.log("Database already seeded. Skipping.");
-    process.exit(0);
+    return;
   }
 
   const [cat1, cat2, cat3, cat4, cat5] = await db.insert(categoriesTable).values([
@@ -163,10 +163,13 @@ async function seed() {
   ]);
 
   console.log("Seed complete: 5 categories, 1 system user, 7 sample Gurus.");
-  process.exit(0);
 }
 
-seed().catch((err) => {
-  console.error("Seed failed:", err);
-  process.exit(1);
-});
+if (process.argv[1]?.includes("seed.ts")) {
+  seedBase()
+    .then(() => process.exit(0))
+    .catch((err) => {
+      console.error("Seed failed:", err);
+      process.exit(1);
+    });
+}

@@ -5,7 +5,7 @@ import { logger } from "./lib/logger";
 import { startAllPublishedBots } from "./lib/botManager";
 import { startProactiveScheduler } from "./lib/proactiveEngine";
 import { startSnapshotScheduler } from "./lib/knowledgeSnapshotScheduler";
-import { seedDemo } from "@workspace/db";
+import { seedBase, seedDemo } from "@workspace/db";
 
 process.on("unhandledRejection", (reason) => {
   logger.error({ err: reason }, "Unhandled rejection");
@@ -65,9 +65,13 @@ app.listen(port, (err) => {
 
   logger.info({ port }, "Server listening");
 
-  seedDemo()
+  seedBase()
+    .then(() => {
+      logger.info("Base seed check complete");
+      return seedDemo();
+    })
     .then(() => logger.info("Demo seed check complete"))
-    .catch((err: unknown) => logger.error({ err }, "Demo seed failed (non-fatal)"));
+    .catch((err: unknown) => logger.error({ err }, "Seed failed (non-fatal)"));
 
   startAllPublishedBots()
     .then(() => {
