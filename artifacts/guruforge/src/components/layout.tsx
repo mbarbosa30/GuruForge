@@ -93,7 +93,10 @@ export default function Layout({ children }: { children: React.ReactNode }) {
             <a href="https://zeno.vision" target="_blank" rel="noopener noreferrer" className="text-[#999] hover:text-[#555] transition-colors no-underline">zeno.vision</a>
           </span>
         </div>
-        <a href="https://x.com/GuruForge" target="_blank" rel="noopener noreferrer" className="text-[11px] text-[#aaa] hover:text-[#555] transition-colors no-underline">@GuruForge</a>
+        <div className="flex items-center gap-3 text-[11px] text-[#aaa]">
+          <a href="https://x.com/GuruForge" target="_blank" rel="noopener noreferrer" className="hover:text-[#555] transition-colors no-underline text-inherit">X/Twitter</a>
+          <a href="https://t.me/guruforge" target="_blank" rel="noopener noreferrer" className="hover:text-[#555] transition-colors no-underline text-inherit">Telegram</a>
+        </div>
       </footer>
     </div>
   );
