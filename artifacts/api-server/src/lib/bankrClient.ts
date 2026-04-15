@@ -53,6 +53,30 @@ export function validateTokenSymbol(symbol: string): string | null {
   return null;
 }
 
+function parseDeployResponse(raw: unknown, expectedName: string, expectedSymbol: string): TokenDeployResult {
+  if (!raw || typeof raw !== "object") {
+    throw new Error("Bankr deployment returned an invalid response");
+  }
+
+  const obj = raw as Record<string, unknown>;
+
+  const tokenAddress = typeof obj.tokenAddress === "string" ? obj.tokenAddress.trim() : "";
+  if (!tokenAddress || !/^0x[a-fA-F0-9]{40}$/.test(tokenAddress)) {
+    throw new Error(`Bankr deployment returned invalid token address: ${tokenAddress || "(empty)"}`);
+  }
+
+  const chain = typeof obj.chain === "string" && obj.chain.trim() ? obj.chain.trim() : "base";
+
+  const name = typeof obj.name === "string" && obj.name.trim() ? obj.name.trim() : expectedName;
+  const symbol = typeof obj.symbol === "string" && obj.symbol.trim() ? obj.symbol.trim().toUpperCase() : expectedSymbol;
+
+  const transactionHash = typeof obj.transactionHash === "string" && /^0x[a-fA-F0-9]{64}$/.test(obj.transactionHash)
+    ? obj.transactionHash
+    : undefined;
+
+  return { tokenAddress, transactionHash, chain, name, symbol };
+}
+
 export async function deployToken(opts: {
   name: string;
   symbol: string;
@@ -65,13 +89,14 @@ export async function deployToken(opts: {
   const symErr = validateTokenSymbol(safeSymbol);
   if (symErr) throw new Error(symErr);
 
-  const result = await bankrFetch<TokenDeployResult>("/agent/prompt", {
+  const raw = await bankrFetch<unknown>("/agent/prompt", {
     method: "POST",
     body: {
       prompt: `Deploy a token called "${safeName}" with symbol "${safeSymbol}" on Base via Clanker`,
     },
   });
-  return result;
+
+  return parseDeployResponse(raw, safeName, safeSymbol);
 }
 
 export interface TransferResult {
@@ -79,23 +104,58 @@ export interface TransferResult {
   status: string;
 }
 
+export interface RecipientTransferOutcome {
+  walletAddress: string;
+  amount: string;
+  transactionHash: string | null;
+  status: "success" | "failed";
+  error?: string;
+}
+
+export interface BatchTransferResult {
+  outcomes: RecipientTransferOutcome[];
+  successCount: number;
+  failCount: number;
+}
+
 export async function transferTokens(opts: {
   tokenAddress: string;
   recipients: Array<{ walletAddress: string; amount: string }>;
-}): Promise<TransferResult[]> {
-  const results: TransferResult[] = [];
+}): Promise<BatchTransferResult> {
+  const outcomes: RecipientTransferOutcome[] = [];
+  let successCount = 0;
+  let failCount = 0;
+
   for (const r of opts.recipients) {
-    const result = await bankrFetch<TransferResult>("/wallet/transfer", {
-      method: "POST",
-      body: {
-        tokenAddress: opts.tokenAddress,
-        to: r.walletAddress,
+    try {
+      const result = await bankrFetch<TransferResult>("/wallet/transfer", {
+        method: "POST",
+        body: {
+          tokenAddress: opts.tokenAddress,
+          to: r.walletAddress,
+          amount: r.amount,
+        },
+      });
+      outcomes.push({
+        walletAddress: r.walletAddress,
         amount: r.amount,
-      },
-    });
-    results.push(result);
+        transactionHash: result.transactionHash || null,
+        status: "success",
+      });
+      successCount++;
+    } catch (err) {
+      outcomes.push({
+        walletAddress: r.walletAddress,
+        amount: r.amount,
+        transactionHash: null,
+        status: "failed",
+        error: err instanceof Error ? err.message : "Transfer failed",
+      });
+      failCount++;
+    }
   }
-  return results;
+
+  return { outcomes, successCount, failCount };
 }
 
 export interface PortfolioItem {

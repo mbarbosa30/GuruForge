@@ -167,39 +167,45 @@ router.post("/gurus/:guruId/rewards/distribute", requireAuth, async (req: AuthRe
       status: "pending",
     }).returning();
 
-    try {
-      const txResults = await transferTokens({
-        tokenAddress: guru.tokenAddress,
-        recipients,
-      });
+    const batchResult = await transferTokens({
+      tokenAddress: guru.tokenAddress,
+      recipients,
+    });
 
-      const hashes = txResults.map((t) => t.transactionHash).filter(Boolean);
+    const hashes = batchResult.outcomes
+      .filter((o) => o.transactionHash)
+      .map((o) => o.transactionHash);
 
-      await db
-        .update(rewardDistributionsTable)
-        .set({
-          status: "completed",
-          transactionHashes: JSON.stringify(hashes),
-          completedAt: new Date(),
-        })
-        .where(eq(rewardDistributionsTable.id, distRecord.id));
+    const finalStatus = batchResult.failCount === 0
+      ? "completed"
+      : batchResult.successCount === 0
+        ? "failed"
+        : "partial";
 
-      res.status(201).json({
-        distributionId: distRecord.id,
-        status: "completed",
-        recipientCount: recipients.length,
-        totalAmount: String(totalAmount),
-        transactionHashes: hashes,
-      });
-    } catch (txErr) {
-      const errMsg = txErr instanceof Error ? txErr.message : "Transfer failed";
-      await db
-        .update(rewardDistributionsTable)
-        .set({ status: "failed", errorMessage: errMsg })
-        .where(eq(rewardDistributionsTable.id, distRecord.id));
+    const errorMessage = batchResult.failCount > 0
+      ? `${batchResult.failCount} of ${batchResult.outcomes.length} transfers failed`
+      : null;
 
-      res.status(500).json({ error: errMsg, distributionId: distRecord.id });
-    }
+    await db
+      .update(rewardDistributionsTable)
+      .set({
+        status: finalStatus,
+        transactionHashes: JSON.stringify(hashes),
+        recipientCount: batchResult.successCount,
+        errorMessage,
+        completedAt: new Date(),
+      })
+      .where(eq(rewardDistributionsTable.id, distRecord.id));
+
+    const statusCode = finalStatus === "failed" ? 500 : 201;
+    res.status(statusCode).json({
+      distributionId: distRecord.id,
+      status: finalStatus,
+      recipientCount: batchResult.successCount,
+      totalAmount: String(totalAmount),
+      transactionHashes: hashes,
+      failedCount: batchResult.failCount,
+    });
   } catch (err) {
     console.error("Reward distribution error:", err);
     res.status(500).json({ error: "Failed to distribute rewards" });

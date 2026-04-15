@@ -635,6 +635,7 @@ export default function GuruProfile() {
                     <span className={`text-[10px] font-medium tracking-[0.06em] uppercase px-2 py-0.5 border ${
                       d.status === "completed" ? "text-[#2a7a2a] border-[#c8e0c8] bg-[#f7fdf7]" :
                       d.status === "failed" ? "text-[#c44] border-[#e8c8c8] bg-[#fdf7f7]" :
+                      d.status === "partial" ? "text-[#a67c00] border-[#e0d8b0] bg-[#fdf9ee]" :
                       "text-[#888] border-[#e0e0e0] bg-[#fafafa]"
                     }`}>{d.status}</span>
                   </div>
