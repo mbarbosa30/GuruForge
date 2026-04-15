@@ -196,8 +196,14 @@ export async function handleCodeVerification(
       .limit(1);
 
     if (existingByTelegram.length > 0) {
-      alreadyOnboarded = existingByTelegram[0].onboardingCompleted;
-      midOnboarding = !alreadyOnboarded && existingByTelegram[0].onboardingStep > 0;
+      const userChanged = existingByTelegram[0].userId !== codeEntry.userId;
+      if (userChanged) {
+        alreadyOnboarded = false;
+        midOnboarding = false;
+      } else {
+        alreadyOnboarded = existingByTelegram[0].onboardingCompleted;
+        midOnboarding = !alreadyOnboarded && existingByTelegram[0].onboardingStep > 0;
+      }
       await db
         .update(telegramConnectionsTable)
         .set({
@@ -205,6 +211,7 @@ export async function handleCodeVerification(
           telegramChatId: chatId,
           status: "active",
           connectedAt: now,
+          ...(userChanged ? { onboardingCompleted: false, onboardingStep: 0 } : {}),
         })
         .where(eq(telegramConnectionsTable.id, existingByTelegram[0].id));
     } else {
