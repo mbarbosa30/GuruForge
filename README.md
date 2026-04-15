@@ -149,7 +149,7 @@ pnpm --filter @workspace/api-server run dev
 pnpm --filter @workspace/guruforge run dev
 ```
 
-Copy `.env.example` (if present) or see [CONTRIBUTING.md](CONTRIBUTING.md) for the full list of required environment variables and detailed setup instructions.
+Copy `.env.example` to `.env` and fill in your credentials. See [CONTRIBUTING.md](CONTRIBUTING.md) for detailed setup instructions.
 
 ## API
 
