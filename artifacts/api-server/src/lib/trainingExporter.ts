@@ -6,6 +6,7 @@ import {
   gurusTable,
   collectivePatternsTable,
   trainingExportsTable,
+  telegramConnectionsTable,
 } from "@workspace/db/schema";
 import { eq, and, gte, lte, sql, desc, count } from "drizzle-orm";
 import { redactPIIWithLLM } from "./piiRedactor";
@@ -38,6 +39,10 @@ interface KnowledgeDistillation {
   confidence: number;
   frequency: number;
   source_count: number;
+  guru_id: number;
+  guru_name: string;
+  guru_domain: string[];
+  publish_title: string | null;
 }
 
 export async function createExport(
@@ -104,8 +109,11 @@ export async function createExport(
   return { exportId };
 }
 
-async function buildAnnotationConditions(filters: ExportFilters) {
-  const conditions = [];
+async function getOptedInAnnotations(filters: ExportFilters) {
+  const conditions = [
+    eq(telegramConnectionsTable.contributesToWisdom, true),
+    eq(telegramConnectionsTable.status, "active"),
+  ];
   if (filters.guruId) {
     conditions.push(eq(conversationAnnotationsTable.guruId, filters.guruId));
   }
@@ -118,13 +126,8 @@ async function buildAnnotationConditions(filters: ExportFilters) {
   if (filters.dateTo) {
     conditions.push(lte(conversationAnnotationsTable.createdAt, new Date(filters.dateTo)));
   }
-  return conditions;
-}
 
-async function buildInstructionPairs(filters: ExportFilters): Promise<InstructionPair[]> {
-  const conditions = await buildAnnotationConditions(filters);
-
-  const annotations = await db
+  return db
     .select({
       messageId: conversationAnnotationsTable.messageId,
       conversationId: conversationAnnotationsTable.conversationId,
@@ -134,22 +137,36 @@ async function buildInstructionPairs(filters: ExportFilters): Promise<Instructio
       topicTags: conversationAnnotationsTable.topicTags,
     })
     .from(conversationAnnotationsTable)
-    .where(conditions.length > 0 ? and(...conditions) : undefined)
+    .innerJoin(
+      conversationsTable,
+      eq(conversationAnnotationsTable.conversationId, conversationsTable.id),
+    )
+    .innerJoin(
+      telegramConnectionsTable,
+      and(
+        eq(telegramConnectionsTable.userId, conversationsTable.userId),
+        eq(telegramConnectionsTable.guruId, conversationsTable.guruId),
+      ),
+    )
+    .where(and(...conditions))
     .orderBy(desc(conversationAnnotationsTable.qualityScore))
     .limit(10000);
+}
 
+async function buildInstructionPairs(filters: ExportFilters): Promise<InstructionPair[]> {
+  const annotations = await getOptedInAnnotations(filters);
   const pairs: InstructionPair[] = [];
 
   for (const ann of annotations) {
-    const assistantMsg = await db
+    const [assistantMsg] = await db
       .select({ content: messagesTable.content })
       .from(messagesTable)
       .where(eq(messagesTable.id, ann.messageId))
       .limit(1);
 
-    if (!assistantMsg[0]) continue;
+    if (!assistantMsg) continue;
 
-    const userMsg = await db
+    const [userMsg] = await db
       .select({ content: messagesTable.content })
       .from(messagesTable)
       .where(
@@ -162,7 +179,7 @@ async function buildInstructionPairs(filters: ExportFilters): Promise<Instructio
       .orderBy(desc(messagesTable.id))
       .limit(1);
 
-    if (!userMsg[0]) continue;
+    if (!userMsg) continue;
 
     const [guru] = await db
       .select({ systemPrompt: gurusTable.systemPrompt })
@@ -170,8 +187,8 @@ async function buildInstructionPairs(filters: ExportFilters): Promise<Instructio
       .where(eq(gurusTable.id, ann.guruId))
       .limit(1);
 
-    const redactedUser = await redactPIIWithLLM(userMsg[0].content);
-    const redactedAssistant = await redactPIIWithLLM(assistantMsg[0].content);
+    const redactedUser = await redactPIIWithLLM(userMsg.content);
+    const redactedAssistant = await redactPIIWithLLM(assistantMsg.content);
 
     pairs.push({
       system: guru?.systemPrompt ?? "",
@@ -187,22 +204,10 @@ async function buildInstructionPairs(filters: ExportFilters): Promise<Instructio
 }
 
 async function buildPreferencePairs(filters: ExportFilters): Promise<PreferencePair[]> {
-  const conditions = await buildAnnotationConditions(filters);
+  const annotations = await getOptedInAnnotations(filters);
 
-  const allAnnotations = await db
-    .select({
-      messageId: conversationAnnotationsTable.messageId,
-      conversationId: conversationAnnotationsTable.conversationId,
-      guruId: conversationAnnotationsTable.guruId,
-      qualityScore: conversationAnnotationsTable.qualityScore,
-    })
-    .from(conversationAnnotationsTable)
-    .where(conditions.length > 0 ? and(...conditions) : undefined)
-    .orderBy(desc(conversationAnnotationsTable.qualityScore))
-    .limit(10000);
-
-  const byConversation = new Map<number, typeof allAnnotations>();
-  for (const ann of allAnnotations) {
+  const byConversation = new Map<number, typeof annotations>();
+  for (const ann of annotations) {
     const existing = byConversation.get(ann.conversationId) || [];
     existing.push(ann);
     byConversation.set(ann.conversationId, existing);
@@ -210,10 +215,10 @@ async function buildPreferencePairs(filters: ExportFilters): Promise<PreferenceP
 
   const pairs: PreferencePair[] = [];
 
-  for (const [, annotations] of byConversation) {
-    if (annotations.length < 2) continue;
+  for (const [, convAnnotations] of byConversation) {
+    if (convAnnotations.length < 2) continue;
 
-    const sorted = annotations.sort((a, b) => b.qualityScore - a.qualityScore);
+    const sorted = [...convAnnotations].sort((a, b) => b.qualityScore - a.qualityScore);
     const high = sorted[0];
     const low = sorted[sorted.length - 1];
 
@@ -276,10 +281,31 @@ async function buildKnowledgeDistillation(filters: ExportFilters): Promise<Knowl
   if (filters.guruId) {
     conditions.push(eq(collectivePatternsTable.guruId, filters.guruId));
   }
+  if (filters.minQuality !== undefined) {
+    conditions.push(gte(collectivePatternsTable.confidence, filters.minQuality));
+  }
+  if (filters.dateFrom) {
+    conditions.push(gte(collectivePatternsTable.createdAt, new Date(filters.dateFrom)));
+  }
+  if (filters.dateTo) {
+    conditions.push(lte(collectivePatternsTable.createdAt, new Date(filters.dateTo)));
+  }
 
   const patterns = await db
-    .select()
+    .select({
+      patternType: collectivePatternsTable.patternType,
+      summary: collectivePatternsTable.summary,
+      redactedSummary: collectivePatternsTable.redactedSummary,
+      publishTitle: collectivePatternsTable.publishTitle,
+      confidence: collectivePatternsTable.confidence,
+      frequency: collectivePatternsTable.frequency,
+      sourceCount: collectivePatternsTable.sourceCount,
+      guruId: collectivePatternsTable.guruId,
+      guruName: gurusTable.name,
+      guruTopics: gurusTable.topics,
+    })
     .from(collectivePatternsTable)
+    .innerJoin(gurusTable, eq(collectivePatternsTable.guruId, gurusTable.id))
     .where(conditions.length > 0 ? and(...conditions) : undefined)
     .orderBy(desc(collectivePatternsTable.confidence));
 
@@ -289,6 +315,10 @@ async function buildKnowledgeDistillation(filters: ExportFilters): Promise<Knowl
     confidence: p.confidence,
     frequency: p.frequency,
     source_count: p.sourceCount,
+    guru_id: p.guruId,
+    guru_name: p.guruName,
+    guru_domain: p.guruTopics ?? [],
+    publish_title: p.publishTitle,
   }));
 }
 

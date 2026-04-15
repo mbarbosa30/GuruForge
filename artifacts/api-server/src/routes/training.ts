@@ -1,12 +1,13 @@
-import { Router } from "express";
+import { Router, type Response, type NextFunction } from "express";
 import { requireAuth, type AuthRequest } from "../middlewares/auth";
 import { createExport, getTrainingStats, getExportContent, type ExportFormat } from "../lib/trainingExporter";
 
 const router = Router();
 
-function requireAdmin(req: AuthRequest, res: any, next: any) {
+function requireAdmin(req: AuthRequest, res: Response, next: NextFunction) {
   if (req.dbUserRole !== "admin") {
-    return res.status(403).json({ error: "Admin access required" });
+    res.status(403).json({ error: "Admin access required" });
+    return;
   }
   next();
 }
