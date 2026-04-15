@@ -138,10 +138,13 @@ router.post("/gurus/:guruId/rewards/distribute", requireAuth, async (req: AuthRe
     }
 
     const total = Number(totalAmount);
-    const recipients = allocation.recipients.map((r) => ({
-      walletAddress: r.walletAddress,
-      amount: ((r.sharePercent / 100) * total).toFixed(6),
-    }));
+    const rawTotalScore = allocation.recipients.reduce((sum, r) => sum + r.score, 0);
+    const recipients = allocation.recipients
+      .map((r) => ({
+        walletAddress: r.walletAddress,
+        amount: rawTotalScore > 0 ? ((r.score / rawTotalScore) * total).toFixed(6) : "0",
+      }))
+      .filter((r) => Number(r.amount) > 0);
 
     const [distRecord] = await db.insert(rewardDistributionsTable).values({
       guruId,
