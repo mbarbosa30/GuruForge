@@ -24,6 +24,8 @@ import type {
   CreateGuruInput,
   CreateRatingInput,
   CreatorLeaderboardResponse,
+  DistributeRewardsInput,
+  DistributeRewardsResponse,
   ErrorResponse,
   FeedbackInput,
   FeedbackResult,
@@ -40,10 +42,14 @@ import type {
   HealthStatus,
   JournalMyVotesResponse,
   JournalResponse,
+  LaunchTokenInput,
+  LaunchTokenResponse,
   LeaderboardResponse,
   ListGurusParams,
   PortalSession,
+  PortfolioResponse,
   Rating,
+  RewardHistoryResponse,
   RewardReadinessResponse,
   SubscriptionCheck,
   TelegramBotInfoResponse,
@@ -1800,6 +1806,346 @@ export function useGetRewardReadiness<
   },
 ): UseQueryResult<TData, TError> & { queryKey: QueryKey } {
   const queryOptions = getGetRewardReadinessQueryOptions(guruId, options);
+
+  const query = useQuery(queryOptions) as UseQueryResult<TData, TError> & {
+    queryKey: QueryKey;
+  };
+
+  return { ...query, queryKey: queryOptions.queryKey };
+}
+
+/**
+ * @summary Launch a token for a guru via Bankr (creator only)
+ */
+export const getLaunchTokenUrl = (guruId: number) => {
+  return `/api/gurus/${guruId}/token/launch`;
+};
+
+export const launchToken = async (
+  guruId: number,
+  launchTokenInput: LaunchTokenInput,
+  options?: RequestInit,
+): Promise<LaunchTokenResponse> => {
+  return customFetch<LaunchTokenResponse>(getLaunchTokenUrl(guruId), {
+    ...options,
+    method: "POST",
+    headers: { "Content-Type": "application/json", ...options?.headers },
+    body: JSON.stringify(launchTokenInput),
+  });
+};
+
+export const getLaunchTokenMutationOptions = <
+  TError = ErrorType<ErrorResponse>,
+  TContext = unknown,
+>(options?: {
+  mutation?: UseMutationOptions<
+    Awaited<ReturnType<typeof launchToken>>,
+    TError,
+    { guruId: number; data: BodyType<LaunchTokenInput> },
+    TContext
+  >;
+  request?: SecondParameter<typeof customFetch>;
+}): UseMutationOptions<
+  Awaited<ReturnType<typeof launchToken>>,
+  TError,
+  { guruId: number; data: BodyType<LaunchTokenInput> },
+  TContext
+> => {
+  const mutationKey = ["launchToken"];
+  const { mutation: mutationOptions, request: requestOptions } = options
+    ? options.mutation &&
+      "mutationKey" in options.mutation &&
+      options.mutation.mutationKey
+      ? options
+      : { ...options, mutation: { ...options.mutation, mutationKey } }
+    : { mutation: { mutationKey }, request: undefined };
+
+  const mutationFn: MutationFunction<
+    Awaited<ReturnType<typeof launchToken>>,
+    { guruId: number; data: BodyType<LaunchTokenInput> }
+  > = (props) => {
+    const { guruId, data } = props ?? {};
+
+    return launchToken(guruId, data, requestOptions);
+  };
+
+  return { mutationFn, ...mutationOptions };
+};
+
+export type LaunchTokenMutationResult = NonNullable<
+  Awaited<ReturnType<typeof launchToken>>
+>;
+export type LaunchTokenMutationBody = BodyType<LaunchTokenInput>;
+export type LaunchTokenMutationError = ErrorType<ErrorResponse>;
+
+/**
+ * @summary Launch a token for a guru via Bankr (creator only)
+ */
+export const useLaunchToken = <
+  TError = ErrorType<ErrorResponse>,
+  TContext = unknown,
+>(options?: {
+  mutation?: UseMutationOptions<
+    Awaited<ReturnType<typeof launchToken>>,
+    TError,
+    { guruId: number; data: BodyType<LaunchTokenInput> },
+    TContext
+  >;
+  request?: SecondParameter<typeof customFetch>;
+}): UseMutationResult<
+  Awaited<ReturnType<typeof launchToken>>,
+  TError,
+  { guruId: number; data: BodyType<LaunchTokenInput> },
+  TContext
+> => {
+  return useMutation(getLaunchTokenMutationOptions(options));
+};
+
+/**
+ * @summary Distribute token rewards to top contributors (creator only)
+ */
+export const getDistributeRewardsUrl = (guruId: number) => {
+  return `/api/gurus/${guruId}/rewards/distribute`;
+};
+
+export const distributeRewards = async (
+  guruId: number,
+  distributeRewardsInput: DistributeRewardsInput,
+  options?: RequestInit,
+): Promise<DistributeRewardsResponse> => {
+  return customFetch<DistributeRewardsResponse>(
+    getDistributeRewardsUrl(guruId),
+    {
+      ...options,
+      method: "POST",
+      headers: { "Content-Type": "application/json", ...options?.headers },
+      body: JSON.stringify(distributeRewardsInput),
+    },
+  );
+};
+
+export const getDistributeRewardsMutationOptions = <
+  TError = ErrorType<ErrorResponse>,
+  TContext = unknown,
+>(options?: {
+  mutation?: UseMutationOptions<
+    Awaited<ReturnType<typeof distributeRewards>>,
+    TError,
+    { guruId: number; data: BodyType<DistributeRewardsInput> },
+    TContext
+  >;
+  request?: SecondParameter<typeof customFetch>;
+}): UseMutationOptions<
+  Awaited<ReturnType<typeof distributeRewards>>,
+  TError,
+  { guruId: number; data: BodyType<DistributeRewardsInput> },
+  TContext
+> => {
+  const mutationKey = ["distributeRewards"];
+  const { mutation: mutationOptions, request: requestOptions } = options
+    ? options.mutation &&
+      "mutationKey" in options.mutation &&
+      options.mutation.mutationKey
+      ? options
+      : { ...options, mutation: { ...options.mutation, mutationKey } }
+    : { mutation: { mutationKey }, request: undefined };
+
+  const mutationFn: MutationFunction<
+    Awaited<ReturnType<typeof distributeRewards>>,
+    { guruId: number; data: BodyType<DistributeRewardsInput> }
+  > = (props) => {
+    const { guruId, data } = props ?? {};
+
+    return distributeRewards(guruId, data, requestOptions);
+  };
+
+  return { mutationFn, ...mutationOptions };
+};
+
+export type DistributeRewardsMutationResult = NonNullable<
+  Awaited<ReturnType<typeof distributeRewards>>
+>;
+export type DistributeRewardsMutationBody = BodyType<DistributeRewardsInput>;
+export type DistributeRewardsMutationError = ErrorType<ErrorResponse>;
+
+/**
+ * @summary Distribute token rewards to top contributors (creator only)
+ */
+export const useDistributeRewards = <
+  TError = ErrorType<ErrorResponse>,
+  TContext = unknown,
+>(options?: {
+  mutation?: UseMutationOptions<
+    Awaited<ReturnType<typeof distributeRewards>>,
+    TError,
+    { guruId: number; data: BodyType<DistributeRewardsInput> },
+    TContext
+  >;
+  request?: SecondParameter<typeof customFetch>;
+}): UseMutationResult<
+  Awaited<ReturnType<typeof distributeRewards>>,
+  TError,
+  { guruId: number; data: BodyType<DistributeRewardsInput> },
+  TContext
+> => {
+  return useMutation(getDistributeRewardsMutationOptions(options));
+};
+
+/**
+ * @summary Get reward distribution history (creator only)
+ */
+export const getGetRewardHistoryUrl = (guruId: number) => {
+  return `/api/gurus/${guruId}/rewards/history`;
+};
+
+export const getRewardHistory = async (
+  guruId: number,
+  options?: RequestInit,
+): Promise<RewardHistoryResponse> => {
+  return customFetch<RewardHistoryResponse>(getGetRewardHistoryUrl(guruId), {
+    ...options,
+    method: "GET",
+  });
+};
+
+export const getGetRewardHistoryQueryKey = (guruId: number) => {
+  return [`/api/gurus/${guruId}/rewards/history`] as const;
+};
+
+export const getGetRewardHistoryQueryOptions = <
+  TData = Awaited<ReturnType<typeof getRewardHistory>>,
+  TError = ErrorType<ErrorResponse>,
+>(
+  guruId: number,
+  options?: {
+    query?: UseQueryOptions<
+      Awaited<ReturnType<typeof getRewardHistory>>,
+      TError,
+      TData
+    >;
+    request?: SecondParameter<typeof customFetch>;
+  },
+) => {
+  const { query: queryOptions, request: requestOptions } = options ?? {};
+
+  const queryKey =
+    queryOptions?.queryKey ?? getGetRewardHistoryQueryKey(guruId);
+
+  const queryFn: QueryFunction<
+    Awaited<ReturnType<typeof getRewardHistory>>
+  > = ({ signal }) => getRewardHistory(guruId, { signal, ...requestOptions });
+
+  return {
+    queryKey,
+    queryFn,
+    enabled: !!guruId,
+    ...queryOptions,
+  } as UseQueryOptions<
+    Awaited<ReturnType<typeof getRewardHistory>>,
+    TError,
+    TData
+  > & { queryKey: QueryKey };
+};
+
+export type GetRewardHistoryQueryResult = NonNullable<
+  Awaited<ReturnType<typeof getRewardHistory>>
+>;
+export type GetRewardHistoryQueryError = ErrorType<ErrorResponse>;
+
+/**
+ * @summary Get reward distribution history (creator only)
+ */
+
+export function useGetRewardHistory<
+  TData = Awaited<ReturnType<typeof getRewardHistory>>,
+  TError = ErrorType<ErrorResponse>,
+>(
+  guruId: number,
+  options?: {
+    query?: UseQueryOptions<
+      Awaited<ReturnType<typeof getRewardHistory>>,
+      TError,
+      TData
+    >;
+    request?: SecondParameter<typeof customFetch>;
+  },
+): UseQueryResult<TData, TError> & { queryKey: QueryKey } {
+  const queryOptions = getGetRewardHistoryQueryOptions(guruId, options);
+
+  const query = useQuery(queryOptions) as UseQueryResult<TData, TError> & {
+    queryKey: QueryKey;
+  };
+
+  return { ...query, queryKey: queryOptions.queryKey };
+}
+
+/**
+ * @summary Get Bankr wallet portfolio
+ */
+export const getGetPortfolioUrl = () => {
+  return `/api/portfolio`;
+};
+
+export const getPortfolio = async (
+  options?: RequestInit,
+): Promise<PortfolioResponse> => {
+  return customFetch<PortfolioResponse>(getGetPortfolioUrl(), {
+    ...options,
+    method: "GET",
+  });
+};
+
+export const getGetPortfolioQueryKey = () => {
+  return [`/api/portfolio`] as const;
+};
+
+export const getGetPortfolioQueryOptions = <
+  TData = Awaited<ReturnType<typeof getPortfolio>>,
+  TError = ErrorType<ErrorResponse>,
+>(options?: {
+  query?: UseQueryOptions<
+    Awaited<ReturnType<typeof getPortfolio>>,
+    TError,
+    TData
+  >;
+  request?: SecondParameter<typeof customFetch>;
+}) => {
+  const { query: queryOptions, request: requestOptions } = options ?? {};
+
+  const queryKey = queryOptions?.queryKey ?? getGetPortfolioQueryKey();
+
+  const queryFn: QueryFunction<Awaited<ReturnType<typeof getPortfolio>>> = ({
+    signal,
+  }) => getPortfolio({ signal, ...requestOptions });
+
+  return { queryKey, queryFn, ...queryOptions } as UseQueryOptions<
+    Awaited<ReturnType<typeof getPortfolio>>,
+    TError,
+    TData
+  > & { queryKey: QueryKey };
+};
+
+export type GetPortfolioQueryResult = NonNullable<
+  Awaited<ReturnType<typeof getPortfolio>>
+>;
+export type GetPortfolioQueryError = ErrorType<ErrorResponse>;
+
+/**
+ * @summary Get Bankr wallet portfolio
+ */
+
+export function useGetPortfolio<
+  TData = Awaited<ReturnType<typeof getPortfolio>>,
+  TError = ErrorType<ErrorResponse>,
+>(options?: {
+  query?: UseQueryOptions<
+    Awaited<ReturnType<typeof getPortfolio>>,
+    TError,
+    TData
+  >;
+  request?: SecondParameter<typeof customFetch>;
+}): UseQueryResult<TData, TError> & { queryKey: QueryKey } {
+  const queryOptions = getGetPortfolioQueryOptions(options);
 
   const query = useQuery(queryOptions) as UseQueryResult<TData, TError> & {
     queryKey: QueryKey;

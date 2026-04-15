@@ -125,6 +125,9 @@ export const GetGuruResponse = zod.object({
   wisdomScore: zod.number().nullish(),
   satisfactionScore: zod.number().nullish(),
   userCount: zod.number().nullish(),
+  tokenAddress: zod.string().nullish(),
+  tokenSymbol: zod.string().nullish(),
+  tokenChain: zod.string().nullish(),
   createdAt: zod.coerce.date(),
   categoryName: zod.string().nullish(),
   categorySlug: zod.string().nullish(),
@@ -457,6 +460,69 @@ export const GetRewardReadinessResponse = zod.object({
   ),
   totalContributors: zod.number(),
   totalScore: zod.number(),
+});
+
+/**
+ * @summary Launch a token for a guru via Bankr (creator only)
+ */
+export const LaunchTokenParams = zod.object({
+  guruId: zod.coerce.number(),
+});
+
+export const LaunchTokenBody = zod.object({
+  name: zod.string(),
+  symbol: zod.string(),
+});
+
+/**
+ * @summary Distribute token rewards to top contributors (creator only)
+ */
+export const DistributeRewardsParams = zod.object({
+  guruId: zod.coerce.number(),
+});
+
+export const DistributeRewardsBody = zod.object({
+  totalAmount: zod.string(),
+});
+
+/**
+ * @summary Get reward distribution history (creator only)
+ */
+export const GetRewardHistoryParams = zod.object({
+  guruId: zod.coerce.number(),
+});
+
+export const GetRewardHistoryResponse = zod.object({
+  distributions: zod.array(
+    zod.object({
+      id: zod.number(),
+      tokenAddress: zod.string(),
+      tokenSymbol: zod.string(),
+      chain: zod.string(),
+      totalAmount: zod.string(),
+      recipientCount: zod.number(),
+      status: zod.string(),
+      transactionHashes: zod.array(zod.string()),
+      errorMessage: zod.string().nullish(),
+      createdAt: zod.coerce.date(),
+      completedAt: zod.coerce.date().nullish(),
+    }),
+  ),
+});
+
+/**
+ * @summary Get Bankr wallet portfolio
+ */
+export const GetPortfolioResponse = zod.object({
+  tokens: zod.array(
+    zod.object({
+      tokenAddress: zod.string(),
+      symbol: zod.string(),
+      name: zod.string(),
+      balance: zod.string(),
+      chain: zod.string(),
+    }),
+  ),
 });
 
 /**

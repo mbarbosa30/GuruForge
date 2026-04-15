@@ -30,6 +30,9 @@ export interface GuruDetail {
   wisdomScore?: number | null;
   satisfactionScore?: number | null;
   userCount?: number | null;
+  tokenAddress?: string | null;
+  tokenSymbol?: string | null;
+  tokenChain?: string | null;
   createdAt: Date;
   categoryName?: string | null;
   categorySlug?: string | null;

@@ -38,7 +38,7 @@ pnpm workspace monorepo using TypeScript. Each package manages its own dependenc
 ### Database Schema
 - `users` — id, privy_id, email, name, avatar_url, role (user/creator/admin), stripe_customer_id
 - `categories` — id, name, slug, description, icon, display_order
-- `gurus` — id, creator_id (FK users), name, slug, tagline, description, category_id (FK categories), avatar_url, status, price_cents, price_interval, topics, personality_style, model_tier, memory_policy, intro_enabled, proactive_cadence (off/daily/every_few_days/weekly, default off), wisdom_score, satisfaction_score, user_count, stripe_product_id, stripe_price_id, telegram_bot_token
+- `gurus` — id, creator_id (FK users), name, slug, tagline, description, category_id (FK categories), avatar_url, status, price_cents, price_interval, topics, personality_style, model_tier, memory_policy, intro_enabled, proactive_cadence (off/daily/every_few_days/weekly, default off), wisdom_score, satisfaction_score, user_count, token_address, token_symbol, token_chain, stripe_product_id, stripe_price_id, telegram_bot_token
 - `subscriptions` — id, user_id, guru_id, status, started_at, expires_at, stripe_subscription_id
 - `guru_ratings` — id, user_id, guru_id, rating (1-5), comment (unique constraint on user_id + guru_id)
 - `conversations` — id, user_id, guru_id, title, message_count, total_input_tokens, total_output_tokens, last_message_at, status
@@ -54,6 +54,7 @@ pnpm workspace monorepo using TypeScript. Each package manages its own dependenc
 - `data_correlations` — id, guru_id, source_type, source_id, target_type, target_id, relationship_type, created_at (tracks message→memory and message→pattern relationships)
 - `knowledge_snapshots` — id, guru_id, snapshot_data (jsonb: patternCounts, memoryDistribution, avgQualityScore, totalAnnotatedTurns, totalConversations, totalUsers, topTopics, confidenceDistribution), total_patterns, total_memories, avg_confidence, created_at
 - `training_exports` — id, format, status, filters (jsonb), row_count, file_size, export_content (text JSONL), exported_by, error_message, started_at, completed_at, created_at
+- `reward_distributions` — id, guru_id (FK gurus), initiated_by (FK users), token_address, token_symbol, chain, total_amount, recipient_count, status (pending/completed/failed), transaction_hashes (JSON text), error_message, created_at, completed_at
 
 ### API Endpoints (under `/api`)
 - `GET /api/healthz` — Health check
@@ -86,6 +87,10 @@ pnpm workspace monorepo using TypeScript. Each package manages its own dependenc
 - `GET /api/gurus/:guruId/journal/my-votes` — Get user's votes on journal entries (auth required)
 - `POST /api/feedback` — Submit thumbs up/down on memory or pattern (auth required, toggles)
 - `GET /api/feed` — Global wisdom feed across all Gurus (public, pagination, pattern type filter, composite ranking by confidence × votes × recency)
+- `POST /api/gurus/:guruId/token/launch` — Launch ERC-20 token via Bankr (auth required, creator only)
+- `POST /api/gurus/:guruId/rewards/distribute` — Distribute token rewards to contributors proportionally by score (auth required, creator only)
+- `GET /api/gurus/:guruId/rewards/history` — Get reward distribution history (auth required, creator only)
+- `GET /api/portfolio` — Get Bankr wallet portfolio (auth required)
 - `POST /api/admin/training-export` — Start training data export (admin only; formats: instruction_pairs, preference_pairs, knowledge_distillation)
 - `GET /api/admin/training-stats` — Get training dataset statistics (admin only; optional guruId filter)
 - `GET /api/admin/training-export/:id/download` — Download export as JSONL (admin only)
@@ -141,6 +146,16 @@ pnpm workspace monorepo using TypeScript. Each package manages its own dependenc
   - **PII redaction**: `piiRedactor.ts` strips emails, phones, URLs, SSNs, credit cards, IPs before content enters Tier 3
   - **Memory policy**: Guru's `memoryPolicy` field controls whether memory is enabled. `"none"` disables all memory.
   - **Contribution toggle**: Users can opt out of collective wisdom via `contributesToWisdom` on their telegram connection
+
+### Bankr Integration (Token Economics)
+- **Client**: `artifacts/api-server/src/lib/bankrClient.ts` — wraps Bankr REST API (https://api.bankr.bot)
+- **Auth**: `X-API-Key` header with `BANKR_API_KEY` env var
+- **Token launch**: POST `/agent/prompt` — deploys ERC-20 via Clanker on Base chain
+- **Token transfer**: POST `/wallet/transfer` — sends tokens to wallet addresses
+- **Portfolio**: GET `/wallet/portfolio` — lists wallet token balances
+- **Routes**: `artifacts/api-server/src/routes/bankr.ts` — 4 endpoints (launch, distribute, history, portfolio)
+- **Reward distribution**: Proportional to contribution scores — scores are summed, each contributor gets `(score / totalScore) × totalAmount` tokens. Only contributors with linked wallet addresses are eligible.
+- **Frontend**: Token launch form + distribute rewards UI + distribution history on guru profile page (creator-only section)
 
 ### Design System
 - Neo-minimal flat UI: pure white bg, sharp edges, uppercase micro-labels, numbered cards, clean typography

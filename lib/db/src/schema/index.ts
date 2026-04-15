@@ -16,3 +16,4 @@ export * from "./conversation-annotations";
 export * from "./data-correlations";
 export * from "./knowledge-snapshots";
 export * from "./training-exports";
+export * from "./reward-distributions";

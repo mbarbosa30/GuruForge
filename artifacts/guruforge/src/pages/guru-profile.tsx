@@ -1,6 +1,7 @@
 import { useRoute, Link, useSearch } from "wouter";
 import { useState, useEffect } from "react";
 import { usePrivy } from "@privy-io/react-auth";
+import { useQueryClient } from "@tanstack/react-query";
 import {
   useGetGuru,
   useListGuruRatings,
@@ -12,12 +13,15 @@ import {
   useGetLeaderboard,
   useGetCreatorLeaderboard,
   useUpdateGuru,
+  useLaunchToken,
+  useDistributeRewards,
+  useGetRewardHistory,
   getGetGuruQueryOptions,
   getListGuruRatingsQueryOptions,
   getCheckSubscriptionQueryOptions,
   getGetTelegramStatusQueryOptions,
 } from "@workspace/api-client-react";
-import type { Rating, LeaderboardContributor, CreatorContributor } from "@workspace/api-client-react";
+import type { Rating, LeaderboardContributor, CreatorContributor, RewardDistributionItem } from "@workspace/api-client-react";
 import TelegramConnectModal from "@/components/telegram-connect-modal";
 
 function formatMemoryPolicy(policy: string | null | undefined): string {
@@ -97,6 +101,7 @@ export default function GuruProfile() {
   });
 
   const { authenticated, login } = usePrivy();
+  const queryClient = useQueryClient();
   const [checkoutLoading, setCheckoutLoading] = useState(false);
   const [checkoutError, setCheckoutError] = useState<string | null>(null);
   const [showTelegramModal, setShowTelegramModal] = useState(false);
@@ -140,6 +145,23 @@ export default function GuruProfile() {
 
   const [leaderboardView, setLeaderboardView] = useState<"public" | "creator">("public");
 
+  const [tokenName, setTokenName] = useState("");
+  const [tokenSymbol, setTokenSymbol] = useState("");
+  const [tokenLaunching, setTokenLaunching] = useState(false);
+  const [tokenError, setTokenError] = useState<string | null>(null);
+  const [tokenSuccess, setTokenSuccess] = useState<string | null>(null);
+  const launchTokenMutation = useLaunchToken();
+
+  const [distributeAmount, setDistributeAmount] = useState("");
+  const [distributing, setDistributing] = useState(false);
+  const [distributeError, setDistributeError] = useState<string | null>(null);
+  const [distributeSuccess, setDistributeSuccess] = useState<string | null>(null);
+  const distributeRewardsMutation = useDistributeRewards();
+
+  const { data: rewardHistory } = useGetRewardHistory(guruId, {
+    query: { enabled: !!guru?.id && !!authenticated && !!guru?.isCreator },
+  });
+
   const { data: leaderboard } = useGetLeaderboard(guruId, {}, {
     query: { enabled: !!guru?.id },
   });
@@ -147,6 +169,47 @@ export default function GuruProfile() {
   const { data: creatorLeaderboard } = useGetCreatorLeaderboard(guruId, {}, {
     query: { enabled: !!guru?.id && !!authenticated && !!guru?.isCreator },
   });
+
+  async function handleLaunchToken() {
+    if (!guru?.id || !tokenName.trim() || !tokenSymbol.trim()) return;
+    setTokenLaunching(true);
+    setTokenError(null);
+    setTokenSuccess(null);
+    try {
+      const result = await launchTokenMutation.mutateAsync({
+        guruId: guru.id,
+        data: { name: tokenName.trim(), symbol: tokenSymbol.trim().toUpperCase() },
+      });
+      setTokenSuccess(`Token $${result.tokenSymbol} launched at ${result.tokenAddress}`);
+      setTokenName("");
+      setTokenSymbol("");
+      queryClient.invalidateQueries({ queryKey: ["getGuru"] });
+    } catch (err: unknown) {
+      setTokenError(err instanceof Error ? err.message : "Failed to launch token");
+    } finally {
+      setTokenLaunching(false);
+    }
+  }
+
+  async function handleDistribute() {
+    if (!guru?.id || !distributeAmount.trim()) return;
+    setDistributing(true);
+    setDistributeError(null);
+    setDistributeSuccess(null);
+    try {
+      const result = await distributeRewardsMutation.mutateAsync({
+        guruId: guru.id,
+        data: { totalAmount: distributeAmount.trim() },
+      });
+      setDistributeSuccess(`Distributed ${result.totalAmount} ${guru.tokenSymbol} to ${result.recipientCount} contributors`);
+      setDistributeAmount("");
+      queryClient.invalidateQueries({ queryKey: ["getRewardHistory"] });
+    } catch (err: unknown) {
+      setDistributeError(err instanceof Error ? err.message : "Failed to distribute rewards");
+    } finally {
+      setDistributing(false);
+    }
+  }
 
   useEffect(() => {
     if (telegramStatus?.contributesToWisdom !== undefined) {
@@ -402,6 +465,110 @@ export default function GuruProfile() {
               ))}
             </div>
           </div>
+        </section>
+      )}
+
+      {guru.isCreator && (
+        <section className="mb-10">
+          <p className="text-[11px] font-medium tracking-[0.12em] uppercase text-[#888] mb-4">Token & rewards</p>
+
+          {guru.tokenAddress ? (
+            <div className="border border-[#e0e0e0] mb-4">
+              <div className="px-5 py-4">
+                <span className="text-[11px] font-medium tracking-[0.04em] uppercase text-[#888] block mb-2">Token launched</span>
+                <div className="flex items-center gap-3">
+                  <span className="text-[16px] font-medium text-[#111]">${guru.tokenSymbol}</span>
+                  <span className="text-[12px] text-[#999] font-mono">{guru.tokenAddress}</span>
+                  <span className="text-[10px] font-medium tracking-[0.06em] uppercase text-[#888] border border-[#e0e0e0] px-2 py-0.5">{guru.tokenChain || "base"}</span>
+                </div>
+              </div>
+              <div className="border-t border-[#e0e0e0] px-5 py-4">
+                <span className="text-[11px] font-medium tracking-[0.04em] uppercase text-[#888] block mb-3">Distribute rewards</span>
+                <div className="flex gap-2 items-end">
+                  <div className="flex-1">
+                    <label className="text-[11px] text-[#aaa] block mb-1">Amount to distribute</label>
+                    <input
+                      type="text"
+                      value={distributeAmount}
+                      onChange={(e) => setDistributeAmount(e.target.value)}
+                      placeholder="e.g. 1000"
+                      className="w-full text-[14px] px-3 py-2 border border-[#ddd] bg-white text-[#333] focus:outline-none focus:border-[#999]"
+                    />
+                  </div>
+                  <button
+                    onClick={handleDistribute}
+                    disabled={distributing || !distributeAmount.trim()}
+                    className="text-[12px] font-medium tracking-[0.04em] uppercase text-white bg-[#111] px-5 py-2.5 border border-[#111] hover:bg-[#333] transition-colors cursor-pointer disabled:opacity-50 disabled:cursor-not-allowed whitespace-nowrap"
+                  >
+                    {distributing ? "Distributing..." : "Distribute"}
+                  </button>
+                </div>
+                {distributeError && <p className="text-[12px] text-[#c44] mt-2">{distributeError}</p>}
+                {distributeSuccess && <p className="text-[12px] text-[#2a7a2a] mt-2">{distributeSuccess}</p>}
+              </div>
+            </div>
+          ) : (
+            <div className="border border-[#e0e0e0] px-5 py-4 mb-4">
+              <span className="text-[11px] font-medium tracking-[0.04em] uppercase text-[#888] block mb-3">Launch token</span>
+              <p className="text-[13px] text-[#777] mb-4">Deploy an ERC-20 token on Base to reward your top contributors.</p>
+              <div className="flex gap-2 mb-3">
+                <div className="flex-1">
+                  <label className="text-[11px] text-[#aaa] block mb-1">Token name</label>
+                  <input
+                    type="text"
+                    value={tokenName}
+                    onChange={(e) => setTokenName(e.target.value)}
+                    placeholder="e.g. Guru Wisdom Token"
+                    className="w-full text-[14px] px-3 py-2 border border-[#ddd] bg-white text-[#333] focus:outline-none focus:border-[#999]"
+                  />
+                </div>
+                <div className="w-[120px]">
+                  <label className="text-[11px] text-[#aaa] block mb-1">Symbol</label>
+                  <input
+                    type="text"
+                    value={tokenSymbol}
+                    onChange={(e) => setTokenSymbol(e.target.value.toUpperCase().slice(0, 10))}
+                    placeholder="e.g. GWT"
+                    className="w-full text-[14px] px-3 py-2 border border-[#ddd] bg-white text-[#333] focus:outline-none focus:border-[#999] uppercase"
+                  />
+                </div>
+              </div>
+              <button
+                onClick={handleLaunchToken}
+                disabled={tokenLaunching || !tokenName.trim() || !tokenSymbol.trim()}
+                className="text-[12px] font-medium tracking-[0.04em] uppercase text-white bg-[#111] px-6 py-2.5 border border-[#111] hover:bg-[#333] transition-colors cursor-pointer disabled:opacity-50 disabled:cursor-not-allowed"
+              >
+                {tokenLaunching ? "Launching..." : "Launch Token"}
+              </button>
+              {tokenError && <p className="text-[12px] text-[#c44] mt-2">{tokenError}</p>}
+              {tokenSuccess && <p className="text-[12px] text-[#2a7a2a] mt-2">{tokenSuccess}</p>}
+            </div>
+          )}
+
+          {rewardHistory && rewardHistory.distributions.length > 0 && (
+            <div className="border border-[#e0e0e0]">
+              <div className="px-4 py-2 bg-[#fafafa] border-b border-[#e0e0e0]">
+                <span className="text-[10px] font-medium tracking-[0.08em] uppercase text-[#aaa]">Distribution history</span>
+              </div>
+              {rewardHistory.distributions.map((d: RewardDistributionItem) => (
+                <div key={d.id} className="px-4 py-3 border-b border-[#f0f0f0] last:border-0">
+                  <div className="flex items-center justify-between mb-1">
+                    <span className="text-[13px] text-[#333] font-medium">{d.totalAmount} {d.tokenSymbol}</span>
+                    <span className={`text-[10px] font-medium tracking-[0.06em] uppercase px-2 py-0.5 border ${
+                      d.status === "completed" ? "text-[#2a7a2a] border-[#c8e0c8] bg-[#f7fdf7]" :
+                      d.status === "failed" ? "text-[#c44] border-[#e8c8c8] bg-[#fdf7f7]" :
+                      "text-[#888] border-[#e0e0e0] bg-[#fafafa]"
+                    }`}>{d.status}</span>
+                  </div>
+                  <div className="flex items-center gap-3 text-[11px] text-[#999]">
+                    <span>{d.recipientCount} recipient{d.recipientCount !== 1 ? "s" : ""}</span>
+                    <span>{new Date(d.createdAt).toLocaleDateString()}</span>
+                  </div>
+                  {d.errorMessage && <p className="text-[11px] text-[#c44] mt-1">{d.errorMessage}</p>}
+                </div>
+              ))}
+            </div>
+          )}
         </section>
       )}
 

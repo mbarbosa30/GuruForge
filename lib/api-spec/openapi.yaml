@@ -26,6 +26,8 @@ tags:
     description: Wisdom feed and journal operations
   - name: feed
     description: Global wisdom feed operations
+  - name: bankr
+    description: Bankr token launch and reward distribution
 paths:
   /healthz:
     get:
@@ -537,6 +539,144 @@ paths:
             application/json:
               schema:
                 $ref: "#/components/schemas/ErrorResponse"
+  /gurus/{guruId}/token/launch:
+    post:
+      operationId: launchToken
+      tags: [bankr]
+      summary: Launch a token for a guru via Bankr (creator only)
+      parameters:
+        - name: guruId
+          in: path
+          required: true
+          schema:
+            type: integer
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/LaunchTokenInput"
+      responses:
+        "201":
+          description: Token launched
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/LaunchTokenResponse"
+        "400":
+          description: Bad request
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ErrorResponse"
+        "401":
+          description: Unauthorized
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ErrorResponse"
+        "403":
+          description: Forbidden
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ErrorResponse"
+        "409":
+          description: Token already launched
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ErrorResponse"
+  /gurus/{guruId}/rewards/distribute:
+    post:
+      operationId: distributeRewards
+      tags: [bankr]
+      summary: Distribute token rewards to top contributors (creator only)
+      parameters:
+        - name: guruId
+          in: path
+          required: true
+          schema:
+            type: integer
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/DistributeRewardsInput"
+      responses:
+        "201":
+          description: Rewards distributed
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/DistributeRewardsResponse"
+        "400":
+          description: Bad request
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ErrorResponse"
+        "401":
+          description: Unauthorized
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ErrorResponse"
+        "403":
+          description: Forbidden
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ErrorResponse"
+  /gurus/{guruId}/rewards/history:
+    get:
+      operationId: getRewardHistory
+      tags: [bankr]
+      summary: Get reward distribution history (creator only)
+      parameters:
+        - name: guruId
+          in: path
+          required: true
+          schema:
+            type: integer
+      responses:
+        "200":
+          description: Distribution history
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/RewardHistoryResponse"
+        "401":
+          description: Unauthorized
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ErrorResponse"
+        "403":
+          description: Forbidden
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ErrorResponse"
+  /portfolio:
+    get:
+      operationId: getPortfolio
+      tags: [bankr]
+      summary: Get Bankr wallet portfolio
+      responses:
+        "200":
+          description: Portfolio tokens
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/PortfolioResponse"
+        "401":
+          description: Unauthorized
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ErrorResponse"
   /gurus/{guruId}/contribution-score:
     get:
       operationId: getContributionScore
@@ -936,6 +1076,15 @@ components:
           nullable: true
         userCount:
           type: integer
+          nullable: true
+        tokenAddress:
+          type: string
+          nullable: true
+        tokenSymbol:
+          type: string
+          nullable: true
+        tokenChain:
+          type: string
           nullable: true
         createdAt:
           type: string
@@ -1734,6 +1883,138 @@ components:
         - limit
         - offset
         - qualityOverTime
+    LaunchTokenInput:
+      type: object
+      properties:
+        name:
+          type: string
+        symbol:
+          type: string
+      required:
+        - name
+        - symbol
+    LaunchTokenResponse:
+      type: object
+      properties:
+        tokenAddress:
+          type: string
+        tokenSymbol:
+          type: string
+        tokenChain:
+          type: string
+        transactionHash:
+          type: string
+          nullable: true
+      required:
+        - tokenAddress
+        - tokenSymbol
+        - tokenChain
+    DistributeRewardsInput:
+      type: object
+      properties:
+        totalAmount:
+          type: string
+      required:
+        - totalAmount
+    DistributeRewardsResponse:
+      type: object
+      properties:
+        distributionId:
+          type: integer
+        status:
+          type: string
+        recipientCount:
+          type: integer
+        totalAmount:
+          type: string
+        transactionHashes:
+          type: array
+          items:
+            type: string
+      required:
+        - distributionId
+        - status
+        - recipientCount
+        - totalAmount
+        - transactionHashes
+    RewardDistributionItem:
+      type: object
+      properties:
+        id:
+          type: integer
+        tokenAddress:
+          type: string
+        tokenSymbol:
+          type: string
+        chain:
+          type: string
+        totalAmount:
+          type: string
+        recipientCount:
+          type: integer
+        status:
+          type: string
+        transactionHashes:
+          type: array
+          items:
+            type: string
+        errorMessage:
+          type: string
+          nullable: true
+        createdAt:
+          type: string
+          format: date-time
+        completedAt:
+          type: string
+          format: date-time
+          nullable: true
+      required:
+        - id
+        - tokenAddress
+        - tokenSymbol
+        - chain
+        - totalAmount
+        - recipientCount
+        - status
+        - transactionHashes
+        - createdAt
+    RewardHistoryResponse:
+      type: object
+      properties:
+        distributions:
+          type: array
+          items:
+            $ref: "#/components/schemas/RewardDistributionItem"
+      required:
+        - distributions
+    PortfolioToken:
+      type: object
+      properties:
+        tokenAddress:
+          type: string
+        symbol:
+          type: string
+        name:
+          type: string
+        balance:
+          type: string
+        chain:
+          type: string
+      required:
+        - tokenAddress
+        - symbol
+        - name
+        - balance
+        - chain
+    PortfolioResponse:
+      type: object
+      properties:
+        tokens:
+          type: array
+          items:
+            $ref: "#/components/schemas/PortfolioToken"
+      required:
+        - tokens
     RewardRecipient:
       type: object
       properties:

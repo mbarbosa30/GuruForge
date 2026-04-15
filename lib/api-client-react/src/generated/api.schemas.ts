@@ -96,6 +96,9 @@ export interface GuruDetail {
   wisdomScore?: number | null;
   satisfactionScore?: number | null;
   userCount?: number | null;
+  tokenAddress?: string | null;
+  tokenSymbol?: string | null;
+  tokenChain?: string | null;
   createdAt: string;
   categoryName?: string | null;
   categorySlug?: string | null;
@@ -525,6 +528,60 @@ export interface CreatorLeaderboardResponse {
   limit: number;
   offset: number;
   qualityOverTime: QualityTrendPoint[];
+}
+
+export interface LaunchTokenInput {
+  name: string;
+  symbol: string;
+}
+
+export interface LaunchTokenResponse {
+  tokenAddress: string;
+  tokenSymbol: string;
+  tokenChain: string;
+  transactionHash?: string | null;
+}
+
+export interface DistributeRewardsInput {
+  totalAmount: string;
+}
+
+export interface DistributeRewardsResponse {
+  distributionId: number;
+  status: string;
+  recipientCount: number;
+  totalAmount: string;
+  transactionHashes: string[];
+}
+
+export interface RewardDistributionItem {
+  id: number;
+  tokenAddress: string;
+  tokenSymbol: string;
+  chain: string;
+  totalAmount: string;
+  recipientCount: number;
+  status: string;
+  transactionHashes: string[];
+  errorMessage?: string | null;
+  createdAt: string;
+  completedAt?: string | null;
+}
+
+export interface RewardHistoryResponse {
+  distributions: RewardDistributionItem[];
+}
+
+export interface PortfolioToken {
+  tokenAddress: string;
+  symbol: string;
+  name: string;
+  balance: string;
+  chain: string;
+}
+
+export interface PortfolioResponse {
+  tokens: PortfolioToken[];
 }
 
 export interface RewardRecipient {

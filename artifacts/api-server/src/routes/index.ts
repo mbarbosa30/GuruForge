@@ -9,6 +9,7 @@ import telegramRouter from "./telegram";
 import wisdomRouter from "./wisdom";
 import feedRouter from "./feed";
 import trainingRouter from "./training";
+import bankrRouter from "./bankr";
 
 const router: IRouter = Router();
 
@@ -22,5 +23,6 @@ router.use(telegramRouter);
 router.use(wisdomRouter);
 router.use(feedRouter);
 router.use(trainingRouter);
+router.use(bankrRouter);
 
 export default router;
