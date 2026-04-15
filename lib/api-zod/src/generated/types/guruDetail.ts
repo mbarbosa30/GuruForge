@@ -6,6 +6,7 @@
  * OpenAPI spec version: 0.1.0
  */
 import type { GuruDetailModelTier } from "./guruDetailModelTier";
+import type { GuruDetailProactiveCadence } from "./guruDetailProactiveCadence";
 
 export interface GuruDetail {
   id: number;
@@ -24,6 +25,8 @@ export interface GuruDetail {
   modelTier?: GuruDetailModelTier;
   memoryPolicy?: string | null;
   introEnabled?: boolean | null;
+  proactiveCadence?: GuruDetailProactiveCadence;
+  isCreator?: boolean;
   wisdomScore?: number | null;
   satisfactionScore?: number | null;
   userCount?: number | null;

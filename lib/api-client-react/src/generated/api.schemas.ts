@@ -63,6 +63,17 @@ export const GuruDetailModelTier = {
   gpt: "gpt",
 } as const;
 
+export type GuruDetailProactiveCadence =
+  | (typeof GuruDetailProactiveCadence)[keyof typeof GuruDetailProactiveCadence]
+  | null;
+
+export const GuruDetailProactiveCadence = {
+  off: "off",
+  daily: "daily",
+  every_few_days: "every_few_days",
+  weekly: "weekly",
+} as const;
+
 export interface GuruDetail {
   id: number;
   creatorId: number;
@@ -80,7 +91,7 @@ export interface GuruDetail {
   modelTier?: GuruDetailModelTier;
   memoryPolicy?: string | null;
   introEnabled?: boolean | null;
-  proactiveCadence?: string | null;
+  proactiveCadence?: GuruDetailProactiveCadence;
   isCreator?: boolean;
   wisdomScore?: number | null;
   satisfactionScore?: number | null;
@@ -466,6 +477,53 @@ export interface FeedbackResult {
   vote?: string | null;
 }
 
+export interface LeaderboardContributor {
+  rank: number;
+  displayName: string;
+  score: number;
+  patternsContributed: number;
+  isYou: boolean;
+}
+
+export interface LeaderboardResponse {
+  contributors: LeaderboardContributor[];
+  total: number;
+  limit: number;
+  offset: number;
+}
+
+export interface CreatorContributor {
+  rank: number;
+  name: string;
+  email: string;
+  walletAddress?: string | null;
+  score: number;
+  turnCount: number;
+  patternsContributed: number;
+  lastUpdatedAt?: string | null;
+}
+
+export interface CreatorLeaderboardResponse {
+  contributors: CreatorContributor[];
+  total: number;
+  limit: number;
+  offset: number;
+}
+
+export interface RewardRecipient {
+  walletAddress: string;
+  score: number;
+  sharePercent: number;
+  patternsContributed: number;
+  turnCount: number;
+}
+
+export interface RewardReadinessResponse {
+  recipients: RewardRecipient[];
+  totalContributors: number;
+  totalScore: number;
+}
+
 export type ListGurusParams = {
   /**
    * Filter by category slug
@@ -494,6 +552,16 @@ export const ListGurusSort = {
   price_desc: "price_desc",
   users: "users",
 } as const;
+
+export type GetLeaderboardParams = {
+  limit?: number;
+  offset?: number;
+};
+
+export type GetCreatorLeaderboardParams = {
+  limit?: number;
+  offset?: number;
+};
 
 export type GetGlobalFeedParams = {
   /**

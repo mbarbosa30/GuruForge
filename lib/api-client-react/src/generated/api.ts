@@ -23,11 +23,14 @@ import type {
   ContributionScoreResponse,
   CreateGuruInput,
   CreateRatingInput,
+  CreatorLeaderboardResponse,
   ErrorResponse,
   FeedbackInput,
   FeedbackResult,
+  GetCreatorLeaderboardParams,
   GetGlobalFeedParams,
   GetGuruJournalParams,
+  GetLeaderboardParams,
   GetWisdomFeedParams,
   GlobalFeedResponse,
   Guru,
@@ -37,9 +40,11 @@ import type {
   HealthStatus,
   JournalMyVotesResponse,
   JournalResponse,
+  LeaderboardResponse,
   ListGurusParams,
   PortalSession,
   Rating,
+  RewardReadinessResponse,
   SubscriptionCheck,
   TelegramBotInfoResponse,
   TelegramConnectionResponse,
@@ -1476,6 +1481,332 @@ export const useToggleWisdomContribution = <
 > => {
   return useMutation(getToggleWisdomContributionMutationOptions(options));
 };
+
+/**
+ * @summary Get public contribution leaderboard for a guru
+ */
+export const getGetLeaderboardUrl = (
+  guruId: number,
+  params?: GetLeaderboardParams,
+) => {
+  const normalizedParams = new URLSearchParams();
+
+  Object.entries(params || {}).forEach(([key, value]) => {
+    if (value !== undefined) {
+      normalizedParams.append(key, value === null ? "null" : value.toString());
+    }
+  });
+
+  const stringifiedParams = normalizedParams.toString();
+
+  return stringifiedParams.length > 0
+    ? `/api/gurus/${guruId}/leaderboard?${stringifiedParams}`
+    : `/api/gurus/${guruId}/leaderboard`;
+};
+
+export const getLeaderboard = async (
+  guruId: number,
+  params?: GetLeaderboardParams,
+  options?: RequestInit,
+): Promise<LeaderboardResponse> => {
+  return customFetch<LeaderboardResponse>(
+    getGetLeaderboardUrl(guruId, params),
+    {
+      ...options,
+      method: "GET",
+    },
+  );
+};
+
+export const getGetLeaderboardQueryKey = (
+  guruId: number,
+  params?: GetLeaderboardParams,
+) => {
+  return [
+    `/api/gurus/${guruId}/leaderboard`,
+    ...(params ? [params] : []),
+  ] as const;
+};
+
+export const getGetLeaderboardQueryOptions = <
+  TData = Awaited<ReturnType<typeof getLeaderboard>>,
+  TError = ErrorType<unknown>,
+>(
+  guruId: number,
+  params?: GetLeaderboardParams,
+  options?: {
+    query?: UseQueryOptions<
+      Awaited<ReturnType<typeof getLeaderboard>>,
+      TError,
+      TData
+    >;
+    request?: SecondParameter<typeof customFetch>;
+  },
+) => {
+  const { query: queryOptions, request: requestOptions } = options ?? {};
+
+  const queryKey =
+    queryOptions?.queryKey ?? getGetLeaderboardQueryKey(guruId, params);
+
+  const queryFn: QueryFunction<Awaited<ReturnType<typeof getLeaderboard>>> = ({
+    signal,
+  }) => getLeaderboard(guruId, params, { signal, ...requestOptions });
+
+  return {
+    queryKey,
+    queryFn,
+    enabled: !!guruId,
+    ...queryOptions,
+  } as UseQueryOptions<
+    Awaited<ReturnType<typeof getLeaderboard>>,
+    TError,
+    TData
+  > & { queryKey: QueryKey };
+};
+
+export type GetLeaderboardQueryResult = NonNullable<
+  Awaited<ReturnType<typeof getLeaderboard>>
+>;
+export type GetLeaderboardQueryError = ErrorType<unknown>;
+
+/**
+ * @summary Get public contribution leaderboard for a guru
+ */
+
+export function useGetLeaderboard<
+  TData = Awaited<ReturnType<typeof getLeaderboard>>,
+  TError = ErrorType<unknown>,
+>(
+  guruId: number,
+  params?: GetLeaderboardParams,
+  options?: {
+    query?: UseQueryOptions<
+      Awaited<ReturnType<typeof getLeaderboard>>,
+      TError,
+      TData
+    >;
+    request?: SecondParameter<typeof customFetch>;
+  },
+): UseQueryResult<TData, TError> & { queryKey: QueryKey } {
+  const queryOptions = getGetLeaderboardQueryOptions(guruId, params, options);
+
+  const query = useQuery(queryOptions) as UseQueryResult<TData, TError> & {
+    queryKey: QueryKey;
+  };
+
+  return { ...query, queryKey: queryOptions.queryKey };
+}
+
+/**
+ * @summary Get full contributor details (creator only)
+ */
+export const getGetCreatorLeaderboardUrl = (
+  guruId: number,
+  params?: GetCreatorLeaderboardParams,
+) => {
+  const normalizedParams = new URLSearchParams();
+
+  Object.entries(params || {}).forEach(([key, value]) => {
+    if (value !== undefined) {
+      normalizedParams.append(key, value === null ? "null" : value.toString());
+    }
+  });
+
+  const stringifiedParams = normalizedParams.toString();
+
+  return stringifiedParams.length > 0
+    ? `/api/gurus/${guruId}/leaderboard/creator?${stringifiedParams}`
+    : `/api/gurus/${guruId}/leaderboard/creator`;
+};
+
+export const getCreatorLeaderboard = async (
+  guruId: number,
+  params?: GetCreatorLeaderboardParams,
+  options?: RequestInit,
+): Promise<CreatorLeaderboardResponse> => {
+  return customFetch<CreatorLeaderboardResponse>(
+    getGetCreatorLeaderboardUrl(guruId, params),
+    {
+      ...options,
+      method: "GET",
+    },
+  );
+};
+
+export const getGetCreatorLeaderboardQueryKey = (
+  guruId: number,
+  params?: GetCreatorLeaderboardParams,
+) => {
+  return [
+    `/api/gurus/${guruId}/leaderboard/creator`,
+    ...(params ? [params] : []),
+  ] as const;
+};
+
+export const getGetCreatorLeaderboardQueryOptions = <
+  TData = Awaited<ReturnType<typeof getCreatorLeaderboard>>,
+  TError = ErrorType<ErrorResponse>,
+>(
+  guruId: number,
+  params?: GetCreatorLeaderboardParams,
+  options?: {
+    query?: UseQueryOptions<
+      Awaited<ReturnType<typeof getCreatorLeaderboard>>,
+      TError,
+      TData
+    >;
+    request?: SecondParameter<typeof customFetch>;
+  },
+) => {
+  const { query: queryOptions, request: requestOptions } = options ?? {};
+
+  const queryKey =
+    queryOptions?.queryKey ?? getGetCreatorLeaderboardQueryKey(guruId, params);
+
+  const queryFn: QueryFunction<
+    Awaited<ReturnType<typeof getCreatorLeaderboard>>
+  > = ({ signal }) =>
+    getCreatorLeaderboard(guruId, params, { signal, ...requestOptions });
+
+  return {
+    queryKey,
+    queryFn,
+    enabled: !!guruId,
+    ...queryOptions,
+  } as UseQueryOptions<
+    Awaited<ReturnType<typeof getCreatorLeaderboard>>,
+    TError,
+    TData
+  > & { queryKey: QueryKey };
+};
+
+export type GetCreatorLeaderboardQueryResult = NonNullable<
+  Awaited<ReturnType<typeof getCreatorLeaderboard>>
+>;
+export type GetCreatorLeaderboardQueryError = ErrorType<ErrorResponse>;
+
+/**
+ * @summary Get full contributor details (creator only)
+ */
+
+export function useGetCreatorLeaderboard<
+  TData = Awaited<ReturnType<typeof getCreatorLeaderboard>>,
+  TError = ErrorType<ErrorResponse>,
+>(
+  guruId: number,
+  params?: GetCreatorLeaderboardParams,
+  options?: {
+    query?: UseQueryOptions<
+      Awaited<ReturnType<typeof getCreatorLeaderboard>>,
+      TError,
+      TData
+    >;
+    request?: SecondParameter<typeof customFetch>;
+  },
+): UseQueryResult<TData, TError> & { queryKey: QueryKey } {
+  const queryOptions = getGetCreatorLeaderboardQueryOptions(
+    guruId,
+    params,
+    options,
+  );
+
+  const query = useQuery(queryOptions) as UseQueryResult<TData, TError> & {
+    queryKey: QueryKey;
+  };
+
+  return { ...query, queryKey: queryOptions.queryKey };
+}
+
+/**
+ * @summary Get wallet-to-score mapping for token distribution (creator only)
+ */
+export const getGetRewardReadinessUrl = (guruId: number) => {
+  return `/api/gurus/${guruId}/leaderboard/rewards`;
+};
+
+export const getRewardReadiness = async (
+  guruId: number,
+  options?: RequestInit,
+): Promise<RewardReadinessResponse> => {
+  return customFetch<RewardReadinessResponse>(
+    getGetRewardReadinessUrl(guruId),
+    {
+      ...options,
+      method: "GET",
+    },
+  );
+};
+
+export const getGetRewardReadinessQueryKey = (guruId: number) => {
+  return [`/api/gurus/${guruId}/leaderboard/rewards`] as const;
+};
+
+export const getGetRewardReadinessQueryOptions = <
+  TData = Awaited<ReturnType<typeof getRewardReadiness>>,
+  TError = ErrorType<ErrorResponse>,
+>(
+  guruId: number,
+  options?: {
+    query?: UseQueryOptions<
+      Awaited<ReturnType<typeof getRewardReadiness>>,
+      TError,
+      TData
+    >;
+    request?: SecondParameter<typeof customFetch>;
+  },
+) => {
+  const { query: queryOptions, request: requestOptions } = options ?? {};
+
+  const queryKey =
+    queryOptions?.queryKey ?? getGetRewardReadinessQueryKey(guruId);
+
+  const queryFn: QueryFunction<
+    Awaited<ReturnType<typeof getRewardReadiness>>
+  > = ({ signal }) => getRewardReadiness(guruId, { signal, ...requestOptions });
+
+  return {
+    queryKey,
+    queryFn,
+    enabled: !!guruId,
+    ...queryOptions,
+  } as UseQueryOptions<
+    Awaited<ReturnType<typeof getRewardReadiness>>,
+    TError,
+    TData
+  > & { queryKey: QueryKey };
+};
+
+export type GetRewardReadinessQueryResult = NonNullable<
+  Awaited<ReturnType<typeof getRewardReadiness>>
+>;
+export type GetRewardReadinessQueryError = ErrorType<ErrorResponse>;
+
+/**
+ * @summary Get wallet-to-score mapping for token distribution (creator only)
+ */
+
+export function useGetRewardReadiness<
+  TData = Awaited<ReturnType<typeof getRewardReadiness>>,
+  TError = ErrorType<ErrorResponse>,
+>(
+  guruId: number,
+  options?: {
+    query?: UseQueryOptions<
+      Awaited<ReturnType<typeof getRewardReadiness>>,
+      TError,
+      TData
+    >;
+    request?: SecondParameter<typeof customFetch>;
+  },
+): UseQueryResult<TData, TError> & { queryKey: QueryKey } {
+  const queryOptions = getGetRewardReadinessQueryOptions(guruId, options);
+
+  const query = useQuery(queryOptions) as UseQueryResult<TData, TError> & {
+    queryKey: QueryKey;
+  };
+
+  return { ...query, queryKey: queryOptions.queryKey };
+}
 
 /**
  * @summary Get the current user's contribution score for a guru

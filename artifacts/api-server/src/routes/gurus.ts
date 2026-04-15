@@ -327,4 +327,211 @@ router.get("/gurus/:guruId/contribution-score", requireAuth, async (req: AuthReq
   }
 });
 
+router.get("/gurus/:guruId/leaderboard", optionalAuth, async (req: AuthRequest, res) => {
+  try {
+    const guruId = parseInt(req.params.guruId, 10);
+    if (isNaN(guruId)) {
+      res.status(400).json({ error: "Invalid guru ID" });
+      return;
+    }
+
+    const [guru] = await db
+      .select({ id: gurusTable.id, status: gurusTable.status, creatorId: gurusTable.creatorId })
+      .from(gurusTable)
+      .where(eq(gurusTable.id, guruId))
+      .limit(1);
+
+    if (!guru) {
+      res.status(404).json({ error: "Guru not found" });
+      return;
+    }
+
+    if (guru.status !== "published" && guru.creatorId !== req.dbUserId) {
+      res.status(404).json({ error: "Guru not found" });
+      return;
+    }
+
+    const parsedLimit = parseInt(req.query.limit as string, 10);
+    const parsedOffset = parseInt(req.query.offset as string, 10);
+    const limit = Math.max(1, Math.min(isNaN(parsedLimit) ? 25 : parsedLimit, 100));
+    const offset = Math.max(0, isNaN(parsedOffset) ? 0 : parsedOffset);
+
+    const rows = await db
+      .select({
+        userId: contributionScoresTable.userId,
+        score: contributionScoresTable.score,
+        patternsContributed: contributionScoresTable.patternsContributed,
+        name: usersTable.name,
+      })
+      .from(contributionScoresTable)
+      .innerJoin(usersTable, eq(contributionScoresTable.userId, usersTable.id))
+      .where(eq(contributionScoresTable.guruId, guruId))
+      .orderBy(desc(contributionScoresTable.score))
+      .limit(limit)
+      .offset(offset);
+
+    const [totalResult] = await db
+      .select({ count: count() })
+      .from(contributionScoresTable)
+      .where(eq(contributionScoresTable.guruId, guruId));
+
+    const contributors = rows.map((row, idx) => {
+      const rank = offset + idx + 1;
+      const nameStr = row.name || "Anonymous";
+      const anonymized = nameStr.charAt(0) + "***";
+      return {
+        rank,
+        displayName: anonymized,
+        score: Math.round(row.score),
+        patternsContributed: row.patternsContributed,
+        isYou: req.dbUserId ? row.userId === req.dbUserId : false,
+      };
+    });
+
+    res.json({
+      contributors,
+      total: totalResult?.count ?? 0,
+      limit,
+      offset,
+    });
+  } catch (err) {
+    res.status(500).json({ error: "Failed to fetch leaderboard" });
+  }
+});
+
+router.get("/gurus/:guruId/leaderboard/creator", requireAuth, async (req: AuthRequest, res) => {
+  try {
+    if (!req.dbUserId) {
+      res.status(401).json({ error: "Unauthorized" });
+      return;
+    }
+
+    const guruId = parseInt(req.params.guruId, 10);
+    if (isNaN(guruId)) {
+      res.status(400).json({ error: "Invalid guru ID" });
+      return;
+    }
+
+    const [guru] = await db
+      .select({ creatorId: gurusTable.creatorId })
+      .from(gurusTable)
+      .where(eq(gurusTable.id, guruId))
+      .limit(1);
+
+    if (!guru || guru.creatorId !== req.dbUserId) {
+      res.status(403).json({ error: "Only the guru creator can view this data" });
+      return;
+    }
+
+    const parsedLimit = parseInt(req.query.limit as string, 10);
+    const parsedOffset = parseInt(req.query.offset as string, 10);
+    const limit = Math.max(1, Math.min(isNaN(parsedLimit) ? 50 : parsedLimit, 200));
+    const offset = Math.max(0, isNaN(parsedOffset) ? 0 : parsedOffset);
+
+    const rows = await db
+      .select({
+        userId: contributionScoresTable.userId,
+        score: contributionScoresTable.score,
+        turnCount: contributionScoresTable.turnCount,
+        patternsContributed: contributionScoresTable.patternsContributed,
+        lastUpdatedAt: contributionScoresTable.lastUpdatedAt,
+        name: usersTable.name,
+        email: usersTable.email,
+        walletAddress: usersTable.walletAddress,
+      })
+      .from(contributionScoresTable)
+      .innerJoin(usersTable, eq(contributionScoresTable.userId, usersTable.id))
+      .where(eq(contributionScoresTable.guruId, guruId))
+      .orderBy(desc(contributionScoresTable.score))
+      .limit(limit)
+      .offset(offset);
+
+    const [totalResult] = await db
+      .select({ count: count() })
+      .from(contributionScoresTable)
+      .where(eq(contributionScoresTable.guruId, guruId));
+
+    const contributors = rows.map((row, idx) => ({
+      rank: offset + idx + 1,
+      name: row.name || "Anonymous",
+      email: row.email,
+      walletAddress: row.walletAddress,
+      score: Math.round(row.score),
+      turnCount: row.turnCount,
+      patternsContributed: row.patternsContributed,
+      lastUpdatedAt: row.lastUpdatedAt,
+    }));
+
+    res.json({
+      contributors,
+      total: totalResult?.count ?? 0,
+      limit,
+      offset,
+    });
+  } catch (err) {
+    res.status(500).json({ error: "Failed to fetch creator leaderboard" });
+  }
+});
+
+router.get("/gurus/:guruId/leaderboard/rewards", requireAuth, async (req: AuthRequest, res) => {
+  try {
+    if (!req.dbUserId) {
+      res.status(401).json({ error: "Unauthorized" });
+      return;
+    }
+
+    const guruId = parseInt(req.params.guruId, 10);
+    if (isNaN(guruId)) {
+      res.status(400).json({ error: "Invalid guru ID" });
+      return;
+    }
+
+    const [guru] = await db
+      .select({ creatorId: gurusTable.creatorId })
+      .from(gurusTable)
+      .where(eq(gurusTable.id, guruId))
+      .limit(1);
+
+    if (!guru || guru.creatorId !== req.dbUserId) {
+      res.status(403).json({ error: "Only the guru creator can view reward data" });
+      return;
+    }
+
+    const rows = await db
+      .select({
+        walletAddress: usersTable.walletAddress,
+        score: contributionScoresTable.score,
+        patternsContributed: contributionScoresTable.patternsContributed,
+        turnCount: contributionScoresTable.turnCount,
+      })
+      .from(contributionScoresTable)
+      .innerJoin(usersTable, eq(contributionScoresTable.userId, usersTable.id))
+      .where(
+        and(
+          eq(contributionScoresTable.guruId, guruId),
+          sql`${usersTable.walletAddress} IS NOT NULL`,
+        ),
+      )
+      .orderBy(desc(contributionScoresTable.score));
+
+    const totalScore = rows.reduce((sum, r) => sum + r.score, 0);
+
+    const recipients = rows.map((row) => ({
+      walletAddress: row.walletAddress!,
+      score: Math.round(row.score),
+      sharePercent: totalScore > 0 ? Math.round((row.score / totalScore) * 10000) / 100 : 0,
+      patternsContributed: row.patternsContributed,
+      turnCount: row.turnCount,
+    }));
+
+    res.json({
+      recipients,
+      totalContributors: recipients.length,
+      totalScore: Math.round(totalScore),
+    });
+  } catch (err) {
+    res.status(500).json({ error: "Failed to fetch reward data" });
+  }
+});
+
 export default router;

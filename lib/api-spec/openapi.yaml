@@ -439,6 +439,104 @@ paths:
             application/json:
               schema:
                 $ref: "#/components/schemas/ErrorResponse"
+  /gurus/{guruId}/leaderboard:
+    get:
+      operationId: getLeaderboard
+      tags: [gurus]
+      summary: Get public contribution leaderboard for a guru
+      parameters:
+        - name: guruId
+          in: path
+          required: true
+          schema:
+            type: integer
+        - name: limit
+          in: query
+          schema:
+            type: integer
+            default: 25
+        - name: offset
+          in: query
+          schema:
+            type: integer
+            default: 0
+      responses:
+        "200":
+          description: Public leaderboard
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/LeaderboardResponse"
+  /gurus/{guruId}/leaderboard/creator:
+    get:
+      operationId: getCreatorLeaderboard
+      tags: [gurus]
+      summary: Get full contributor details (creator only)
+      parameters:
+        - name: guruId
+          in: path
+          required: true
+          schema:
+            type: integer
+        - name: limit
+          in: query
+          schema:
+            type: integer
+            default: 50
+        - name: offset
+          in: query
+          schema:
+            type: integer
+            default: 0
+      responses:
+        "200":
+          description: Creator leaderboard with full details
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/CreatorLeaderboardResponse"
+        "401":
+          description: Unauthorized
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ErrorResponse"
+        "403":
+          description: Forbidden
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ErrorResponse"
+  /gurus/{guruId}/leaderboard/rewards:
+    get:
+      operationId: getRewardReadiness
+      tags: [gurus]
+      summary: Get wallet-to-score mapping for token distribution (creator only)
+      parameters:
+        - name: guruId
+          in: path
+          required: true
+          schema:
+            type: integer
+      responses:
+        "200":
+          description: Reward readiness data
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/RewardReadinessResponse"
+        "401":
+          description: Unauthorized
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ErrorResponse"
+        "403":
+          description: Forbidden
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ErrorResponse"
   /gurus/{guruId}/contribution-score:
     get:
       operationId: getContributionScore
@@ -1509,3 +1607,121 @@ components:
           nullable: true
       required:
         - action
+    LeaderboardContributor:
+      type: object
+      properties:
+        rank:
+          type: integer
+        displayName:
+          type: string
+        score:
+          type: integer
+        patternsContributed:
+          type: integer
+        isYou:
+          type: boolean
+      required:
+        - rank
+        - displayName
+        - score
+        - patternsContributed
+        - isYou
+    LeaderboardResponse:
+      type: object
+      properties:
+        contributors:
+          type: array
+          items:
+            $ref: "#/components/schemas/LeaderboardContributor"
+        total:
+          type: integer
+        limit:
+          type: integer
+        offset:
+          type: integer
+      required:
+        - contributors
+        - total
+        - limit
+        - offset
+    CreatorContributor:
+      type: object
+      properties:
+        rank:
+          type: integer
+        name:
+          type: string
+        email:
+          type: string
+        walletAddress:
+          type: string
+          nullable: true
+        score:
+          type: integer
+        turnCount:
+          type: integer
+        patternsContributed:
+          type: integer
+        lastUpdatedAt:
+          type: string
+          format: date-time
+          nullable: true
+      required:
+        - rank
+        - name
+        - email
+        - score
+        - turnCount
+        - patternsContributed
+    CreatorLeaderboardResponse:
+      type: object
+      properties:
+        contributors:
+          type: array
+          items:
+            $ref: "#/components/schemas/CreatorContributor"
+        total:
+          type: integer
+        limit:
+          type: integer
+        offset:
+          type: integer
+      required:
+        - contributors
+        - total
+        - limit
+        - offset
+    RewardRecipient:
+      type: object
+      properties:
+        walletAddress:
+          type: string
+        score:
+          type: integer
+        sharePercent:
+          type: number
+        patternsContributed:
+          type: integer
+        turnCount:
+          type: integer
+      required:
+        - walletAddress
+        - score
+        - sharePercent
+        - patternsContributed
+        - turnCount
+    RewardReadinessResponse:
+      type: object
+      properties:
+        recipients:
+          type: array
+          items:
+            $ref: "#/components/schemas/RewardRecipient"
+        totalContributors:
+          type: integer
+        totalScore:
+          type: integer
+      required:
+        - recipients
+        - totalContributors
+        - totalScore

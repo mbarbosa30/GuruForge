@@ -89,7 +89,9 @@ export const CreateGuruBody = zod.object({
   modelTier: zod.enum(["grok", "gpt"]).optional(),
   memoryPolicy: zod.string().optional(),
   introEnabled: zod.boolean().optional(),
-  proactiveCadence: zod.enum(["off", "daily", "every_few_days", "weekly"]).optional(),
+  proactiveCadence: zod
+    .enum(["off", "daily", "every_few_days", "weekly"])
+    .optional(),
 });
 
 /**
@@ -116,6 +118,10 @@ export const GetGuruResponse = zod.object({
   modelTier: zod.enum(["grok", "gpt"]).nullish(),
   memoryPolicy: zod.string().nullish(),
   introEnabled: zod.boolean().nullish(),
+  proactiveCadence: zod
+    .enum(["off", "daily", "every_few_days", "weekly"])
+    .nullish(),
+  isCreator: zod.boolean().optional(),
   wisdomScore: zod.number().nullish(),
   satisfactionScore: zod.number().nullish(),
   userCount: zod.number().nullish(),
@@ -151,7 +157,9 @@ export const UpdateGuruBody = zod.object({
   modelTier: zod.enum(["grok", "gpt"]).optional(),
   memoryPolicy: zod.string().optional(),
   introEnabled: zod.boolean().optional(),
-  proactiveCadence: zod.enum(["off", "daily", "every_few_days", "weekly"]).optional(),
+  proactiveCadence: zod
+    .enum(["off", "daily", "every_few_days", "weekly"])
+    .optional(),
   telegramBotToken: zod.string().optional(),
 });
 
@@ -348,6 +356,90 @@ export const ToggleWisdomContributionBody = zod.object({
 
 export const ToggleWisdomContributionResponse = zod.object({
   contributesToWisdom: zod.boolean(),
+});
+
+/**
+ * @summary Get public contribution leaderboard for a guru
+ */
+export const GetLeaderboardParams = zod.object({
+  guruId: zod.coerce.number(),
+});
+
+export const getLeaderboardQueryLimitDefault = 25;
+export const getLeaderboardQueryOffsetDefault = 0;
+
+export const GetLeaderboardQueryParams = zod.object({
+  limit: zod.coerce.number().default(getLeaderboardQueryLimitDefault),
+  offset: zod.coerce.number().default(getLeaderboardQueryOffsetDefault),
+});
+
+export const GetLeaderboardResponse = zod.object({
+  contributors: zod.array(
+    zod.object({
+      rank: zod.number(),
+      displayName: zod.string(),
+      score: zod.number(),
+      patternsContributed: zod.number(),
+      isYou: zod.boolean(),
+    }),
+  ),
+  total: zod.number(),
+  limit: zod.number(),
+  offset: zod.number(),
+});
+
+/**
+ * @summary Get full contributor details (creator only)
+ */
+export const GetCreatorLeaderboardParams = zod.object({
+  guruId: zod.coerce.number(),
+});
+
+export const getCreatorLeaderboardQueryLimitDefault = 50;
+export const getCreatorLeaderboardQueryOffsetDefault = 0;
+
+export const GetCreatorLeaderboardQueryParams = zod.object({
+  limit: zod.coerce.number().default(getCreatorLeaderboardQueryLimitDefault),
+  offset: zod.coerce.number().default(getCreatorLeaderboardQueryOffsetDefault),
+});
+
+export const GetCreatorLeaderboardResponse = zod.object({
+  contributors: zod.array(
+    zod.object({
+      rank: zod.number(),
+      name: zod.string(),
+      email: zod.string(),
+      walletAddress: zod.string().nullish(),
+      score: zod.number(),
+      turnCount: zod.number(),
+      patternsContributed: zod.number(),
+      lastUpdatedAt: zod.coerce.date().nullish(),
+    }),
+  ),
+  total: zod.number(),
+  limit: zod.number(),
+  offset: zod.number(),
+});
+
+/**
+ * @summary Get wallet-to-score mapping for token distribution (creator only)
+ */
+export const GetRewardReadinessParams = zod.object({
+  guruId: zod.coerce.number(),
+});
+
+export const GetRewardReadinessResponse = zod.object({
+  recipients: zod.array(
+    zod.object({
+      walletAddress: zod.string(),
+      score: zod.number(),
+      sharePercent: zod.number(),
+      patternsContributed: zod.number(),
+      turnCount: zod.number(),
+    }),
+  ),
+  totalContributors: zod.number(),
+  totalScore: zod.number(),
 });
 
 /**
