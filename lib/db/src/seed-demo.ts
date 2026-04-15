@@ -7,7 +7,7 @@ import {
   knowledgeSnapshotsTable,
   userMemoriesTable,
 } from "./schema";
-import { eq, like } from "drizzle-orm";
+import { eq, like, inArray } from "drizzle-orm";
 
 function daysAgo(n: number): Date {
   const d = new Date();
@@ -129,16 +129,28 @@ const MEMORY_TEMPLATES: Record<string, Array<{ category: string; displayTitle: s
     { category: "preferences", displayTitle: "Anti-growth-hack mentality", topic: "philosophy", summary: "Strongly dislikes engagement bait, follow-for-follow, and other growth hacking tactics. Wants organic, quality-driven growth.", importance: 0.73 },
     { category: "history", displayTitle: "Viral post drove 800 subscribers in one week", topic: "growth", summary: "A deep-dive post on 'Why most AI features fail' went viral, adding 800 subscribers in 7 days. Trying to replicate the format.", importance: 0.79 },
   ],
+  "operators-edge": [
+    { category: "goals", displayTitle: "Build first management layer by Q2", topic: "hiring", summary: "Company is at 22 people. Needs to hire 3 team leads before headcount hits 35. Wants to promote internally if possible.", importance: 0.93 },
+    { category: "context", displayTitle: "B2B fintech, post-Series A", topic: "company", summary: "Building a compliance automation tool for banks. $4.2M raised, 18 enterprise customers, 31% QoQ revenue growth.", importance: 0.86 },
+    { category: "decisions", displayTitle: "Switched from Scrum to Shape Up", topic: "process", summary: "Moved engineering from 2-week sprints to 6-week cycles after productivity plateau. Early results showing 40% fewer context switches.", importance: 0.81 },
+    { category: "preferences", displayTitle: "Prefers battle-tested frameworks over novel approaches", topic: "management", summary: "User favors proven management practices with track records. Skeptical of trendy methodologies without evidence.", importance: 0.74 },
+  ],
+  "tokenomics-architect": [
+    { category: "goals", displayTitle: "Designing token for social protocol", topic: "tokenomics", summary: "Building a decentralized social graph protocol. Needs token model for content curation, staking, and governance. Target TGE in 6 months.", importance: 0.94 },
+    { category: "context", displayTitle: "Previously launched failed utility token", topic: "experience", summary: "First project had 90% token price decline in 3 months due to excessive emissions. Very conscious of inflation mechanics now.", importance: 0.88 },
+    { category: "preferences", displayTitle: "Favors deflationary mechanisms", topic: "design", summary: "Strong preference for burn mechanics and buyback models over pure inflation. Wants real revenue backing token value.", importance: 0.82 },
+    { category: "decisions", displayTitle: "Chose fixed supply over inflationary model", topic: "tokenomics", summary: "After extensive analysis, decided on 100M fixed supply with fee-redistribution to stakers rather than new emissions.", importance: 0.85 },
+  ],
+  "research-synthesizer": [
+    { category: "goals", displayTitle: "Complete competitive landscape analysis", topic: "research", summary: "Mapping 47 competitors across 5 market segments for board presentation. Needs structured framework for comparison.", importance: 0.91 },
+    { category: "context", displayTitle: "Strategy consultant at McKinsey", topic: "background", summary: "10 years in management consulting. Specializes in technology strategy and market entry analysis for Fortune 500 clients.", importance: 0.84 },
+    { category: "preferences", displayTitle: "Wants MECE frameworks for everything", topic: "methodology", summary: "Trained in McKinsey-style mutually exclusive, collectively exhaustive frameworks. Wants all analysis structured this way.", importance: 0.76 },
+    { category: "history", displayTitle: "Used three-lens method on AI market report", topic: "research", summary: "Applied the quantitative-qualitative-contrarian analysis to AI market sizing. Caught a major blind spot in adoption curves that changed the recommendation.", importance: 0.80 },
+  ],
 };
 
 async function seedDemo() {
   console.log("Seeding demo engagement data...");
-
-  const existingDemoUsers = await db.select().from(usersTable).where(like(usersTable.privyId, "demo_%"));
-  if (existingDemoUsers.length > 0) {
-    console.log(`Found ${existingDemoUsers.length} existing demo users. Demo data already seeded. Skipping.`);
-    process.exit(0);
-  }
 
   const gurus = await db.select().from(gurusTable);
   if (gurus.length === 0) {
@@ -147,116 +159,154 @@ async function seedDemo() {
   }
   const guruBySlug = Object.fromEntries(gurus.map(g => [g.slug, g]));
 
-  const demoUsers = await db.insert(usersTable).values(
-    DEMO_USERS.map((u, i) => ({
-      privyId: `demo_user_${i + 1}`,
-      email: u.email,
-      name: u.name,
-      role: "user" as const,
-    }))
-  ).returning();
-  console.log(`Created ${demoUsers.length} demo users.`);
-
-  let patternCount = 0;
-  for (const [slug, patterns] of Object.entries(PATTERNS_BY_GURU_SLUG)) {
-    const guru = guruBySlug[slug];
-    if (!guru) { console.warn(`Guru "${slug}" not found, skipping patterns.`); continue; }
-    await db.insert(collectivePatternsTable).values(
-      patterns.map((p, i) => ({
-        guruId: guru.id,
-        patternType: p.patternType,
-        summary: p.summary,
-        publishTitle: p.publishTitle,
-        redactedSummary: p.redactedSummary,
-        frequency: p.frequency,
-        confidence: p.confidence,
-        sourceCount: p.sourceCount,
-        createdAt: daysAgo(28 - i * 3),
-        updatedAt: daysAgo(Math.max(0, 7 - i)),
+  let existingDemoUsers = await db.select().from(usersTable).where(like(usersTable.privyId, "demo_%"));
+  let demoUsers: typeof existingDemoUsers;
+  if (existingDemoUsers.length > 0) {
+    console.log(`Found ${existingDemoUsers.length} existing demo users. Reusing.`);
+    demoUsers = existingDemoUsers;
+  } else {
+    demoUsers = await db.insert(usersTable).values(
+      DEMO_USERS.map((u, i) => ({
+        privyId: `demo_user_${i + 1}`,
+        email: u.email,
+        name: u.name,
+        role: "user" as const,
       }))
-    );
-    patternCount += patterns.length;
+    ).returning();
+    console.log(`Created ${demoUsers.length} demo users.`);
   }
-  console.log(`Seeded ${patternCount} collective patterns across ${Object.keys(PATTERNS_BY_GURU_SLUG).length} gurus.`);
 
-  const contribValues: Array<{
-    userId: number; guruId: number; score: number; turnCount: number; patternsContributed: number;
-  }> = [];
-  for (const guru of gurus) {
-    const userSubset = demoUsers.slice(0, 8 + Math.floor(Math.random() * 10));
-    for (const user of userSubset) {
-      const score = Math.round((15 + Math.random() * 85) * 100) / 100;
-      contribValues.push({
-        userId: user.id,
-        guruId: guru.id,
-        score,
-        turnCount: 10 + Math.floor(Math.random() * 90),
-        patternsContributed: Math.floor(Math.random() * 8),
-      });
+  const existingPatterns = await db.select().from(collectivePatternsTable);
+  if (existingPatterns.length > 0) {
+    console.log(`Patterns already seeded (${existingPatterns.length}). Skipping.`);
+  } else {
+    let patternCount = 0;
+    for (const [slug, patterns] of Object.entries(PATTERNS_BY_GURU_SLUG)) {
+      const guru = guruBySlug[slug];
+      if (!guru) { console.warn(`Guru "${slug}" not found, skipping patterns.`); continue; }
+      await db.insert(collectivePatternsTable).values(
+        patterns.map((p, i) => ({
+          guruId: guru.id,
+          patternType: p.patternType,
+          summary: p.summary,
+          publishTitle: p.publishTitle,
+          redactedSummary: p.redactedSummary,
+          frequency: p.frequency,
+          confidence: p.confidence,
+          sourceCount: p.sourceCount,
+          createdAt: daysAgo(28 - i * 3),
+          updatedAt: daysAgo(Math.max(0, 7 - i)),
+        }))
+      );
+      patternCount += patterns.length;
     }
+    console.log(`Seeded ${patternCount} collective patterns across ${Object.keys(PATTERNS_BY_GURU_SLUG).length} gurus.`);
   }
-  await db.insert(contributionScoresTable).values(contribValues);
-  console.log(`Seeded ${contribValues.length} contribution scores.`);
 
-  const snapshotValues = gurus.map(guru => {
-    const patterns = PATTERNS_BY_GURU_SLUG[guru.slug] || [];
-    const patternCounts: Record<string, number> = {};
-    for (const p of patterns) {
-      patternCounts[p.patternType] = (patternCounts[p.patternType] || 0) + 1;
+  const demoUserIds = demoUsers.map(u => u.id);
+  const existingContribs = await db.select().from(contributionScoresTable).where(inArray(contributionScoresTable.userId, demoUserIds));
+  if (existingContribs.length > 0) {
+    console.log(`Demo contribution scores already seeded (${existingContribs.length}). Skipping.`);
+  } else {
+    const contribValues: Array<{
+      userId: number; guruId: number; score: number; turnCount: number; patternsContributed: number; lastUpdatedAt: Date;
+    }> = [];
+    for (const guru of gurus) {
+      const userSubset = demoUsers.slice(0, 8 + Math.floor(Math.random() * 10));
+      for (let j = 0; j < userSubset.length; j++) {
+        const user = userSubset[j];
+        const score = Math.round((15 + Math.random() * 85) * 100) / 100;
+        contribValues.push({
+          userId: user.id,
+          guruId: guru.id,
+          score,
+          turnCount: 10 + Math.floor(Math.random() * 90),
+          patternsContributed: Math.floor(Math.random() * 8),
+          lastUpdatedAt: daysAgo(Math.floor(Math.random() * 28)),
+        });
+      }
     }
-    const topics = (guru.topics || []).slice(0, 5).map((t, i) => ({ topic: t, count: 30 - i * 5 + Math.floor(Math.random() * 10) }));
-    return {
-      guruId: guru.id,
-      snapshotData: {
-        patternCounts,
-        memoryDistribution: { goals: 24, preferences: 18, history: 31, decisions: 15, context: 22 },
-        avgQualityScore: 0.72 + Math.random() * 0.18,
-        totalAnnotatedTurns: 200 + Math.floor(Math.random() * 600),
-        totalConversations: 40 + Math.floor(Math.random() * 160),
-        totalUsers: guru.userCount || 50,
-        topTopics: topics,
-        confidenceDistribution: {
-          high: 30 + Math.floor(Math.random() * 20),
-          medium: 35 + Math.floor(Math.random() * 15),
-          low: 5 + Math.floor(Math.random() * 10),
-        },
-      },
-      totalPatterns: patterns.length + Math.floor(Math.random() * 10),
-      totalMemories: 80 + Math.floor(Math.random() * 200),
-      avgConfidence: 0.75 + Math.random() * 0.15,
-      createdAt: daysAgo(1),
-    };
-  });
-  await db.insert(knowledgeSnapshotsTable).values(snapshotValues);
-  console.log(`Seeded ${snapshotValues.length} knowledge snapshots.`);
-
-  const memoryValues: Array<{
-    userId: number; guruId: number; category: string; summary: string;
-    displayTitle: string; topic: string; importance: number;
-    createdAt: Date; updatedAt: Date;
-  }> = [];
-  for (const [slug, memories] of Object.entries(MEMORY_TEMPLATES)) {
-    const guru = guruBySlug[slug];
-    if (!guru) continue;
-    for (let i = 0; i < memories.length; i++) {
-      const m = memories[i];
-      const userIdx = i % demoUsers.length;
-      const created = daysAgo(25 - i * 5);
-      memoryValues.push({
-        userId: demoUsers[userIdx].id,
-        guruId: guru.id,
-        category: m.category,
-        summary: m.summary,
-        displayTitle: m.displayTitle,
-        topic: m.topic,
-        importance: m.importance,
-        createdAt: created,
-        updatedAt: daysAgo(Math.max(0, 5 - i)),
-      });
-    }
+    await db.insert(contributionScoresTable).values(contribValues);
+    console.log(`Seeded ${contribValues.length} contribution scores.`);
   }
-  await db.insert(userMemoriesTable).values(memoryValues);
-  console.log(`Seeded ${memoryValues.length} user memories.`);
+
+  const existingSnapshots = await db.select().from(knowledgeSnapshotsTable);
+  if (existingSnapshots.length > 0) {
+    console.log(`Knowledge snapshots already seeded (${existingSnapshots.length}). Skipping.`);
+  } else {
+    const snapshotValues: Array<any> = [];
+    for (const guru of gurus) {
+      const patterns = PATTERNS_BY_GURU_SLUG[guru.slug] || [];
+      const patternCounts: Record<string, number> = {};
+      for (const p of patterns) {
+        patternCounts[p.patternType] = (patternCounts[p.patternType] || 0) + 1;
+      }
+      const topics = (guru.topics || []).slice(0, 5).map((t, i) => ({ topic: t, count: 30 - i * 5 + Math.floor(Math.random() * 10) }));
+      const snapshotDays = [28, 21, 14, 7, 1];
+      for (const day of snapshotDays) {
+        const scale = 1 - (day / 35);
+        snapshotValues.push({
+          guruId: guru.id,
+          snapshotData: {
+            patternCounts,
+            memoryDistribution: { goals: Math.round(24 * scale) || 3, preferences: Math.round(18 * scale) || 2, history: Math.round(31 * scale) || 4, decisions: Math.round(15 * scale) || 1, context: Math.round(22 * scale) || 3 },
+            avgQualityScore: 0.62 + scale * 0.25,
+            totalAnnotatedTurns: Math.round((200 + Math.floor(Math.random() * 600)) * scale) || 10,
+            totalConversations: Math.round((40 + Math.floor(Math.random() * 160)) * scale) || 5,
+            totalUsers: Math.round((guru.userCount || 50) * scale) || 8,
+            topTopics: topics,
+            confidenceDistribution: {
+              high: Math.round((30 + Math.floor(Math.random() * 20)) * scale) || 2,
+              medium: Math.round((35 + Math.floor(Math.random() * 15)) * scale) || 3,
+              low: Math.round((5 + Math.floor(Math.random() * 10)) * scale) || 1,
+            },
+          },
+          totalPatterns: Math.round((patterns.length + Math.floor(Math.random() * 10)) * scale) || 1,
+          totalMemories: Math.round((80 + Math.floor(Math.random() * 200)) * scale) || 5,
+          avgConfidence: 0.65 + scale * 0.2,
+          createdAt: daysAgo(day),
+        });
+      }
+    }
+    await db.insert(knowledgeSnapshotsTable).values(snapshotValues);
+    console.log(`Seeded ${snapshotValues.length} knowledge snapshots (${gurus.length} gurus x 5 time points).`);
+  }
+
+  const existingMemories = await db.select().from(userMemoriesTable).where(inArray(userMemoriesTable.userId, demoUserIds));
+  if (existingMemories.length > 0) {
+    console.log(`Demo user memories already seeded (${existingMemories.length}). Skipping.`);
+  } else {
+    const memoryValues: Array<{
+      userId: number; guruId: number; category: string; summary: string;
+      displayTitle: string; topic: string; importance: number;
+      createdAt: Date; updatedAt: Date;
+    }> = [];
+    for (const [slug, memories] of Object.entries(MEMORY_TEMPLATES)) {
+      const guru = guruBySlug[slug];
+      if (!guru) continue;
+      for (let i = 0; i < memories.length; i++) {
+        const m = memories[i];
+        const userCount = Math.min(3, demoUsers.length);
+        for (let u = 0; u < userCount; u++) {
+          const userIdx = (i * 3 + u) % demoUsers.length;
+          const created = daysAgo(28 - i * 4 - u);
+          memoryValues.push({
+            userId: demoUsers[userIdx].id,
+            guruId: guru.id,
+            category: m.category,
+            summary: m.summary + (u > 0 ? ` (Variation ${u + 1}: different specifics but same pattern.)` : ""),
+            displayTitle: m.displayTitle,
+            topic: m.topic,
+            importance: Math.round((m.importance - u * 0.05) * 100) / 100,
+            createdAt: created,
+            updatedAt: daysAgo(Math.max(0, 5 - i)),
+          });
+        }
+      }
+    }
+    await db.insert(userMemoriesTable).values(memoryValues);
+    console.log(`Seeded ${memoryValues.length} user memories across ${Object.keys(MEMORY_TEMPLATES).length} gurus.`);
+  }
 
   console.log("\nDemo seed complete.");
   process.exit(0);
