@@ -29,7 +29,7 @@ export default function Layout({ children }: { children: React.ReactNode }) {
             data-testid="link-logo"
           >
             <img src={`${import.meta.env.BASE_URL}logo-48.png`} alt="" className="h-6 w-auto" />
-            <span className="text-sm font-semibold tracking-[0.08em] uppercase text-[#111]">GuruForge</span>
+            <span className="text-sm tracking-[0.08em] uppercase text-[#111]"><span className="font-semibold">Guru</span><span className="font-normal">Forge</span></span>
           </Link>
           <nav className="hidden sm:flex items-center gap-5">
             <Link href="/marketplace" className={linkClass("/marketplace")} data-testid="link-marketplace">
