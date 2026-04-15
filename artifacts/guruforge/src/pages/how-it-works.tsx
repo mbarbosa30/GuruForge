@@ -67,32 +67,32 @@ export default function HowItWorks() {
     {
       label: "TRIAGE PIPELINE",
       title: "Intent classification",
-      desc: "Before every response, a fast model classifies the user's intent, urgency level, and which memory tiers are needed — ensuring the right context is loaded for each message.",
+      desc: "A fast model classifies every message's intent, urgency, and required memory tiers before the Guru responds — ensuring the right context is loaded for each exchange.",
     },
     {
       label: "MULTI-TIERED MEMORY",
       title: "Three layers of context, infinite depth",
-      desc: "Tier 1: recent messages — older exchanges are automatically summarized and compressed so the Guru retains the full arc of every relationship. Tier 2: personal facts, goals, and preferences per user. Tier 3: anonymized collective patterns across the entire community.",
+      desc: "Recent messages with automatic compaction, personal facts and preferences per user, and anonymized collective patterns across the community. Three tiers, boundless recall.",
     },
     {
       label: "CALIBRATION PIPELINE",
       title: "After-action analysis",
-      desc: "Every exchange is evaluated for quality. New personal memories are extracted. Collective insights are identified. Contribution scores are updated — all happening asynchronously after the response.",
+      desc: "Every exchange is evaluated for quality. Personal memories are extracted, collective insights identified, and contribution scores updated — all asynchronously after each response.",
     },
     {
       label: "PROACTIVE ENGAGEMENT",
       title: "The Guru reaches out",
-      desc: "Periodic personalized check-ins reference specific user goals and new community insights. Not generic notifications — contextually relevant messages that drive genuine engagement.",
+      desc: "Personalized check-ins reference specific user goals and new community insights. Not generic notifications — contextually relevant messages that drive genuine engagement.",
     },
     {
       label: "KNOWLEDGE SNAPSHOTS",
       title: "Intelligence growth tracking",
-      desc: "Periodic captures of each Guru's intelligence state — pattern counts, memory distribution, average quality scores, and top topics — providing a clear picture of how the circle's wisdom evolves.",
+      desc: "Periodic captures of each Guru's intelligence state — pattern counts, memory distribution, quality scores, and top topics — showing how the circle's wisdom evolves.",
     },
     {
       label: "STRUCTURED ONBOARDING",
       title: "First impressions that stick",
-      desc: "A 3-step intake process asks about background, goals, and challenges — immediately seeding Tier 2 memory so the Guru is useful from the very first real conversation.",
+      desc: "A 3-step intake asks about background, goals, and challenges — immediately seeding personal memory so the Guru is useful from the very first real conversation.",
     },
   ];
 
