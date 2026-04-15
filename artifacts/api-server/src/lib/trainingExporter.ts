@@ -234,6 +234,9 @@ async function buildPreferencePairs(filters: ExportFilters): Promise<PreferenceP
     eq(telegramConnectionsTable.contributesToWisdom, true),
     eq(telegramConnectionsTable.status, "active"),
   ];
+  if (filters.guruId) {
+    baseConditions.push(eq(conversationAnnotationsTable.guruId, filters.guruId));
+  }
   if (filters.minQuality !== undefined) {
     baseConditions.push(gte(conversationAnnotationsTable.qualityScore, filters.minQuality));
   }
@@ -406,17 +409,26 @@ async function buildKnowledgeDistillation(filters: ExportFilters): Promise<Knowl
     .where(and(...conditions))
     .orderBy(desc(collectivePatternsTable.confidence));
 
-  return patterns.map((p) => ({
-    pattern_type: p.patternType,
-    content: p.redactedSummary ?? p.summary,
-    confidence: p.confidence,
-    frequency: p.frequency,
-    source_count: p.sourceCount,
-    guru_id: p.guruId,
-    guru_name: p.guruName,
-    guru_domain: p.guruTopics ?? [],
-    publish_title: p.publishTitle,
-  }));
+  const results: KnowledgeDistillation[] = [];
+  for (const p of patterns) {
+    let content = p.redactedSummary;
+    if (!content) {
+      const redacted = await redactPIIWithLLM(p.summary);
+      content = redacted.redacted;
+    }
+    results.push({
+      pattern_type: p.patternType,
+      content,
+      confidence: p.confidence,
+      frequency: p.frequency,
+      source_count: p.sourceCount,
+      guru_id: p.guruId,
+      guru_name: p.guruName,
+      guru_domain: p.guruTopics ?? [],
+      publish_title: p.publishTitle,
+    });
+  }
+  return results;
 }
 
 export async function getExportContent(exportId: number) {
