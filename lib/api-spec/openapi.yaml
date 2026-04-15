@@ -28,6 +28,8 @@ tags:
     description: Global wisdom feed operations
   - name: bankr
     description: Bankr token launch and reward distribution
+  - name: wallet
+    description: Guru wallet management
 paths:
   /healthz:
     get:
@@ -673,6 +675,161 @@ paths:
                 $ref: "#/components/schemas/PortfolioResponse"
         "401":
           description: Unauthorized
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ErrorResponse"
+  /gurus/{guruId}/wallet:
+    post:
+      operationId: createGuruWallet
+      tags: [wallet]
+      summary: Create a server-managed wallet for a guru (creator only)
+      parameters:
+        - name: guruId
+          in: path
+          required: true
+          schema:
+            type: integer
+      responses:
+        "201":
+          description: Wallet created
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/CreateWalletResponse"
+        "401":
+          description: Unauthorized
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ErrorResponse"
+        "403":
+          description: Forbidden
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ErrorResponse"
+        "409":
+          description: Wallet already exists
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ErrorResponse"
+    get:
+      operationId: getGuruWallet
+      tags: [wallet]
+      summary: Get wallet info for a guru (creator only)
+      parameters:
+        - name: guruId
+          in: path
+          required: true
+          schema:
+            type: integer
+      responses:
+        "200":
+          description: Wallet info
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/GuruWalletInfo"
+        "401":
+          description: Unauthorized
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ErrorResponse"
+        "403":
+          description: Forbidden
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ErrorResponse"
+        "404":
+          description: No wallet found
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ErrorResponse"
+  /gurus/{guruId}/wallet/limits:
+    put:
+      operationId: updateWalletLimits
+      tags: [wallet]
+      summary: Update spending limits for a guru wallet (creator only)
+      parameters:
+        - name: guruId
+          in: path
+          required: true
+          schema:
+            type: integer
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/UpdateWalletLimitsInput"
+      responses:
+        "200":
+          description: Limits updated
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/WalletLimitsResponse"
+        "400":
+          description: Bad request
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ErrorResponse"
+        "401":
+          description: Unauthorized
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ErrorResponse"
+        "403":
+          description: Forbidden
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ErrorResponse"
+  /gurus/{guruId}/wallet/sign:
+    post:
+      operationId: signWalletTransaction
+      tags: [wallet]
+      summary: Sign and broadcast a transaction from the guru wallet (creator only)
+      parameters:
+        - name: guruId
+          in: path
+          required: true
+          schema:
+            type: integer
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/SignTransactionInput"
+      responses:
+        "200":
+          description: Transaction signed and broadcast
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/SignTransactionResponse"
+        "400":
+          description: Bad request
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ErrorResponse"
+        "401":
+          description: Unauthorized
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ErrorResponse"
+        "403":
+          description: Forbidden or spending limit exceeded
           content:
             application/json:
               schema:
@@ -2052,3 +2209,74 @@ components:
         - recipients
         - totalContributors
         - totalScore
+    CreateWalletResponse:
+      type: object
+      properties:
+        walletAddress:
+          type: string
+        recoveryShare:
+          type: string
+      required:
+        - walletAddress
+        - recoveryShare
+    GuruWalletInfo:
+      type: object
+      properties:
+        walletAddress:
+          type: string
+        ethBalance:
+          type: string
+        perTxLimitUsd:
+          type: number
+        dailyLimitUsd:
+          type: number
+        dailySpentUsd:
+          type: number
+        createdAt:
+          type: string
+          format: date-time
+      required:
+        - walletAddress
+        - ethBalance
+        - perTxLimitUsd
+        - dailyLimitUsd
+        - dailySpentUsd
+        - createdAt
+    UpdateWalletLimitsInput:
+      type: object
+      properties:
+        perTxLimitUsd:
+          type: number
+        dailyLimitUsd:
+          type: number
+    WalletLimitsResponse:
+      type: object
+      properties:
+        perTxLimitUsd:
+          type: number
+        dailyLimitUsd:
+          type: number
+      required:
+        - perTxLimitUsd
+        - dailyLimitUsd
+    SignTransactionInput:
+      type: object
+      properties:
+        to:
+          type: string
+          description: Recipient address (0x-prefixed, 40 hex chars)
+        value:
+          type: string
+          description: Transfer amount in wei (decimal string)
+      required:
+        - to
+    SignTransactionResponse:
+      type: object
+      properties:
+        transactionHash:
+          type: string
+        signedTransaction:
+          type: string
+      required:
+        - transactionHash
+        - signedTransaction

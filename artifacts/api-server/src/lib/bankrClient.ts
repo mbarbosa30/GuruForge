@@ -80,6 +80,7 @@ function parseDeployResponse(raw: unknown, expectedName: string, expectedSymbol:
 export async function deployToken(opts: {
   name: string;
   symbol: string;
+  feeRecipient?: string;
 }): Promise<TokenDeployResult> {
   const safeName = sanitizeTokenInput(opts.name);
   const safeSymbol = sanitizeTokenInput(opts.symbol).toUpperCase();
@@ -89,10 +90,14 @@ export async function deployToken(opts: {
   const symErr = validateTokenSymbol(safeSymbol);
   if (symErr) throw new Error(symErr);
 
+  const feeRecipientClause = opts.feeRecipient
+    ? ` with fee recipient ${opts.feeRecipient}`
+    : "";
+
   const raw = await bankrFetch<unknown>("/agent/prompt", {
     method: "POST",
     body: {
-      prompt: `Deploy a token called "${safeName}" with symbol "${safeSymbol}" on Base via Clanker`,
+      prompt: `Deploy a token called "${safeName}" with symbol "${safeSymbol}" on Base via Clanker${feeRecipientClause}`,
     },
   });
 

@@ -1,6 +1,6 @@
 import { Router, type IRouter } from "express";
 import { db } from "@workspace/db";
-import { gurusTable, rewardDistributionsTable } from "@workspace/db/schema";
+import { gurusTable, guruWalletsTable, rewardDistributionsTable } from "@workspace/db/schema";
 import { eq, desc } from "drizzle-orm";
 import { requireAuth, type AuthRequest } from "../middlewares/auth";
 import { deployToken, transferTokens, getPortfolio, validateTokenName, validateTokenSymbol } from "../lib/bankrClient";
@@ -60,7 +60,17 @@ router.post("/gurus/:guruId/token/launch", requireAuth, async (req: AuthRequest,
       return;
     }
 
-    const result = await deployToken({ name: String(name).trim(), symbol: String(symbol).trim().toUpperCase() });
+    let feeRecipient: string | undefined;
+    const [guruWallet] = await db
+      .select()
+      .from(guruWalletsTable)
+      .where(eq(guruWalletsTable.guruId, guruId))
+      .limit(1);
+    if (guruWallet) {
+      feeRecipient = guruWallet.walletAddress;
+    }
+
+    const result = await deployToken({ name: String(name).trim(), symbol: String(symbol).trim().toUpperCase(), feeRecipient });
 
     await db
       .update(gurusTable)

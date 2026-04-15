@@ -599,6 +599,42 @@ export interface RewardReadinessResponse {
   totalScore: number;
 }
 
+export interface CreateWalletResponse {
+  walletAddress: string;
+  recoveryShare: string;
+}
+
+export interface GuruWalletInfo {
+  walletAddress: string;
+  ethBalance: string;
+  perTxLimitUsd: number;
+  dailyLimitUsd: number;
+  dailySpentUsd: number;
+  createdAt: string;
+}
+
+export interface UpdateWalletLimitsInput {
+  perTxLimitUsd?: number;
+  dailyLimitUsd?: number;
+}
+
+export interface WalletLimitsResponse {
+  perTxLimitUsd: number;
+  dailyLimitUsd: number;
+}
+
+export interface SignTransactionInput {
+  /** Recipient address (0x-prefixed, 40 hex chars) */
+  to: string;
+  /** Transfer amount in wei (decimal string) */
+  value?: string;
+}
+
+export interface SignTransactionResponse {
+  transactionHash: string;
+  signedTransaction: string;
+}
+
 export type ListGurusParams = {
   /**
    * Filter by category slug

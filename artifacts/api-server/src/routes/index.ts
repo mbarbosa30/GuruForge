@@ -10,6 +10,7 @@ import wisdomRouter from "./wisdom";
 import feedRouter from "./feed";
 import trainingRouter from "./training";
 import bankrRouter from "./bankr";
+import walletRouter from "./wallet";
 
 const router: IRouter = Router();
 
@@ -24,5 +25,6 @@ router.use(wisdomRouter);
 router.use(feedRouter);
 router.use(trainingRouter);
 router.use(bankrRouter);
+router.use(walletRouter);
 
 export default router;

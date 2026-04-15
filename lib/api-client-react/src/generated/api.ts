@@ -23,6 +23,7 @@ import type {
   ContributionScoreResponse,
   CreateGuruInput,
   CreateRatingInput,
+  CreateWalletResponse,
   CreatorLeaderboardResponse,
   DistributeRewardsInput,
   DistributeRewardsResponse,
@@ -39,6 +40,7 @@ import type {
   GuruDetail,
   GuruListItem,
   GuruRating,
+  GuruWalletInfo,
   HealthStatus,
   JournalMyVotesResponse,
   JournalResponse,
@@ -51,6 +53,8 @@ import type {
   Rating,
   RewardHistoryResponse,
   RewardReadinessResponse,
+  SignTransactionInput,
+  SignTransactionResponse,
   SubscriptionCheck,
   TelegramBotInfoResponse,
   TelegramConnectionResponse,
@@ -59,8 +63,10 @@ import type {
   UpdateBotTokenResponse,
   UpdateGuruInput,
   UpdateUserInput,
+  UpdateWalletLimitsInput,
   User,
   UserSubscription,
+  WalletLimitsResponse,
   WisdomFeedResponse,
   WisdomToggleInput,
   WisdomToggleResponse,
@@ -2153,6 +2159,354 @@ export function useGetPortfolio<
 
   return { ...query, queryKey: queryOptions.queryKey };
 }
+
+/**
+ * @summary Create a server-managed wallet for a guru (creator only)
+ */
+export const getCreateGuruWalletUrl = (guruId: number) => {
+  return `/api/gurus/${guruId}/wallet`;
+};
+
+export const createGuruWallet = async (
+  guruId: number,
+  options?: RequestInit,
+): Promise<CreateWalletResponse> => {
+  return customFetch<CreateWalletResponse>(getCreateGuruWalletUrl(guruId), {
+    ...options,
+    method: "POST",
+  });
+};
+
+export const getCreateGuruWalletMutationOptions = <
+  TError = ErrorType<ErrorResponse>,
+  TContext = unknown,
+>(options?: {
+  mutation?: UseMutationOptions<
+    Awaited<ReturnType<typeof createGuruWallet>>,
+    TError,
+    { guruId: number },
+    TContext
+  >;
+  request?: SecondParameter<typeof customFetch>;
+}): UseMutationOptions<
+  Awaited<ReturnType<typeof createGuruWallet>>,
+  TError,
+  { guruId: number },
+  TContext
+> => {
+  const mutationKey = ["createGuruWallet"];
+  const { mutation: mutationOptions, request: requestOptions } = options
+    ? options.mutation &&
+      "mutationKey" in options.mutation &&
+      options.mutation.mutationKey
+      ? options
+      : { ...options, mutation: { ...options.mutation, mutationKey } }
+    : { mutation: { mutationKey }, request: undefined };
+
+  const mutationFn: MutationFunction<
+    Awaited<ReturnType<typeof createGuruWallet>>,
+    { guruId: number }
+  > = (props) => {
+    const { guruId } = props ?? {};
+
+    return createGuruWallet(guruId, requestOptions);
+  };
+
+  return { mutationFn, ...mutationOptions };
+};
+
+export type CreateGuruWalletMutationResult = NonNullable<
+  Awaited<ReturnType<typeof createGuruWallet>>
+>;
+
+export type CreateGuruWalletMutationError = ErrorType<ErrorResponse>;
+
+/**
+ * @summary Create a server-managed wallet for a guru (creator only)
+ */
+export const useCreateGuruWallet = <
+  TError = ErrorType<ErrorResponse>,
+  TContext = unknown,
+>(options?: {
+  mutation?: UseMutationOptions<
+    Awaited<ReturnType<typeof createGuruWallet>>,
+    TError,
+    { guruId: number },
+    TContext
+  >;
+  request?: SecondParameter<typeof customFetch>;
+}): UseMutationResult<
+  Awaited<ReturnType<typeof createGuruWallet>>,
+  TError,
+  { guruId: number },
+  TContext
+> => {
+  return useMutation(getCreateGuruWalletMutationOptions(options));
+};
+
+/**
+ * @summary Get wallet info for a guru (creator only)
+ */
+export const getGetGuruWalletUrl = (guruId: number) => {
+  return `/api/gurus/${guruId}/wallet`;
+};
+
+export const getGuruWallet = async (
+  guruId: number,
+  options?: RequestInit,
+): Promise<GuruWalletInfo> => {
+  return customFetch<GuruWalletInfo>(getGetGuruWalletUrl(guruId), {
+    ...options,
+    method: "GET",
+  });
+};
+
+export const getGetGuruWalletQueryKey = (guruId: number) => {
+  return [`/api/gurus/${guruId}/wallet`] as const;
+};
+
+export const getGetGuruWalletQueryOptions = <
+  TData = Awaited<ReturnType<typeof getGuruWallet>>,
+  TError = ErrorType<ErrorResponse>,
+>(
+  guruId: number,
+  options?: {
+    query?: UseQueryOptions<
+      Awaited<ReturnType<typeof getGuruWallet>>,
+      TError,
+      TData
+    >;
+    request?: SecondParameter<typeof customFetch>;
+  },
+) => {
+  const { query: queryOptions, request: requestOptions } = options ?? {};
+
+  const queryKey = queryOptions?.queryKey ?? getGetGuruWalletQueryKey(guruId);
+
+  const queryFn: QueryFunction<Awaited<ReturnType<typeof getGuruWallet>>> = ({
+    signal,
+  }) => getGuruWallet(guruId, { signal, ...requestOptions });
+
+  return {
+    queryKey,
+    queryFn,
+    enabled: !!guruId,
+    ...queryOptions,
+  } as UseQueryOptions<
+    Awaited<ReturnType<typeof getGuruWallet>>,
+    TError,
+    TData
+  > & { queryKey: QueryKey };
+};
+
+export type GetGuruWalletQueryResult = NonNullable<
+  Awaited<ReturnType<typeof getGuruWallet>>
+>;
+export type GetGuruWalletQueryError = ErrorType<ErrorResponse>;
+
+/**
+ * @summary Get wallet info for a guru (creator only)
+ */
+
+export function useGetGuruWallet<
+  TData = Awaited<ReturnType<typeof getGuruWallet>>,
+  TError = ErrorType<ErrorResponse>,
+>(
+  guruId: number,
+  options?: {
+    query?: UseQueryOptions<
+      Awaited<ReturnType<typeof getGuruWallet>>,
+      TError,
+      TData
+    >;
+    request?: SecondParameter<typeof customFetch>;
+  },
+): UseQueryResult<TData, TError> & { queryKey: QueryKey } {
+  const queryOptions = getGetGuruWalletQueryOptions(guruId, options);
+
+  const query = useQuery(queryOptions) as UseQueryResult<TData, TError> & {
+    queryKey: QueryKey;
+  };
+
+  return { ...query, queryKey: queryOptions.queryKey };
+}
+
+/**
+ * @summary Update spending limits for a guru wallet (creator only)
+ */
+export const getUpdateWalletLimitsUrl = (guruId: number) => {
+  return `/api/gurus/${guruId}/wallet/limits`;
+};
+
+export const updateWalletLimits = async (
+  guruId: number,
+  updateWalletLimitsInput: UpdateWalletLimitsInput,
+  options?: RequestInit,
+): Promise<WalletLimitsResponse> => {
+  return customFetch<WalletLimitsResponse>(getUpdateWalletLimitsUrl(guruId), {
+    ...options,
+    method: "PUT",
+    headers: { "Content-Type": "application/json", ...options?.headers },
+    body: JSON.stringify(updateWalletLimitsInput),
+  });
+};
+
+export const getUpdateWalletLimitsMutationOptions = <
+  TError = ErrorType<ErrorResponse>,
+  TContext = unknown,
+>(options?: {
+  mutation?: UseMutationOptions<
+    Awaited<ReturnType<typeof updateWalletLimits>>,
+    TError,
+    { guruId: number; data: BodyType<UpdateWalletLimitsInput> },
+    TContext
+  >;
+  request?: SecondParameter<typeof customFetch>;
+}): UseMutationOptions<
+  Awaited<ReturnType<typeof updateWalletLimits>>,
+  TError,
+  { guruId: number; data: BodyType<UpdateWalletLimitsInput> },
+  TContext
+> => {
+  const mutationKey = ["updateWalletLimits"];
+  const { mutation: mutationOptions, request: requestOptions } = options
+    ? options.mutation &&
+      "mutationKey" in options.mutation &&
+      options.mutation.mutationKey
+      ? options
+      : { ...options, mutation: { ...options.mutation, mutationKey } }
+    : { mutation: { mutationKey }, request: undefined };
+
+  const mutationFn: MutationFunction<
+    Awaited<ReturnType<typeof updateWalletLimits>>,
+    { guruId: number; data: BodyType<UpdateWalletLimitsInput> }
+  > = (props) => {
+    const { guruId, data } = props ?? {};
+
+    return updateWalletLimits(guruId, data, requestOptions);
+  };
+
+  return { mutationFn, ...mutationOptions };
+};
+
+export type UpdateWalletLimitsMutationResult = NonNullable<
+  Awaited<ReturnType<typeof updateWalletLimits>>
+>;
+export type UpdateWalletLimitsMutationBody = BodyType<UpdateWalletLimitsInput>;
+export type UpdateWalletLimitsMutationError = ErrorType<ErrorResponse>;
+
+/**
+ * @summary Update spending limits for a guru wallet (creator only)
+ */
+export const useUpdateWalletLimits = <
+  TError = ErrorType<ErrorResponse>,
+  TContext = unknown,
+>(options?: {
+  mutation?: UseMutationOptions<
+    Awaited<ReturnType<typeof updateWalletLimits>>,
+    TError,
+    { guruId: number; data: BodyType<UpdateWalletLimitsInput> },
+    TContext
+  >;
+  request?: SecondParameter<typeof customFetch>;
+}): UseMutationResult<
+  Awaited<ReturnType<typeof updateWalletLimits>>,
+  TError,
+  { guruId: number; data: BodyType<UpdateWalletLimitsInput> },
+  TContext
+> => {
+  return useMutation(getUpdateWalletLimitsMutationOptions(options));
+};
+
+/**
+ * @summary Sign and broadcast a transaction from the guru wallet (creator only)
+ */
+export const getSignWalletTransactionUrl = (guruId: number) => {
+  return `/api/gurus/${guruId}/wallet/sign`;
+};
+
+export const signWalletTransaction = async (
+  guruId: number,
+  signTransactionInput: SignTransactionInput,
+  options?: RequestInit,
+): Promise<SignTransactionResponse> => {
+  return customFetch<SignTransactionResponse>(
+    getSignWalletTransactionUrl(guruId),
+    {
+      ...options,
+      method: "POST",
+      headers: { "Content-Type": "application/json", ...options?.headers },
+      body: JSON.stringify(signTransactionInput),
+    },
+  );
+};
+
+export const getSignWalletTransactionMutationOptions = <
+  TError = ErrorType<ErrorResponse>,
+  TContext = unknown,
+>(options?: {
+  mutation?: UseMutationOptions<
+    Awaited<ReturnType<typeof signWalletTransaction>>,
+    TError,
+    { guruId: number; data: BodyType<SignTransactionInput> },
+    TContext
+  >;
+  request?: SecondParameter<typeof customFetch>;
+}): UseMutationOptions<
+  Awaited<ReturnType<typeof signWalletTransaction>>,
+  TError,
+  { guruId: number; data: BodyType<SignTransactionInput> },
+  TContext
+> => {
+  const mutationKey = ["signWalletTransaction"];
+  const { mutation: mutationOptions, request: requestOptions } = options
+    ? options.mutation &&
+      "mutationKey" in options.mutation &&
+      options.mutation.mutationKey
+      ? options
+      : { ...options, mutation: { ...options.mutation, mutationKey } }
+    : { mutation: { mutationKey }, request: undefined };
+
+  const mutationFn: MutationFunction<
+    Awaited<ReturnType<typeof signWalletTransaction>>,
+    { guruId: number; data: BodyType<SignTransactionInput> }
+  > = (props) => {
+    const { guruId, data } = props ?? {};
+
+    return signWalletTransaction(guruId, data, requestOptions);
+  };
+
+  return { mutationFn, ...mutationOptions };
+};
+
+export type SignWalletTransactionMutationResult = NonNullable<
+  Awaited<ReturnType<typeof signWalletTransaction>>
+>;
+export type SignWalletTransactionMutationBody = BodyType<SignTransactionInput>;
+export type SignWalletTransactionMutationError = ErrorType<ErrorResponse>;
+
+/**
+ * @summary Sign and broadcast a transaction from the guru wallet (creator only)
+ */
+export const useSignWalletTransaction = <
+  TError = ErrorType<ErrorResponse>,
+  TContext = unknown,
+>(options?: {
+  mutation?: UseMutationOptions<
+    Awaited<ReturnType<typeof signWalletTransaction>>,
+    TError,
+    { guruId: number; data: BodyType<SignTransactionInput> },
+    TContext
+  >;
+  request?: SecondParameter<typeof customFetch>;
+}): UseMutationResult<
+  Awaited<ReturnType<typeof signWalletTransaction>>,
+  TError,
+  { guruId: number; data: BodyType<SignTransactionInput> },
+  TContext
+> => {
+  return useMutation(getSignWalletTransactionMutationOptions(options));
+};
 
 /**
  * @summary Get the current user's contribution score for a guru

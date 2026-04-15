@@ -17,6 +17,9 @@ import {
   useDistributeRewards,
   useGetRewardHistory,
   useGetRewardReadiness,
+  useCreateGuruWallet,
+  useGetGuruWallet,
+  useUpdateWalletLimits,
   getGetGuruQueryOptions,
   getGetGuruQueryKey,
   getGetRewardHistoryQueryKey,
@@ -24,6 +27,8 @@ import {
   getListGuruRatingsQueryOptions,
   getCheckSubscriptionQueryOptions,
   getGetTelegramStatusQueryOptions,
+  getGetGuruWalletQueryKey,
+  getGetGuruWalletQueryOptions,
 } from "@workspace/api-client-react";
 import type { Rating, LeaderboardContributor, CreatorContributor, RewardDistributionItem, RewardRecipient } from "@workspace/api-client-react";
 import TelegramConnectModal from "@/components/telegram-connect-modal";
@@ -163,6 +168,25 @@ export default function GuruProfile() {
   const [showDistributePreview, setShowDistributePreview] = useState(false);
   const distributeRewardsMutation = useDistributeRewards();
 
+  const createWalletMutation = useCreateGuruWallet();
+  const updateLimitsMutation = useUpdateWalletLimits();
+  const [walletCreating, setWalletCreating] = useState(false);
+  const [walletError, setWalletError] = useState<string | null>(null);
+  const [recoveryShare, setRecoveryShare] = useState<string | null>(null);
+  const [recoveryCopied, setRecoveryCopied] = useState(false);
+  const [editingLimits, setEditingLimits] = useState(false);
+  const [perTxLimit, setPerTxLimit] = useState("");
+  const [dailyLimit, setDailyLimit] = useState("");
+  const [limitsError, setLimitsError] = useState<string | null>(null);
+
+  const { data: guruWallet, isLoading: walletLoading } = useGetGuruWallet(guruId, {
+    query: {
+      ...getGetGuruWalletQueryOptions(guruId),
+      enabled: !!guru?.id && !!authenticated && !!guru?.isCreator,
+      retry: false,
+    },
+  });
+
   const { data: rewardReadiness } = useGetRewardReadiness(guruId, {
     query: { enabled: !!guru?.id && !!authenticated && !!guru?.isCreator && !!guru?.tokenAddress },
   });
@@ -178,6 +202,49 @@ export default function GuruProfile() {
   const { data: creatorLeaderboard } = useGetCreatorLeaderboard(guruId, {}, {
     query: { enabled: !!guru?.id && !!authenticated && !!guru?.isCreator },
   });
+
+  async function handleCreateWallet() {
+    if (!guru?.id) return;
+    setWalletCreating(true);
+    setWalletError(null);
+    try {
+      const result = await createWalletMutation.mutateAsync({ guruId: guru.id });
+      setRecoveryShare(result.recoveryShare);
+      queryClient.invalidateQueries({ queryKey: getGetGuruWalletQueryKey(guruId) });
+    } catch (err: unknown) {
+      setWalletError(err instanceof Error ? err.message : "Failed to create wallet");
+    } finally {
+      setWalletCreating(false);
+    }
+  }
+
+  async function handleCopyRecovery() {
+    if (!recoveryShare) return;
+    await navigator.clipboard.writeText(recoveryShare);
+    setRecoveryCopied(true);
+    setTimeout(() => setRecoveryCopied(false), 2000);
+  }
+
+  async function handleSaveLimits() {
+    if (!guru?.id) return;
+    setLimitsError(null);
+    const updates: Record<string, number> = {};
+    if (perTxLimit.trim()) updates.perTxLimitUsd = Number(perTxLimit);
+    if (dailyLimit.trim()) updates.dailyLimitUsd = Number(dailyLimit);
+    if (Object.keys(updates).length === 0) {
+      setEditingLimits(false);
+      return;
+    }
+    try {
+      await updateLimitsMutation.mutateAsync({ guruId: guru.id, data: updates });
+      queryClient.invalidateQueries({ queryKey: getGetGuruWalletQueryKey(guruId) });
+      setEditingLimits(false);
+      setPerTxLimit("");
+      setDailyLimit("");
+    } catch (err: unknown) {
+      setLimitsError(err instanceof Error ? err.message : "Failed to update limits");
+    }
+  }
 
   async function handleLaunchToken() {
     if (!guru?.id || !tokenName.trim() || !tokenSymbol.trim()) return;
@@ -485,6 +552,130 @@ export default function GuruProfile() {
               ))}
             </div>
           </div>
+        </section>
+      )}
+
+      {guru.isCreator && (
+        <section className="mb-10">
+          <p className="text-[11px] font-medium tracking-[0.12em] uppercase text-[#888] mb-4">Wallet</p>
+
+          {recoveryShare && (
+            <div className="border-2 border-[#c44] bg-[#fdf2f2] px-5 py-4 mb-4">
+              <p className="text-[13px] font-medium text-[#c44] mb-2">Recovery Share — Save This Now</p>
+              <p className="text-[12px] text-[#a33] mb-3">
+                This recovery share will only be shown once. Copy it and store it securely. You will need it together with the server share to recover your wallet if needed.
+              </p>
+              <div className="flex items-center gap-2 mb-3">
+                <code className="text-[11px] bg-white border border-[#e0c8c8] px-3 py-2 font-mono text-[#333] flex-1 break-all select-all">
+                  {recoveryShare}
+                </code>
+                <button
+                  onClick={handleCopyRecovery}
+                  className="text-[11px] font-medium tracking-[0.04em] uppercase text-white bg-[#c44] px-4 py-2 border border-[#c44] hover:bg-[#a33] transition-colors cursor-pointer whitespace-nowrap"
+                >
+                  {recoveryCopied ? "Copied" : "Copy"}
+                </button>
+              </div>
+              <button
+                onClick={() => setRecoveryShare(null)}
+                className="text-[11px] font-medium tracking-[0.04em] uppercase text-[#a33] bg-transparent px-0 py-1 border-0 border-b border-[#a33] cursor-pointer hover:text-[#c44]"
+              >
+                I have saved my recovery share
+              </button>
+            </div>
+          )}
+
+          {walletLoading ? (
+            <div className="border border-[#e0e0e0] px-5 py-6 animate-pulse">
+              <div className="h-4 w-1/3 bg-[#f0f0f0] mb-2" />
+              <div className="h-3 w-2/3 bg-[#f5f5f5]" />
+            </div>
+          ) : guruWallet ? (
+            <div className="border border-[#e0e0e0]">
+              <div className="px-5 py-4 border-b border-[#e0e0e0]">
+                <span className="text-[11px] font-medium tracking-[0.04em] uppercase text-[#888] block mb-2">Wallet address</span>
+                <span className="text-[14px] text-[#333] font-mono break-all">{guruWallet.walletAddress}</span>
+              </div>
+              <div className="grid grid-cols-1 sm:grid-cols-3 gap-px bg-[#e0e0e0]">
+                <div className="bg-white px-5 py-4">
+                  <span className="text-[11px] font-medium tracking-[0.04em] uppercase text-[#888] block mb-1">ETH Balance</span>
+                  <span className="text-[14px] text-[#333]">{Number(guruWallet.ethBalance).toFixed(6)} ETH</span>
+                </div>
+                <div className="bg-white px-5 py-4">
+                  <span className="text-[11px] font-medium tracking-[0.04em] uppercase text-[#888] block mb-1">Per-tx limit</span>
+                  <span className="text-[14px] text-[#333]">${guruWallet.perTxLimitUsd}</span>
+                </div>
+                <div className="bg-white px-5 py-4">
+                  <span className="text-[11px] font-medium tracking-[0.04em] uppercase text-[#888] block mb-1">Daily limit</span>
+                  <span className="text-[14px] text-[#333]">${guruWallet.dailyLimitUsd} (spent: ${guruWallet.dailySpentUsd})</span>
+                </div>
+              </div>
+              <div className="px-5 py-3 border-t border-[#e0e0e0]">
+                {editingLimits ? (
+                  <div>
+                    <div className="flex gap-2 mb-2">
+                      <div className="flex-1">
+                        <label className="text-[11px] text-[#aaa] block mb-1">Per-tx limit (USD)</label>
+                        <input
+                          type="number"
+                          value={perTxLimit}
+                          onChange={(e) => setPerTxLimit(e.target.value)}
+                          placeholder={String(guruWallet.perTxLimitUsd)}
+                          className="w-full text-[13px] px-3 py-1.5 border border-[#ddd] bg-white text-[#333] focus:outline-none focus:border-[#999]"
+                        />
+                      </div>
+                      <div className="flex-1">
+                        <label className="text-[11px] text-[#aaa] block mb-1">Daily limit (USD)</label>
+                        <input
+                          type="number"
+                          value={dailyLimit}
+                          onChange={(e) => setDailyLimit(e.target.value)}
+                          placeholder={String(guruWallet.dailyLimitUsd)}
+                          className="w-full text-[13px] px-3 py-1.5 border border-[#ddd] bg-white text-[#333] focus:outline-none focus:border-[#999]"
+                        />
+                      </div>
+                    </div>
+                    <div className="flex gap-2">
+                      <button
+                        onClick={handleSaveLimits}
+                        className="text-[11px] font-medium tracking-[0.04em] uppercase text-white bg-[#111] px-4 py-1.5 border border-[#111] hover:bg-[#333] transition-colors cursor-pointer"
+                      >
+                        Save
+                      </button>
+                      <button
+                        onClick={() => { setEditingLimits(false); setLimitsError(null); }}
+                        className="text-[11px] font-medium tracking-[0.04em] uppercase text-[#555] bg-white px-4 py-1.5 border border-[#ddd] hover:border-[#999] transition-colors cursor-pointer"
+                      >
+                        Cancel
+                      </button>
+                    </div>
+                    {limitsError && <p className="text-[12px] text-[#c44] mt-2">{limitsError}</p>}
+                  </div>
+                ) : (
+                  <button
+                    onClick={() => setEditingLimits(true)}
+                    className="text-[11px] font-medium tracking-[0.04em] uppercase text-[#555] bg-white px-4 py-1.5 border border-[#ddd] hover:border-[#999] transition-colors cursor-pointer"
+                  >
+                    Edit spending limits
+                  </button>
+                )}
+              </div>
+            </div>
+          ) : (
+            <div className="border border-[#e0e0e0] px-5 py-4">
+              <p className="text-[13px] text-[#777] mb-3">
+                Create a server-managed wallet for this guru on Base. The wallet will serve as the guru's on-chain identity for token operations and rewards.
+              </p>
+              <button
+                onClick={handleCreateWallet}
+                disabled={walletCreating}
+                className="text-[12px] font-medium tracking-[0.04em] uppercase text-white bg-[#111] px-6 py-2.5 border border-[#111] hover:bg-[#333] transition-colors cursor-pointer disabled:opacity-50 disabled:cursor-not-allowed"
+              >
+                {walletCreating ? "Creating..." : "Create Wallet"}
+              </button>
+              {walletError && <p className="text-[12px] text-[#c44] mt-2">{walletError}</p>}
+            </div>
+          )}
         </section>
       )}
 

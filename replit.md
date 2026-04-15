@@ -55,6 +55,7 @@ pnpm workspace monorepo using TypeScript. Each package manages its own dependenc
 - `knowledge_snapshots` — id, guru_id, snapshot_data (jsonb: patternCounts, memoryDistribution, avgQualityScore, totalAnnotatedTurns, totalConversations, totalUsers, topTopics, confidenceDistribution), total_patterns, total_memories, avg_confidence, created_at
 - `training_exports` — id, format, status, filters (jsonb), row_count, file_size, export_content (text JSONL), exported_by, error_message, started_at, completed_at, created_at
 - `reward_distributions` — id, guru_id (FK gurus), initiated_by (FK users), token_address, token_symbol, chain, total_amount, recipient_count, status (pending/completed/failed), transaction_hashes (JSON text), error_message, created_at, completed_at
+- `guru_wallets` — id, guru_id (FK gurus, unique), wallet_address, encrypted_private_key (AES-256-GCM, salt:iv:tag:ciphertext format), server_recovery_share (Shamir 2-of-2), per_tx_limit_usd (default 100), daily_limit_usd (default 1000), daily_spent_usd, daily_spent_reset_at, created_at, updated_at
 
 ### API Endpoints (under `/api`)
 - `GET /api/healthz` — Health check
@@ -91,6 +92,10 @@ pnpm workspace monorepo using TypeScript. Each package manages its own dependenc
 - `POST /api/gurus/:guruId/rewards/distribute` — Distribute token rewards to contributors proportionally by score (auth required, creator only)
 - `GET /api/gurus/:guruId/rewards/history` — Get reward distribution history (auth required, creator only)
 - `GET /api/portfolio` — Get Bankr wallet portfolio (auth required)
+- `POST /api/gurus/:guruId/wallet` — Create server-managed wallet for a guru (auth required, creator only, returns wallet address + one-time recovery share)
+- `GET /api/gurus/:guruId/wallet` — Get wallet info with on-chain ETH balance (auth required, creator only)
+- `PUT /api/gurus/:guruId/wallet/limits` — Update per-tx and daily spending limits (auth required, creator only)
+- `POST /api/gurus/:guruId/wallet/sign` — Sign and broadcast a transaction with spending limit enforcement (auth required, creator only)
 - `POST /api/admin/training-export` — Start training data export (admin only; formats: instruction_pairs, preference_pairs, knowledge_distillation)
 - `GET /api/admin/training-stats` — Get training dataset statistics (admin only; optional guruId filter)
 - `GET /api/admin/training-export/:id/download` — Download export as JSONL (admin only)
@@ -156,6 +161,14 @@ pnpm workspace monorepo using TypeScript. Each package manages its own dependenc
 - **Routes**: `artifacts/api-server/src/routes/bankr.ts` — 4 endpoints (launch, distribute, history, portfolio)
 - **Reward distribution**: Proportional to contribution scores — scores are summed, each contributor gets `(score / totalScore) × totalAmount` tokens. Only contributors with linked wallet addresses are eligible.
 - **Frontend**: Token launch form + distribute rewards UI + distribution history on guru profile page (creator-only section)
+
+### Guru Wallet System
+- **Wallet crypto**: `artifacts/api-server/src/lib/walletCrypto.ts` — Ethereum keypair generation (ethers.js), AES-256-GCM encryption/decryption with scrypt-derived key from `WALLET_ENCRYPTION_SECRET` secret, Shamir 2-of-2 secret sharing over GF(256) (splits raw private key bytes), transaction signing with on-chain nonce/gas/fee fetching, ETH balance lookup + ETH/USD price via CoinGecko
+- **Routes**: `artifacts/api-server/src/routes/wallet.ts` — create wallet, get wallet info with balances, update spending limits, sign+broadcast native ETH transfers only (contract calls blocked). Spending limits enforced server-side using live ETH price.
+- **Schema**: `lib/db/src/schema/guru-wallets.ts` — one wallet per guru, encrypted private key, recovery share, spending limits (per-tx and daily USD)
+- **Token launch integration**: When a guru with a wallet launches a token via Bankr, the guru's wallet address is passed as fee recipient
+- **Frontend**: Wallet section on guru profile page (creator-only) — create wallet button, recovery share modal (one-time display of creator's key share), address/balance display, spending limit editor
+- **Security**: `WALLET_ENCRYPTION_SECRET` stored as Replit Secret (never in config files). Recovery shares split the raw private key (not ciphertext). Contract calls explicitly blocked to prevent spending-limit bypass via ERC-20 transfers.
 
 ### Design System
 - Neo-minimal flat UI: pure white bg, sharp edges, uppercase micro-labels, numbered cards, clean typography

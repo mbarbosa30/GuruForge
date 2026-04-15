@@ -526,6 +526,66 @@ export const GetPortfolioResponse = zod.object({
 });
 
 /**
+ * @summary Create a server-managed wallet for a guru (creator only)
+ */
+export const CreateGuruWalletParams = zod.object({
+  guruId: zod.coerce.number(),
+});
+
+/**
+ * @summary Get wallet info for a guru (creator only)
+ */
+export const GetGuruWalletParams = zod.object({
+  guruId: zod.coerce.number(),
+});
+
+export const GetGuruWalletResponse = zod.object({
+  walletAddress: zod.string(),
+  ethBalance: zod.string(),
+  perTxLimitUsd: zod.number(),
+  dailyLimitUsd: zod.number(),
+  dailySpentUsd: zod.number(),
+  createdAt: zod.coerce.date(),
+});
+
+/**
+ * @summary Update spending limits for a guru wallet (creator only)
+ */
+export const UpdateWalletLimitsParams = zod.object({
+  guruId: zod.coerce.number(),
+});
+
+export const UpdateWalletLimitsBody = zod.object({
+  perTxLimitUsd: zod.number().optional(),
+  dailyLimitUsd: zod.number().optional(),
+});
+
+export const UpdateWalletLimitsResponse = zod.object({
+  perTxLimitUsd: zod.number(),
+  dailyLimitUsd: zod.number(),
+});
+
+/**
+ * @summary Sign and broadcast a transaction from the guru wallet (creator only)
+ */
+export const SignWalletTransactionParams = zod.object({
+  guruId: zod.coerce.number(),
+});
+
+export const SignWalletTransactionBody = zod.object({
+  to: zod.string().describe("Recipient address (0x-prefixed, 40 hex chars)"),
+  value: zod
+    .string()
+    .optional()
+    .describe("Transfer amount in wei (decimal string)"),
+});
+
+export const SignWalletTransactionResponse = zod.object({
+  transactionHash: zod.string(),
+  signedTransaction: zod.string(),
+});
+
+/**
  * @summary Get the current user's contribution score for a guru
  */
 export const GetContributionScoreParams = zod.object({
