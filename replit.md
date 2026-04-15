@@ -78,6 +78,7 @@ pnpm workspace monorepo using TypeScript. Each package manages its own dependenc
 - `GET /api/gurus/:guruId/journal` — Public guru journal with collective patterns (public, pagination, pattern type filter)
 - `GET /api/gurus/:guruId/journal/my-votes` — Get user's votes on journal entries (auth required)
 - `POST /api/feedback` — Submit thumbs up/down on memory or pattern (auth required, toggles)
+- `GET /api/feed` — Global wisdom feed across all Gurus (public, pagination, pattern type filter, composite ranking by confidence × votes × recency)
 
 ### Auth
 - Privy.io for authentication (replaced Clerk)
@@ -98,6 +99,7 @@ pnpm workspace monorepo using TypeScript. Each package manages its own dependenc
 - `/dashboard` — User subscriptions dashboard with Manage Billing link and Wisdom Feed links (auth required)
 - `/guru/:slug/wisdom` — Personal Wisdom Feed page for a subscribed guru (auth required, search, category filter, thumbs up/down)
 - `/guru/:slug/journal` — Public Guru Journal page showing collective patterns (public, pattern type filter, thumbs up/down for auth users)
+- `/feed` — Global Wisdom Feed page aggregating top collective insights from all Gurus (public, pattern type filter tabs, voting for auth users, Load more pagination, Guru attribution links)
 
 ### Payments (Stripe)
 - **Integration**: Replit Stripe connector (`stripe-replit-sync` + `stripe` packages at workspace root)

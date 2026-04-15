@@ -392,6 +392,48 @@ export const UpdateTelegramBotTokenResponse = zod.object({
 });
 
 /**
+ * @summary Get global wisdom feed across all Gurus
+ */
+export const getGlobalFeedQueryPageDefault = 1;
+export const getGlobalFeedQueryLimitDefault = 20;
+
+export const GetGlobalFeedQueryParams = zod.object({
+  patternType: zod.coerce
+    .string()
+    .optional()
+    .describe("Filter by pattern type"),
+  page: zod.coerce.number().default(getGlobalFeedQueryPageDefault),
+  limit: zod.coerce.number().default(getGlobalFeedQueryLimitDefault),
+});
+
+export const GetGlobalFeedResponse = zod.object({
+  items: zod.array(
+    zod.object({
+      id: zod.number(),
+      patternType: zod.string(),
+      publishTitle: zod.string().nullish(),
+      redactedSummary: zod.string(),
+      frequency: zod.number(),
+      confidence: zod.number(),
+      sourceCount: zod.number(),
+      votesUp: zod.number(),
+      votesDown: zod.number(),
+      guruId: zod.number(),
+      guruName: zod.string(),
+      guruSlug: zod.string(),
+      guruAvatarUrl: zod.string().nullish(),
+      userVote: zod.string().nullish(),
+      createdAt: zod.coerce.date(),
+      updatedAt: zod.coerce.date(),
+    }),
+  ),
+  total: zod.number(),
+  page: zod.number(),
+  limit: zod.number(),
+  totalPages: zod.number(),
+});
+
+/**
  * @summary Get personal wisdom feed for a guru
  */
 export const GetWisdomFeedParams = zod.object({

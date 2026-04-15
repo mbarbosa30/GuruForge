@@ -24,6 +24,8 @@ tags:
     description: Telegram connection operations
   - name: wisdom
     description: Wisdom feed and journal operations
+  - name: feed
+    description: Global wisdom feed operations
 paths:
   /healthz:
     get:
@@ -515,6 +517,34 @@ paths:
             application/json:
               schema:
                 $ref: "#/components/schemas/ErrorResponse"
+  /feed:
+    get:
+      operationId: getGlobalFeed
+      tags: [feed]
+      summary: Get global wisdom feed across all Gurus
+      parameters:
+        - name: patternType
+          in: query
+          schema:
+            type: string
+          description: Filter by pattern type
+        - name: page
+          in: query
+          schema:
+            type: integer
+            default: 1
+        - name: limit
+          in: query
+          schema:
+            type: integer
+            default: 20
+      responses:
+        "200":
+          description: Global feed items
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/GlobalFeedResponse"
   /gurus/{guruId}/wisdom-feed:
     get:
       operationId: getWisdomFeed
@@ -1244,6 +1274,81 @@ components:
           nullable: true
       required:
         - success
+    GlobalFeedItem:
+      type: object
+      properties:
+        id:
+          type: integer
+        patternType:
+          type: string
+        publishTitle:
+          type: string
+          nullable: true
+        redactedSummary:
+          type: string
+        frequency:
+          type: integer
+        confidence:
+          type: number
+        sourceCount:
+          type: integer
+        votesUp:
+          type: integer
+        votesDown:
+          type: integer
+        guruId:
+          type: integer
+        guruName:
+          type: string
+        guruSlug:
+          type: string
+        guruAvatarUrl:
+          type: string
+          nullable: true
+        userVote:
+          type: string
+          nullable: true
+        createdAt:
+          type: string
+          format: date-time
+        updatedAt:
+          type: string
+          format: date-time
+      required:
+        - id
+        - patternType
+        - redactedSummary
+        - frequency
+        - confidence
+        - sourceCount
+        - votesUp
+        - votesDown
+        - guruId
+        - guruName
+        - guruSlug
+        - createdAt
+        - updatedAt
+    GlobalFeedResponse:
+      type: object
+      properties:
+        items:
+          type: array
+          items:
+            $ref: "#/components/schemas/GlobalFeedItem"
+        total:
+          type: integer
+        page:
+          type: integer
+        limit:
+          type: integer
+        totalPages:
+          type: integer
+      required:
+        - items
+        - total
+        - page
+        - limit
+        - totalPages
     WisdomFeedItem:
       type: object
       properties:

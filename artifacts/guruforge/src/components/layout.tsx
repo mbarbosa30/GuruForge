@@ -34,6 +34,9 @@ export default function Layout({ children }: { children: React.ReactNode }) {
             <Link href="/marketplace" className={linkClass("/marketplace")} data-testid="link-marketplace">
               Marketplace
             </Link>
+            <Link href="/feed" className={linkClass("/feed")} data-testid="link-feed">
+              Wisdom Feed
+            </Link>
             {authenticated && (
               <>
                 <Link href="/create" className={linkClass("/create")} data-testid="link-create">

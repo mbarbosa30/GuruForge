@@ -26,8 +26,10 @@ import type {
   ErrorResponse,
   FeedbackInput,
   FeedbackResult,
+  GetGlobalFeedParams,
   GetGuruJournalParams,
   GetWisdomFeedParams,
+  GlobalFeedResponse,
   Guru,
   GuruDetail,
   GuruListItem,
@@ -1747,6 +1749,100 @@ export const useUpdateTelegramBotToken = <
 > => {
   return useMutation(getUpdateTelegramBotTokenMutationOptions(options));
 };
+
+/**
+ * @summary Get global wisdom feed across all Gurus
+ */
+export const getGetGlobalFeedUrl = (params?: GetGlobalFeedParams) => {
+  const normalizedParams = new URLSearchParams();
+
+  Object.entries(params || {}).forEach(([key, value]) => {
+    if (value !== undefined) {
+      normalizedParams.append(key, value === null ? "null" : value.toString());
+    }
+  });
+
+  const stringifiedParams = normalizedParams.toString();
+
+  return stringifiedParams.length > 0
+    ? `/api/feed?${stringifiedParams}`
+    : `/api/feed`;
+};
+
+export const getGlobalFeed = async (
+  params?: GetGlobalFeedParams,
+  options?: RequestInit,
+): Promise<GlobalFeedResponse> => {
+  return customFetch<GlobalFeedResponse>(getGetGlobalFeedUrl(params), {
+    ...options,
+    method: "GET",
+  });
+};
+
+export const getGetGlobalFeedQueryKey = (params?: GetGlobalFeedParams) => {
+  return [`/api/feed`, ...(params ? [params] : [])] as const;
+};
+
+export const getGetGlobalFeedQueryOptions = <
+  TData = Awaited<ReturnType<typeof getGlobalFeed>>,
+  TError = ErrorType<unknown>,
+>(
+  params?: GetGlobalFeedParams,
+  options?: {
+    query?: UseQueryOptions<
+      Awaited<ReturnType<typeof getGlobalFeed>>,
+      TError,
+      TData
+    >;
+    request?: SecondParameter<typeof customFetch>;
+  },
+) => {
+  const { query: queryOptions, request: requestOptions } = options ?? {};
+
+  const queryKey = queryOptions?.queryKey ?? getGetGlobalFeedQueryKey(params);
+
+  const queryFn: QueryFunction<Awaited<ReturnType<typeof getGlobalFeed>>> = ({
+    signal,
+  }) => getGlobalFeed(params, { signal, ...requestOptions });
+
+  return { queryKey, queryFn, ...queryOptions } as UseQueryOptions<
+    Awaited<ReturnType<typeof getGlobalFeed>>,
+    TError,
+    TData
+  > & { queryKey: QueryKey };
+};
+
+export type GetGlobalFeedQueryResult = NonNullable<
+  Awaited<ReturnType<typeof getGlobalFeed>>
+>;
+export type GetGlobalFeedQueryError = ErrorType<unknown>;
+
+/**
+ * @summary Get global wisdom feed across all Gurus
+ */
+
+export function useGetGlobalFeed<
+  TData = Awaited<ReturnType<typeof getGlobalFeed>>,
+  TError = ErrorType<unknown>,
+>(
+  params?: GetGlobalFeedParams,
+  options?: {
+    query?: UseQueryOptions<
+      Awaited<ReturnType<typeof getGlobalFeed>>,
+      TError,
+      TData
+    >;
+    request?: SecondParameter<typeof customFetch>;
+  },
+): UseQueryResult<TData, TError> & { queryKey: QueryKey } {
+  const queryOptions = getGetGlobalFeedQueryOptions(params, options);
+
+  const query = useQuery(queryOptions) as UseQueryResult<TData, TError> & {
+    queryKey: QueryKey;
+  };
+
+  return { ...query, queryKey: queryOptions.queryKey };
+}
 
 /**
  * @summary Get personal wisdom feed for a guru

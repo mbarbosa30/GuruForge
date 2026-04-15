@@ -340,6 +340,33 @@ export interface UpdateBotTokenResponse {
   botName?: string | null;
 }
 
+export interface GlobalFeedItem {
+  id: number;
+  patternType: string;
+  publishTitle?: string | null;
+  redactedSummary: string;
+  frequency: number;
+  confidence: number;
+  sourceCount: number;
+  votesUp: number;
+  votesDown: number;
+  guruId: number;
+  guruName: string;
+  guruSlug: string;
+  guruAvatarUrl?: string | null;
+  userVote?: string | null;
+  createdAt: string;
+  updatedAt: string;
+}
+
+export interface GlobalFeedResponse {
+  items: GlobalFeedItem[];
+  total: number;
+  page: number;
+  limit: number;
+  totalPages: number;
+}
+
 export interface WisdomFeedItem {
   id: number;
   category: string;
@@ -443,6 +470,15 @@ export const ListGurusSort = {
   price_desc: "price_desc",
   users: "users",
 } as const;
+
+export type GetGlobalFeedParams = {
+  /**
+   * Filter by pattern type
+   */
+  patternType?: string;
+  page?: number;
+  limit?: number;
+};
 
 export type GetWisdomFeedParams = {
   category?: string;
