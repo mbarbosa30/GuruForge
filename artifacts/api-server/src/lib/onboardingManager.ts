@@ -3,6 +3,7 @@ import { telegramConnectionsTable, userMemoriesTable } from "@workspace/db/schem
 import { eq, and } from "drizzle-orm";
 import { getModelConfig } from "./modelConfig";
 import { logUsage } from "./usageLogger";
+import type OpenAI from "openai";
 
 const TOTAL_ONBOARDING_STEPS = 3;
 
@@ -118,7 +119,7 @@ async function generateNextQuestion(
   previousAnswer: string,
   userName: string | null,
   model: string,
-  client: any,
+  client: OpenAI,
 ): Promise<string> {
   const personality = guru.personalityStyle ?? "professional";
   const topicsStr = guru.topics?.length ? guru.topics.join(", ") : "general guidance";
@@ -165,7 +166,7 @@ async function generateOnboardingSummary(
   userId: number,
   userName: string | null,
   model: string,
-  client: any,
+  client: OpenAI,
 ): Promise<string> {
   const memories = await db
     .select({ category: userMemoriesTable.category, summary: userMemoriesTable.summary })
@@ -222,7 +223,7 @@ async function extractMemoryFromAnswer(
   step: number,
   answer: string,
   model: string,
-  client: any,
+  client: OpenAI,
 ): Promise<void> {
   try {
     const categoryMapping: Record<number, string> = {

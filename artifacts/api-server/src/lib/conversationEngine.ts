@@ -168,7 +168,10 @@ export async function handleCodeVerification(
     )
     .limit(1);
 
+  let alreadyOnboarded = false;
+
   if (existingByUser.length > 0) {
+    alreadyOnboarded = existingByUser[0].onboardingCompleted;
     await db
       .update(telegramConnectionsTable)
       .set({
@@ -191,6 +194,7 @@ export async function handleCodeVerification(
       .limit(1);
 
     if (existingByTelegram.length > 0) {
+      alreadyOnboarded = existingByTelegram[0].onboardingCompleted;
       await db
         .update(telegramConnectionsTable)
         .set({
@@ -218,6 +222,13 @@ export async function handleCodeVerification(
     .limit(1);
 
   const guruName = guru?.name ?? "your Guru";
+
+  if (alreadyOnboarded) {
+    return {
+      success: true,
+      message: `Welcome back! I'm ${guruName}, reconnected and ready to continue where we left off. What can I help you with?`,
+    };
+  }
 
   let userName: string | null = null;
   try {
