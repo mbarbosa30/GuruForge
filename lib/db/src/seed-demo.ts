@@ -7,7 +7,8 @@ import {
   knowledgeSnapshotsTable,
   userMemoriesTable,
 } from "./schema";
-import { eq, like, inArray } from "drizzle-orm";
+import type { SnapshotData } from "./schema/knowledge-snapshots";
+import { eq, like, inArray, and } from "drizzle-orm";
 
 function daysAgo(n: number): Date {
   const d = new Date();
@@ -176,32 +177,30 @@ async function seedDemo() {
     console.log(`Created ${demoUsers.length} demo users.`);
   }
 
-  const existingPatterns = await db.select().from(collectivePatternsTable);
-  if (existingPatterns.length > 0) {
-    console.log(`Patterns already seeded (${existingPatterns.length}). Skipping.`);
-  } else {
-    let patternCount = 0;
-    for (const [slug, patterns] of Object.entries(PATTERNS_BY_GURU_SLUG)) {
-      const guru = guruBySlug[slug];
-      if (!guru) { console.warn(`Guru "${slug}" not found, skipping patterns.`); continue; }
-      await db.insert(collectivePatternsTable).values(
-        patterns.map((p, i) => ({
-          guruId: guru.id,
-          patternType: p.patternType,
-          summary: p.summary,
-          publishTitle: p.publishTitle,
-          redactedSummary: p.redactedSummary,
-          frequency: p.frequency,
-          confidence: p.confidence,
-          sourceCount: p.sourceCount,
-          createdAt: daysAgo(28 - i * 3),
-          updatedAt: daysAgo(Math.max(0, 7 - i)),
-        }))
-      );
-      patternCount += patterns.length;
-    }
-    console.log(`Seeded ${patternCount} collective patterns across ${Object.keys(PATTERNS_BY_GURU_SLUG).length} gurus.`);
+  let patternCount = 0;
+  for (const [slug, patterns] of Object.entries(PATTERNS_BY_GURU_SLUG)) {
+    const guru = guruBySlug[slug];
+    if (!guru) { console.warn(`Guru "${slug}" not found, skipping patterns.`); continue; }
+    const existing = await db.select().from(collectivePatternsTable).where(eq(collectivePatternsTable.guruId, guru.id));
+    if (existing.length > 0) { console.log(`  Patterns for "${slug}" already exist (${existing.length}). Skipping.`); continue; }
+    await db.insert(collectivePatternsTable).values(
+      patterns.map((p, i) => ({
+        guruId: guru.id,
+        patternType: p.patternType,
+        summary: p.summary,
+        publishTitle: p.publishTitle,
+        redactedSummary: p.redactedSummary,
+        frequency: p.frequency,
+        confidence: p.confidence,
+        sourceCount: p.sourceCount,
+        createdAt: daysAgo(28 - i * 3),
+        updatedAt: daysAgo(Math.max(0, 7 - i)),
+      }))
+    );
+    patternCount += patterns.length;
   }
+  if (patternCount > 0) console.log(`Seeded ${patternCount} collective patterns.`);
+  else console.log("All patterns already seeded. Skipping.");
 
   const demoUserIds = demoUsers.map(u => u.id);
   const existingContribs = await db.select().from(contributionScoresTable).where(inArray(contributionScoresTable.userId, demoUserIds));
@@ -230,47 +229,48 @@ async function seedDemo() {
     console.log(`Seeded ${contribValues.length} contribution scores.`);
   }
 
-  const existingSnapshots = await db.select().from(knowledgeSnapshotsTable);
-  if (existingSnapshots.length > 0) {
-    console.log(`Knowledge snapshots already seeded (${existingSnapshots.length}). Skipping.`);
-  } else {
-    const snapshotValues: Array<any> = [];
-    for (const guru of gurus) {
-      const patterns = PATTERNS_BY_GURU_SLUG[guru.slug] || [];
-      const patternCounts: Record<string, number> = {};
-      for (const p of patterns) {
-        patternCounts[p.patternType] = (patternCounts[p.patternType] || 0) + 1;
-      }
-      const topics = (guru.topics || []).slice(0, 5).map((t, i) => ({ topic: t, count: 30 - i * 5 + Math.floor(Math.random() * 10) }));
-      const snapshotDays = [28, 21, 14, 7, 1];
-      for (const day of snapshotDays) {
-        const scale = 1 - (day / 35);
-        snapshotValues.push({
-          guruId: guru.id,
-          snapshotData: {
-            patternCounts,
-            memoryDistribution: { goals: Math.round(24 * scale) || 3, preferences: Math.round(18 * scale) || 2, history: Math.round(31 * scale) || 4, decisions: Math.round(15 * scale) || 1, context: Math.round(22 * scale) || 3 },
-            avgQualityScore: 0.62 + scale * 0.25,
-            totalAnnotatedTurns: Math.round((200 + Math.floor(Math.random() * 600)) * scale) || 10,
-            totalConversations: Math.round((40 + Math.floor(Math.random() * 160)) * scale) || 5,
-            totalUsers: Math.round((guru.userCount || 50) * scale) || 8,
-            topTopics: topics,
-            confidenceDistribution: {
-              high: Math.round((30 + Math.floor(Math.random() * 20)) * scale) || 2,
-              medium: Math.round((35 + Math.floor(Math.random() * 15)) * scale) || 3,
-              low: Math.round((5 + Math.floor(Math.random() * 10)) * scale) || 1,
-            },
-          },
-          totalPatterns: Math.round((patterns.length + Math.floor(Math.random() * 10)) * scale) || 1,
-          totalMemories: Math.round((80 + Math.floor(Math.random() * 200)) * scale) || 5,
-          avgConfidence: 0.65 + scale * 0.2,
-          createdAt: daysAgo(day),
-        });
-      }
+  let snapshotCount = 0;
+  for (const guru of gurus) {
+    const existingSnaps = await db.select().from(knowledgeSnapshotsTable).where(eq(knowledgeSnapshotsTable.guruId, guru.id));
+    if (existingSnaps.length > 0) { continue; }
+    const patterns = PATTERNS_BY_GURU_SLUG[guru.slug] || [];
+    const patternCounts: Record<string, number> = {};
+    for (const p of patterns) {
+      patternCounts[p.patternType] = (patternCounts[p.patternType] || 0) + 1;
+    }
+    const topics = (guru.topics || []).slice(0, 5).map((t, i) => ({ topic: t, count: 30 - i * 5 + Math.floor(Math.random() * 10) }));
+    const snapshotDays = [28, 21, 14, 7, 1];
+    const snapshotValues: Array<typeof knowledgeSnapshotsTable.$inferInsert> = [];
+    for (const day of snapshotDays) {
+      const scale = 1 - (day / 35);
+      const data: SnapshotData = {
+        patternCounts,
+        memoryDistribution: { goals: Math.round(24 * scale) || 3, preferences: Math.round(18 * scale) || 2, history: Math.round(31 * scale) || 4, decisions: Math.round(15 * scale) || 1, context: Math.round(22 * scale) || 3 },
+        avgQualityScore: 0.62 + scale * 0.25,
+        totalAnnotatedTurns: Math.round((200 + Math.floor(Math.random() * 600)) * scale) || 10,
+        totalConversations: Math.round((40 + Math.floor(Math.random() * 160)) * scale) || 5,
+        totalUsers: Math.round((guru.userCount || 50) * scale) || 8,
+        topTopics: topics,
+        confidenceDistribution: {
+          high: Math.round((30 + Math.floor(Math.random() * 20)) * scale) || 2,
+          medium: Math.round((35 + Math.floor(Math.random() * 15)) * scale) || 3,
+          low: Math.round((5 + Math.floor(Math.random() * 10)) * scale) || 1,
+        },
+      };
+      snapshotValues.push({
+        guruId: guru.id,
+        snapshotData: data,
+        totalPatterns: Math.round((patterns.length + Math.floor(Math.random() * 10)) * scale) || 1,
+        totalMemories: Math.round((80 + Math.floor(Math.random() * 200)) * scale) || 5,
+        avgConfidence: 0.65 + scale * 0.2,
+        createdAt: daysAgo(day),
+      });
     }
     await db.insert(knowledgeSnapshotsTable).values(snapshotValues);
-    console.log(`Seeded ${snapshotValues.length} knowledge snapshots (${gurus.length} gurus x 5 time points).`);
+    snapshotCount += snapshotValues.length;
   }
+  if (snapshotCount > 0) console.log(`Seeded ${snapshotCount} knowledge snapshots.`);
+  else console.log("All knowledge snapshots already seeded. Skipping.");
 
   const existingMemories = await db.select().from(userMemoriesTable).where(inArray(userMemoriesTable.userId, demoUserIds));
   if (existingMemories.length > 0) {
