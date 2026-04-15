@@ -824,6 +824,12 @@ components:
         introEnabled:
           type: boolean
           nullable: true
+        proactiveCadence:
+          type: string
+          enum: [off, daily, every_few_days, weekly]
+          nullable: true
+        isCreator:
+          type: boolean
         wisdomScore:
           type: number
           nullable: true

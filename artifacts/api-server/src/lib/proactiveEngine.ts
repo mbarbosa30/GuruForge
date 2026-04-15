@@ -286,11 +286,12 @@ async function generateProactiveMessage(conn: EligibleConnection, lastProactiveA
     logUsage({
       guruId: conn.guruId,
       userId: conn.userId,
+      callType: "proactive_checkin",
       model: modelConfig.fastModel,
       promptTokens: usage.prompt_tokens,
       completionTokens: usage.completion_tokens,
+      totalTokens: (usage.prompt_tokens ?? 0) + (usage.completion_tokens ?? 0),
       latencyMs: elapsed,
-      operation: "proactive_checkin",
     }).catch(() => {});
   }
 
