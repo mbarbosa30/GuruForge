@@ -28,7 +28,7 @@ pnpm workspace monorepo using TypeScript. Each package manages its own dependenc
 - `artifacts/mockup-sandbox` — Vite dev server for UI mockups
 
 ### Shared Libraries
-- `lib/db` — Drizzle ORM schema and database client
+- `lib/db` — Drizzle ORM schema and database client; also exports `seedDemo()` which auto-runs on API server startup to populate demo engagement data (idempotent, safe for repeated calls)
 - `lib/api-spec` — OpenAPI spec + Orval codegen config
 - `lib/api-zod` — Generated Zod schemas from OpenAPI
 - `lib/api-client-react` — Generated React Query hooks from OpenAPI

@@ -150,13 +150,13 @@ const MEMORY_TEMPLATES: Record<string, Array<{ category: string; displayTitle: s
   ],
 };
 
-async function seedDemo() {
+export async function seedDemo() {
   console.log("Seeding demo engagement data...");
 
   const gurus = await db.select().from(gurusTable);
   if (gurus.length === 0) {
-    console.error("No gurus found. Run the base seed script first: pnpm --filter @workspace/db run seed");
-    process.exit(1);
+    console.log("No gurus found — skipping demo seed (run base seed first).");
+    return;
   }
   const guruBySlug = Object.fromEntries(gurus.map(g => [g.slug, g]));
 
@@ -308,11 +308,14 @@ async function seedDemo() {
     console.log(`Seeded ${memoryValues.length} user memories across ${Object.keys(MEMORY_TEMPLATES).length} gurus.`);
   }
 
-  console.log("\nDemo seed complete.");
-  process.exit(0);
+  console.log("Demo seed complete.");
 }
 
-seedDemo().catch((err) => {
-  console.error("Demo seed failed:", err);
-  process.exit(1);
-});
+if (process.argv[1]?.includes("seed-demo")) {
+  seedDemo()
+    .then(() => process.exit(0))
+    .catch((err) => {
+      console.error("Demo seed failed:", err);
+      process.exit(1);
+    });
+}
