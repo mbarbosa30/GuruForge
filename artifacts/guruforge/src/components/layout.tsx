@@ -79,11 +79,21 @@ export default function Layout({ children }: { children: React.ReactNode }) {
         </div>
       </header>
       <main className="flex-1">{children}</main>
-      <footer className="px-6 md:px-10 py-6 border-t border-[#e0e0e0] flex flex-col sm:flex-row justify-between items-center gap-2">
-        <span className="text-[11px] text-[#999] tracking-[0.02em]">
-          Built on the 3-tier intelligence system from selfclaw.ai & teli.gent
-        </span>
-        <span className="text-[11px] text-[#aaa]">guruforge.ai</span>
+      <footer className="px-6 md:px-10 py-6 border-t border-[#e0e0e0] flex flex-col sm:flex-row justify-between items-center gap-3">
+        <div className="flex flex-col sm:flex-row items-center gap-2 text-[11px] text-[#999] tracking-[0.02em]">
+          <span>
+            Built on the 3-tier intelligence system from{" "}
+            <a href="https://selfclaw.ai" target="_blank" rel="noopener noreferrer" className="text-[#999] hover:text-[#555] transition-colors no-underline">selfclaw.ai</a>
+            {" & "}
+            <a href="https://teli.gent" target="_blank" rel="noopener noreferrer" className="text-[#999] hover:text-[#555] transition-colors no-underline">teli.gent</a>
+          </span>
+          <span className="hidden sm:inline text-[#ccc]">/</span>
+          <span>
+            built with &lt;3 by{" "}
+            <a href="https://zeno.vision" target="_blank" rel="noopener noreferrer" className="text-[#999] hover:text-[#555] transition-colors no-underline">zeno.vision</a>
+          </span>
+        </div>
+        <a href="https://x.com/GuruForge" target="_blank" rel="noopener noreferrer" className="text-[11px] text-[#aaa] hover:text-[#555] transition-colors no-underline">@GuruForge</a>
       </footer>
     </div>
   );
