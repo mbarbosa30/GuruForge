@@ -8,6 +8,7 @@ import {
   subscriptionsTable,
   conversationsTable,
   messagesTable,
+  processedTelegramUpdatesTable,
 } from "@workspace/db/schema";
 import { eq, and, or, isNull, lte, desc, sql } from "drizzle-orm";
 import { sendBotMessage } from "./botManager";
@@ -392,10 +393,20 @@ export function startProactiveScheduler(): void {
   const envInterval = process.env.PROACTIVE_INTERVAL_MS;
   const intervalMs = envInterval ? parseInt(envInterval, 10) || DEFAULT_INTERVAL_MS : DEFAULT_INTERVAL_MS;
 
-  intervalId = setInterval(() => {
+  intervalId = setInterval(async () => {
     runProactiveCycle().catch((err) =>
       logger.error({ err }, "Scheduled proactive cycle failed"),
     );
+
+    try {
+      const cutoff = new Date(Date.now() - 24 * 60 * 60 * 1000);
+      await db
+        .delete(processedTelegramUpdatesTable)
+        .where(lte(processedTelegramUpdatesTable.processedAt, cutoff));
+      logger.info("Cleaned up old processed Telegram update records");
+    } catch (cleanupErr) {
+      logger.error({ err: cleanupErr }, "Failed to clean up processed Telegram updates");
+    }
   }, intervalMs);
 
   logger.info({ intervalMs }, "Proactive engagement scheduler started");

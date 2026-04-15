@@ -6,6 +6,7 @@ import {
   telegramConnectionsTable,
   gurusTable,
   subscriptionsTable,
+  processedTelegramUpdatesTable,
 } from "@workspace/db/schema";
 import { eq, and } from "drizzle-orm";
 import { getBotHandler, startBot, stopBot, setupWebhook, isBotActive, getWebhookSecret } from "../lib/botManager";
@@ -277,6 +278,19 @@ router.post("/telegram/webhook/:guruId", async (req, res) => {
     if (!receivedSecret || receivedSecret !== expectedSecret) {
       res.status(403).json({ error: "Unauthorized." });
       return;
+    }
+
+    const updateId = req.body?.update_id;
+    if (typeof updateId === "number") {
+      const result = await db
+        .insert(processedTelegramUpdatesTable)
+        .values({ updateId: BigInt(updateId), guruId })
+        .onConflictDoNothing()
+        .returning({ updateId: processedTelegramUpdatesTable.updateId });
+      if (result.length === 0) {
+        res.status(200).json({ ok: true });
+        return;
+      }
     }
 
     if (!isBotActive(guruId)) {
