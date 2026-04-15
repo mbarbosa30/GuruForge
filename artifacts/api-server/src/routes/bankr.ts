@@ -1,9 +1,10 @@
 import { Router, type IRouter } from "express";
 import { db } from "@workspace/db";
-import { gurusTable, contributionScoresTable, usersTable, rewardDistributionsTable } from "@workspace/db/schema";
-import { eq, and, desc, sql } from "drizzle-orm";
+import { gurusTable, rewardDistributionsTable } from "@workspace/db/schema";
+import { eq, desc } from "drizzle-orm";
 import { requireAuth, type AuthRequest } from "../middlewares/auth";
 import { deployToken, transferTokens, getPortfolio, validateTokenName, validateTokenSymbol } from "../lib/bankrClient";
+import { computeRewardAllocation } from "../lib/rewardAllocation";
 
 const router: IRouter = Router();
 
@@ -124,36 +125,22 @@ router.post("/gurus/:guruId/rewards/distribute", requireAuth, async (req: AuthRe
       return;
     }
 
-    const rows = await db
-      .select({
-        walletAddress: usersTable.walletAddress,
-        score: contributionScoresTable.score,
-      })
-      .from(contributionScoresTable)
-      .innerJoin(usersTable, eq(contributionScoresTable.userId, usersTable.id))
-      .where(
-        and(
-          eq(contributionScoresTable.guruId, guruId),
-          sql`${usersTable.walletAddress} IS NOT NULL`,
-        ),
-      )
-      .orderBy(desc(contributionScoresTable.score));
+    const allocation = await computeRewardAllocation(guruId);
 
-    if (rows.length === 0) {
+    if (allocation.totalContributors === 0) {
       res.status(400).json({ error: "No eligible contributors with wallet addresses" });
       return;
     }
 
-    const totalScore = rows.reduce((sum, r) => sum + r.score, 0);
-    if (totalScore <= 0) {
+    if (allocation.totalScore <= 0) {
       res.status(400).json({ error: "No positive contribution scores to distribute" });
       return;
     }
 
     const total = Number(totalAmount);
-    const recipients = rows.map((r) => ({
-      walletAddress: r.walletAddress!,
-      amount: ((r.score / totalScore) * total).toFixed(6),
+    const recipients = allocation.recipients.map((r) => ({
+      walletAddress: r.walletAddress,
+      amount: ((r.sharePercent / 100) * total).toFixed(6),
     }));
 
     const [distRecord] = await db.insert(rewardDistributionsTable).values({

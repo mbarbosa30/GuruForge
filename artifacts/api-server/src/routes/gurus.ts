@@ -5,6 +5,7 @@ import { eq, desc, asc, and, sql, avg, count, or } from "drizzle-orm";
 import { requireAuth, optionalAuth, type AuthRequest } from "../middlewares/auth";
 import { CreateGuruBody, UpdateGuruBody, UpdateGuruParams, ListGurusQueryParams } from "@workspace/api-zod";
 import { handleGuruStatusChange, isBotActive, stopBot, startBot, setupWebhook } from "../lib/botManager";
+import { computeRewardAllocation } from "../lib/rewardAllocation";
 
 const router: IRouter = Router();
 
@@ -595,38 +596,9 @@ router.get("/gurus/:guruId/leaderboard/rewards", requireAuth, async (req: AuthRe
       return;
     }
 
-    const rows = await db
-      .select({
-        walletAddress: usersTable.walletAddress,
-        score: contributionScoresTable.score,
-        patternsContributed: contributionScoresTable.patternsContributed,
-        turnCount: contributionScoresTable.turnCount,
-      })
-      .from(contributionScoresTable)
-      .innerJoin(usersTable, eq(contributionScoresTable.userId, usersTable.id))
-      .where(
-        and(
-          eq(contributionScoresTable.guruId, guruId),
-          sql`${usersTable.walletAddress} IS NOT NULL`,
-        ),
-      )
-      .orderBy(desc(contributionScoresTable.score));
+    const allocation = await computeRewardAllocation(guruId);
 
-    const totalScore = rows.reduce((sum, r) => sum + r.score, 0);
-
-    const recipients = rows.map((row) => ({
-      walletAddress: row.walletAddress!,
-      score: Math.round(row.score),
-      sharePercent: totalScore > 0 ? Math.round((row.score / totalScore) * 10000) / 100 : 0,
-      patternsContributed: row.patternsContributed,
-      turnCount: row.turnCount,
-    }));
-
-    res.json({
-      recipients,
-      totalContributors: recipients.length,
-      totalScore: Math.round(totalScore),
-    });
+    res.json(allocation);
   } catch (err) {
     res.status(500).json({ error: "Failed to fetch reward data" });
   }
