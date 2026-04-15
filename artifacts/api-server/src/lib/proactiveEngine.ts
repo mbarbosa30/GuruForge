@@ -160,16 +160,39 @@ async function getEligibleConnections(): Promise<EligibleConnection[]> {
 }
 
 async function getPersonalContext(userId: number, guruId: number): Promise<string> {
-  const memories = await db
+  const goalMemories = await db
     .select({ summary: userMemoriesTable.summary, category: userMemoriesTable.category })
     .from(userMemoriesTable)
-    .where(and(eq(userMemoriesTable.userId, userId), eq(userMemoriesTable.guruId, guruId)))
+    .where(
+      and(
+        eq(userMemoriesTable.userId, userId),
+        eq(userMemoriesTable.guruId, guruId),
+        eq(userMemoriesTable.category, "goals"),
+      ),
+    )
     .orderBy(desc(userMemoriesTable.importance), desc(userMemoriesTable.updatedAt))
-    .limit(10);
+    .limit(5);
 
-  if (memories.length === 0) return "";
+  const remainingSlots = 10 - goalMemories.length;
+  const otherMemories = remainingSlots > 0
+    ? await db
+        .select({ summary: userMemoriesTable.summary, category: userMemoriesTable.category })
+        .from(userMemoriesTable)
+        .where(
+          and(
+            eq(userMemoriesTable.userId, userId),
+            eq(userMemoriesTable.guruId, guruId),
+            sql`${userMemoriesTable.category} != 'goals'`,
+          ),
+        )
+        .orderBy(desc(userMemoriesTable.importance), desc(userMemoriesTable.updatedAt))
+        .limit(remainingSlots)
+    : [];
 
-  return memories.map((m) => `- [${m.category}] ${m.summary}`).join("\n");
+  const all = [...goalMemories, ...otherMemories];
+  if (all.length === 0) return "";
+
+  return all.map((m) => `- [${m.category}] ${m.summary}`).join("\n");
 }
 
 async function getRecentCollectivePatterns(guruId: number, lastProactiveAt: Date | null): Promise<string> {
@@ -360,17 +383,21 @@ export async function runProactiveCycle(): Promise<void> {
 
 let intervalId: ReturnType<typeof setInterval> | null = null;
 
+const DEFAULT_INTERVAL_MS = 60 * 60 * 1000;
+
 export function startProactiveScheduler(): void {
   if (intervalId) return;
 
-  const intervalMs = 60 * 60 * 1000;
+  const envInterval = process.env.PROACTIVE_INTERVAL_MS;
+  const intervalMs = envInterval ? parseInt(envInterval, 10) || DEFAULT_INTERVAL_MS : DEFAULT_INTERVAL_MS;
+
   intervalId = setInterval(() => {
     runProactiveCycle().catch((err) =>
       logger.error({ err }, "Scheduled proactive cycle failed"),
     );
   }, intervalMs);
 
-  logger.info("Proactive engagement scheduler started (runs every hour)");
+  logger.info({ intervalMs }, "Proactive engagement scheduler started");
 }
 
 export function stopProactiveScheduler(): void {

@@ -9,6 +9,7 @@ import {
   useGetTelegramStatus,
   useToggleWisdomContribution,
   useGetContributionScore,
+  useUpdateGuru,
   getGetGuruQueryOptions,
   getListGuruRatingsQueryOptions,
   getCheckSubscriptionQueryOptions,
@@ -128,6 +129,8 @@ export default function GuruProfile() {
   const isTelegramConnected = telegramStatus?.connected === true;
   const [wisdomEnabled, setWisdomEnabled] = useState(true);
   const wisdomToggleMutation = useToggleWisdomContribution();
+  const updateGuruMutation = useUpdateGuru();
+  const [cadenceValue, setCadenceValue] = useState<string>(guru?.proactiveCadence ?? "off");
 
   const { data: contributionScore } = useGetContributionScore(guruId, {
     query: { enabled: !!guru?.id && !!authenticated && isSubscribed },
@@ -139,6 +142,26 @@ export default function GuruProfile() {
       setWisdomEnabled(telegramStatus.contributesToWisdom);
     }
   }, [telegramStatus?.contributesToWisdom]);
+
+  useEffect(() => {
+    if (guru?.proactiveCadence) {
+      setCadenceValue(guru.proactiveCadence);
+    }
+  }, [guru?.proactiveCadence]);
+
+  async function handleCadenceChange(newCadence: string) {
+    if (!guru?.id) return;
+    const prev = cadenceValue;
+    setCadenceValue(newCadence);
+    try {
+      await updateGuruMutation.mutateAsync({
+        id: guru.id,
+        data: { proactiveCadence: newCadence as "off" | "daily" | "every_few_days" | "weekly" },
+      });
+    } catch {
+      setCadenceValue(prev);
+    }
+  }
 
   async function handleWisdomToggle() {
     if (!guru?.id) return;
@@ -341,6 +364,35 @@ export default function GuruProfile() {
           </div>
         </div>
       </section>
+
+      {guru.isCreator && (
+        <section className="mb-10">
+          <p className="text-[11px] font-medium tracking-[0.12em] uppercase text-[#888] mb-4">Creator settings</p>
+          <div className="border border-[#e0e0e0] px-5 py-4">
+            <span className="text-[11px] font-medium tracking-[0.04em] uppercase text-[#888] block mb-3">Proactive check-ins</span>
+            <div className="flex flex-wrap gap-2">
+              {([
+                { value: "off", label: "Off" },
+                { value: "daily", label: "Daily" },
+                { value: "every_few_days", label: "Every few days" },
+                { value: "weekly", label: "Weekly" },
+              ] as const).map((opt) => (
+                <button
+                  key={opt.value}
+                  onClick={() => handleCadenceChange(opt.value)}
+                  className={`text-[12px] font-medium tracking-[0.04em] uppercase px-4 py-2 border transition-colors cursor-pointer ${
+                    cadenceValue === opt.value
+                      ? "bg-[#111] text-white border-[#111]"
+                      : "bg-white text-[#555] border-[#ddd] hover:border-[#999]"
+                  }`}
+                >
+                  {opt.label}
+                </button>
+              ))}
+            </div>
+          </div>
+        </section>
+      )}
 
       {isSubscribed && contributionScore && (contributionScore.score > 0 || contributionScore.turnCount > 0) && (
         <section className="mb-10">

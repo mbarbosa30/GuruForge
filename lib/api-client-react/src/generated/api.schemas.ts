@@ -80,6 +80,8 @@ export interface GuruDetail {
   modelTier?: GuruDetailModelTier;
   memoryPolicy?: string | null;
   introEnabled?: boolean | null;
+  proactiveCadence?: string | null;
+  isCreator?: boolean;
   wisdomScore?: number | null;
   satisfactionScore?: number | null;
   userCount?: number | null;

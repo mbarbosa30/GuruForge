@@ -110,7 +110,7 @@ router.get("/gurus", optionalAuth, async (req: AuthRequest, res) => {
   }
 });
 
-router.get("/gurus/:slug", async (req, res) => {
+router.get("/gurus/:slug", optionalAuth, async (req: AuthRequest, res) => {
   try {
     const { slug } = req.params;
 
@@ -132,6 +132,7 @@ router.get("/gurus/:slug", async (req, res) => {
         modelTier: gurusTable.modelTier,
         memoryPolicy: gurusTable.memoryPolicy,
         introEnabled: gurusTable.introEnabled,
+        proactiveCadence: gurusTable.proactiveCadence,
         wisdomScore: gurusTable.wisdomScore,
         satisfactionScore: gurusTable.satisfactionScore,
         userCount: gurusTable.userCount,
@@ -166,6 +167,7 @@ router.get("/gurus/:slug", async (req, res) => {
       ...guru,
       avgRating: ratingStats[0]?.avgRating ? parseFloat(String(ratingStats[0].avgRating)) : null,
       totalRatings: ratingStats[0]?.totalRatings ?? 0,
+      isCreator: req.dbUserId ? guru.creatorId === req.dbUserId : false,
     });
   } catch (err) {
     res.status(500).json({ error: "Failed to fetch guru" });
