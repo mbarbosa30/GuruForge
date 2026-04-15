@@ -209,7 +209,7 @@ router.post("/gurus", requireAuth, async (req: AuthRequest, res) => {
       modelTier: modelTier ?? "gpt",
       memoryPolicy: memoryPolicy ?? null,
       introEnabled: introEnabled ?? false,
-      proactiveCadence: proactiveCadence ?? "none",
+      proactiveCadence: proactiveCadence ?? "off",
     }).returning();
 
     await db.update(usersTable).set({ role: "creator" }).where(eq(usersTable.id, req.dbUserId));

@@ -10,8 +10,8 @@ export type CreateGuruInputProactiveCadence =
   (typeof CreateGuruInputProactiveCadence)[keyof typeof CreateGuruInputProactiveCadence];
 
 export const CreateGuruInputProactiveCadence = {
-  none: "none",
+  off: "off",
   daily: "daily",
+  every_few_days: "every_few_days",
   weekly: "weekly",
-  biweekly: "biweekly",
 } as const;

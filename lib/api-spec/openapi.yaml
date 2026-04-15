@@ -975,7 +975,7 @@ components:
           type: boolean
         proactiveCadence:
           type: string
-          enum: [none, daily, weekly, biweekly]
+          enum: [off, daily, every_few_days, weekly]
       required:
         - name
     UpdateGuruInput:
@@ -1015,7 +1015,7 @@ components:
           type: boolean
         proactiveCadence:
           type: string
-          enum: [none, daily, weekly, biweekly]
+          enum: [off, daily, every_few_days, weekly]
         telegramBotToken:
           type: string
     User:

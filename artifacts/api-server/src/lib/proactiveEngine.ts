@@ -6,6 +6,8 @@ import {
   userMemoriesTable,
   collectivePatternsTable,
   subscriptionsTable,
+  conversationsTable,
+  messagesTable,
 } from "@workspace/db/schema";
 import { eq, and, or, isNull, lte, desc, sql } from "drizzle-orm";
 import { sendBotMessage } from "./botManager";
@@ -15,9 +17,14 @@ import { logger } from "./logger";
 
 const CADENCE_HOURS: Record<string, number> = {
   daily: 24,
+  every_few_days: 60,
   weekly: 168,
-  biweekly: 336,
 };
+
+function isQuietHoursUTC(): boolean {
+  const hour = new Date().getUTCHours();
+  return hour < 9 || hour >= 21;
+}
 
 interface EligibleConnection {
   connectionId: number;
@@ -31,6 +38,7 @@ interface EligibleConnection {
   guruTopics: string[] | null;
   guruModelTier: string | null;
   guruPriceCents: number;
+  guruCreatorId: number;
   userName: string | null;
 }
 
@@ -40,6 +48,7 @@ async function getEligibleConnections(): Promise<EligibleConnection[]> {
   const gurusWithCadence = await db
     .select({
       id: gurusTable.id,
+      creatorId: gurusTable.creatorId,
       name: gurusTable.name,
       description: gurusTable.description,
       tagline: gurusTable.tagline,
@@ -55,8 +64,8 @@ async function getEligibleConnections(): Promise<EligibleConnection[]> {
         eq(gurusTable.status, "published"),
         or(
           eq(gurusTable.proactiveCadence, "daily"),
+          eq(gurusTable.proactiveCadence, "every_few_days"),
           eq(gurusTable.proactiveCadence, "weekly"),
-          eq(gurusTable.proactiveCadence, "biweekly"),
         ),
       ),
     );
@@ -67,7 +76,8 @@ async function getEligibleConnections(): Promise<EligibleConnection[]> {
     const cadenceHours = CADENCE_HOURS[guru.proactiveCadence];
     if (!cadenceHours) continue;
 
-    const cutoff = new Date(now.getTime() - cadenceHours * 60 * 60 * 1000);
+    const cadenceCutoff = new Date(now.getTime() - cadenceHours * 60 * 60 * 1000);
+    const interactionCutoff = new Date(now.getTime() - 24 * 60 * 60 * 1000);
 
     const connections = await db
       .select({
@@ -86,13 +96,14 @@ async function getEligibleConnections(): Promise<EligibleConnection[]> {
           eq(telegramConnectionsTable.onboardingCompleted, true),
           or(
             isNull(telegramConnectionsTable.lastProactiveAt),
-            lte(telegramConnectionsTable.lastProactiveAt, cutoff),
+            lte(telegramConnectionsTable.lastProactiveAt, cadenceCutoff),
           ),
         ),
       );
 
     for (const conn of connections) {
-      const isCreator = false;
+      const isCreator = guru.creatorId === conn.userId;
+
       if (!isCreator) {
         const [activeSub] = await db
           .select({ id: subscriptionsTable.id })
@@ -106,13 +117,25 @@ async function getEligibleConnections(): Promise<EligibleConnection[]> {
           )
           .limit(1);
 
-        const [guruRow] = await db
-          .select({ creatorId: gurusTable.creatorId })
-          .from(gurusTable)
-          .where(eq(gurusTable.id, guru.id))
-          .limit(1);
+        if (!activeSub) continue;
+      }
 
-        if (!activeSub && guruRow?.creatorId !== conn.userId) continue;
+      const [recentMsg] = await db
+        .select({ createdAt: messagesTable.createdAt })
+        .from(messagesTable)
+        .innerJoin(conversationsTable, eq(messagesTable.conversationId, conversationsTable.id))
+        .where(
+          and(
+            eq(conversationsTable.userId, conn.userId),
+            eq(conversationsTable.guruId, guru.id),
+            eq(messagesTable.role, "user"),
+          ),
+        )
+        .orderBy(desc(messagesTable.createdAt))
+        .limit(1);
+
+      if (recentMsg && recentMsg.createdAt > interactionCutoff) {
+        continue;
       }
 
       eligible.push({
@@ -127,6 +150,7 @@ async function getEligibleConnections(): Promise<EligibleConnection[]> {
         guruTopics: guru.topics,
         guruModelTier: guru.modelTier,
         guruPriceCents: guru.priceCents,
+        guruCreatorId: guru.creatorId,
         userName: conn.userName,
       });
     }
@@ -148,22 +172,43 @@ async function getPersonalContext(userId: number, guruId: number): Promise<strin
   return memories.map((m) => `- [${m.category}] ${m.summary}`).join("\n");
 }
 
-async function getCollectiveContext(guruId: number): Promise<string> {
+async function getRecentCollectivePatterns(guruId: number, lastProactiveAt: Date | null): Promise<string> {
+  const cutoff = lastProactiveAt ?? new Date(Date.now() - 7 * 24 * 60 * 60 * 1000);
+
   const patterns = await db
-    .select({ pattern: collectivePatternsTable.summary, confidence: collectivePatternsTable.confidence })
+    .select({
+      pattern: collectivePatternsTable.summary,
+      confidence: collectivePatternsTable.confidence,
+      updatedAt: collectivePatternsTable.updatedAt,
+    })
     .from(collectivePatternsTable)
-    .where(eq(collectivePatternsTable.guruId, guruId))
+    .where(
+      and(
+        eq(collectivePatternsTable.guruId, guruId),
+        sql`${collectivePatternsTable.updatedAt} > ${cutoff}`,
+      ),
+    )
     .orderBy(desc(collectivePatternsTable.confidence))
     .limit(5);
 
-  if (patterns.length === 0) return "";
+  if (patterns.length === 0) {
+    const fallback = await db
+      .select({ pattern: collectivePatternsTable.summary, confidence: collectivePatternsTable.confidence })
+      .from(collectivePatternsTable)
+      .where(eq(collectivePatternsTable.guruId, guruId))
+      .orderBy(desc(collectivePatternsTable.confidence))
+      .limit(3);
+
+    if (fallback.length === 0) return "";
+    return fallback.map((p) => `- ${p.pattern} (confidence: ${(p.confidence * 100).toFixed(0)}%)`).join("\n");
+  }
 
   return patterns.map((p) => `- ${p.pattern} (confidence: ${(p.confidence * 100).toFixed(0)}%)`).join("\n");
 }
 
-async function generateProactiveMessage(conn: EligibleConnection): Promise<string | null> {
+async function generateProactiveMessage(conn: EligibleConnection, lastProactiveAt: Date | null): Promise<string | null> {
   const personalContext = await getPersonalContext(conn.userId, conn.guruId);
-  const collectiveContext = await getCollectiveContext(conn.guruId);
+  const collectiveContext = await getRecentCollectivePatterns(conn.guruId, lastProactiveAt);
 
   if (!personalContext && !collectiveContext) return null;
 
@@ -190,13 +235,13 @@ async function generateProactiveMessage(conn: EligibleConnection): Promise<strin
     conn.userName ? `The user's name is "${conn.userName}".` : "",
     "",
     "Generate a brief, natural check-in message (2-4 sentences) that:",
-    "- References something specific from their context or a community insight",
+    "- References something specific from their context or a recently discovered community insight",
     "- Asks a thought-provoking question or offers a useful nudge",
     "- Feels personal, not generic or spammy",
     "- Does NOT start with 'Hey!' or similar greeting cliches",
     "",
     personalContext ? `PERSONAL CONTEXT:\n${personalContext}` : "",
-    collectiveContext ? `COMMUNITY INSIGHTS:\n${collectiveContext}` : "",
+    collectiveContext ? `RECENT COMMUNITY INSIGHTS:\n${collectiveContext}` : "",
   ]
     .filter(Boolean)
     .join("\n");
@@ -229,13 +274,51 @@ async function generateProactiveMessage(conn: EligibleConnection): Promise<strin
   return completion.choices[0]?.message?.content?.trim() || null;
 }
 
+async function persistProactiveMessage(userId: number, guruId: number, message: string): Promise<void> {
+  let [conversation] = await db
+    .select()
+    .from(conversationsTable)
+    .where(
+      and(
+        eq(conversationsTable.userId, userId),
+        eq(conversationsTable.guruId, guruId),
+      ),
+    )
+    .orderBy(desc(conversationsTable.createdAt))
+    .limit(1);
+
+  if (!conversation) {
+    [conversation] = await db
+      .insert(conversationsTable)
+      .values({
+        userId,
+        guruId,
+        title: "Telegram conversation",
+      })
+      .returning();
+  }
+
+  await db.insert(messagesTable).values({
+    conversationId: conversation.id,
+    role: "assistant",
+    content: message,
+  });
+}
+
 async function processConnection(conn: EligibleConnection): Promise<void> {
   try {
-    const message = await generateProactiveMessage(conn);
+    const [connRow] = await db
+      .select({ lastProactiveAt: telegramConnectionsTable.lastProactiveAt })
+      .from(telegramConnectionsTable)
+      .where(eq(telegramConnectionsTable.id, conn.connectionId))
+      .limit(1);
+
+    const message = await generateProactiveMessage(conn, connRow?.lastProactiveAt ?? null);
     if (!message) return;
 
     const sent = await sendBotMessage(conn.guruId, conn.telegramChatId, message);
     if (sent) {
+      await persistProactiveMessage(conn.userId, conn.guruId, message);
       await db
         .update(telegramConnectionsTable)
         .set({ lastProactiveAt: new Date() })
@@ -251,6 +334,11 @@ async function processConnection(conn: EligibleConnection): Promise<void> {
 
 export async function runProactiveCycle(): Promise<void> {
   try {
+    if (isQuietHoursUTC()) {
+      logger.debug("Skipping proactive cycle — outside UTC 9am-9pm window");
+      return;
+    }
+
     const eligible = await getEligibleConnections();
     if (eligible.length === 0) return;
 

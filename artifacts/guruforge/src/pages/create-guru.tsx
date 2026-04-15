@@ -36,7 +36,7 @@ interface FormData {
   memoryPersonal: boolean;
   memoryShared: boolean;
   introEnabled: boolean;
-  proactiveCadence: "none" | "daily" | "weekly" | "biweekly";
+  proactiveCadence: "off" | "daily" | "every_few_days" | "weekly";
   priceCents: number;
   freeTrial: boolean;
 }
@@ -57,7 +57,7 @@ const INITIAL: FormData = {
   memoryPersonal: true,
   memoryShared: true,
   introEnabled: false,
-  proactiveCadence: "none",
+  proactiveCadence: "off",
   priceCents: 2900,
   freeTrial: false,
 };
@@ -342,10 +342,10 @@ function Toggle({ checked, onChange, label, desc, testId }: {
 }
 
 const CADENCE_OPTIONS = [
-  { value: "none", label: "Off", desc: "No proactive messages" },
+  { value: "off", label: "Off", desc: "No proactive messages" },
   { value: "daily", label: "Daily", desc: "Check in once per day" },
+  { value: "every_few_days", label: "Every Few Days", desc: "Check in every 2-3 days" },
   { value: "weekly", label: "Weekly", desc: "Check in once per week" },
-  { value: "biweekly", label: "Biweekly", desc: "Check in every two weeks" },
 ] as const;
 
 function StepMemory({ data, onChange }: { data: FormData; onChange: (d: Partial<FormData>) => void }) {
@@ -480,7 +480,7 @@ function StepReview({ data, categories }: { data: FormData; categories: Category
         <ReviewRow label="Personal memory" value={data.memoryPersonal ? "On" : "Off"} />
         <ReviewRow label="Shared learning" value={data.memoryShared ? "On" : "Off"} />
         <ReviewRow label="Introductions" value={data.introEnabled ? "Enabled" : "Disabled"} />
-        <ReviewRow label="Proactive check-ins" value={data.proactiveCadence === "none" ? "Off" : data.proactiveCadence.charAt(0).toUpperCase() + data.proactiveCadence.slice(1)} />
+        <ReviewRow label="Proactive check-ins" value={data.proactiveCadence === "off" ? "Off" : data.proactiveCadence === "every_few_days" ? "Every few days" : data.proactiveCadence.charAt(0).toUpperCase() + data.proactiveCadence.slice(1)} />
         <ReviewRow label="Price" value={data.priceCents === 0 ? "Free" : `$${(data.priceCents / 100).toFixed(2)}/month`} />
         {data.priceCents > 0 && <ReviewRow label="Free trial" value={data.freeTrial ? "Enabled" : "Disabled"} />}
       </div>
