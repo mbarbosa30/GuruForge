@@ -3,7 +3,7 @@ import { conversationsTable } from "./conversations";
 
 export const conversationSummariesTable = pgTable("conversation_summaries", {
   id: serial("id").primaryKey(),
-  conversationId: integer("conversation_id").notNull().references(() => conversationsTable.id),
+  conversationId: integer("conversation_id").notNull().references(() => conversationsTable.id, { onDelete: "cascade" }),
   summary: text("summary").notNull(),
   messagesSummarized: integer("messages_summarized").notNull().default(0),
   createdAt: timestamp("created_at", { withTimezone: true }).defaultNow().notNull(),

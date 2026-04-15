@@ -23,7 +23,7 @@ export async function compactConversation(
     .where(eq(messagesTable.conversationId, conversationId));
 
   const totalMessages = countResult?.count ?? 0;
-  if (totalMessages < COMPACTION_THRESHOLD) return;
+  if (totalMessages <= COMPACTION_THRESHOLD) return;
 
   const [existingSummary] = await db
     .select()
@@ -51,7 +51,8 @@ export async function compactConversation(
   let modelConfig;
   try {
     modelConfig = getModelConfig(modelTier);
-  } catch {
+  } catch (err) {
+    console.error(`Compaction skipped for conversation ${conversationId}: model config unavailable`, err);
     return;
   }
 
