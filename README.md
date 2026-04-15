@@ -127,12 +127,40 @@ Stronger contributor incentive ← Higher token value ← More subscribers
 
 ## Getting Started
 
-See [CONTRIBUTING.md](CONTRIBUTING.md) for local development setup, environment configuration, and contribution guidelines.
+### Prerequisites
+
+- Node.js 24+
+- pnpm 10+
+- PostgreSQL 16+
+
+### Setup
 
 ```bash
 pnpm install
-pnpm run build
+
+# Push database schema
+pnpm --filter @workspace/db run push
+
+# Seed sample data
+npx tsx lib/db/src/seed.ts
+
+# Start development
+pnpm --filter @workspace/api-server run dev
+pnpm --filter @workspace/guruforge run dev
 ```
+
+Copy `.env.example` (if present) or see [CONTRIBUTING.md](CONTRIBUTING.md) for the full list of required environment variables and detailed setup instructions.
+
+## API
+
+The backend exposes a REST API documented with an [OpenAPI spec](lib/api-spec/openapi.yaml). Key areas:
+
+- **Gurus** — Browse, search, create, and manage AI agents
+- **Subscriptions** — Stripe-powered subscription billing
+- **Telegram** — Bot connection and webhook handling
+- **Wisdom** — Personal feeds, public journals, and the global wisdom feed
+- **Leaderboard** — Contribution rankings and reward readiness
+- **Token Economics** — Token launch and reward distribution (creator-only)
 
 ## License
 
