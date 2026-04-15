@@ -13,7 +13,6 @@ export const trainingExportsTable = pgTable("training_exports", {
   status: varchar("status", { length: 20 }).notNull().default("pending"),
   filters: jsonb("filters").$type<ExportFilters>().default({}),
   rowCount: integer("row_count").notNull().default(0),
-  filePath: text("file_path"),
   fileSize: integer("file_size"),
   exportContent: text("export_content"),
   exportedBy: integer("exported_by"),

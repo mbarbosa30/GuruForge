@@ -53,7 +53,7 @@ pnpm workspace monorepo using TypeScript. Each package manages its own dependenc
 - `conversation_annotations` — id, message_id (FK messages, unique), conversation_id, guru_id, topic_tags (jsonb string[]), quality_score (0-1), memory_extraction_success, memories_extracted_count, contribution_quality (0-1), domain_relevance (0-1), pii_detected, token_count, created_at
 - `data_correlations` — id, guru_id, source_type, source_id, target_type, target_id, relationship_type, created_at (tracks message→memory and message→pattern relationships)
 - `knowledge_snapshots` — id, guru_id, snapshot_data (jsonb: patternCounts, memoryDistribution, avgQualityScore, totalAnnotatedTurns, totalConversations, totalUsers, topTopics, confidenceDistribution), total_patterns, total_memories, avg_confidence, created_at
-- `training_exports` — id, format, status, filters (jsonb), row_count, file_path, file_size, export_content (text), exported_by, error_message, started_at, completed_at, created_at
+- `training_exports` — id, format, status, filters (jsonb), row_count, file_size, export_content (text JSONL), exported_by, error_message, started_at, completed_at, created_at
 
 ### API Endpoints (under `/api`)
 - `GET /api/healthz` — Health check

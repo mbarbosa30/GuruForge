@@ -4,11 +4,13 @@ import {
   messagesTable,
   conversationsTable,
   gurusTable,
+  guruRatingsTable,
   collectivePatternsTable,
+  dataCorrelationsTable,
   trainingExportsTable,
   telegramConnectionsTable,
 } from "@workspace/db/schema";
-import { eq, and, gte, lte, sql, desc, count } from "drizzle-orm";
+import { eq, and, gte, lte, sql, desc, count, avg, inArray } from "drizzle-orm";
 import { redactPIIWithLLM } from "./piiRedactor";
 import { logger } from "./logger";
 import type { ExportFilters } from "@workspace/db/schema/training-exports";
@@ -204,25 +206,92 @@ async function buildInstructionPairs(filters: ExportFilters): Promise<Instructio
 }
 
 async function buildPreferencePairs(filters: ExportFilters): Promise<PreferencePair[]> {
-  const annotations = await getOptedInAnnotations(filters);
+  const guruRatings = await db
+    .select({
+      guruId: guruRatingsTable.guruId,
+      avgRating: avg(guruRatingsTable.rating),
+    })
+    .from(guruRatingsTable)
+    .groupBy(guruRatingsTable.guruId);
 
-  const byConversation = new Map<number, typeof annotations>();
-  for (const ann of annotations) {
-    const existing = byConversation.get(ann.conversationId) || [];
-    existing.push(ann);
-    byConversation.set(ann.conversationId, existing);
+  const ratingMap = new Map<number, number>();
+  for (const g of guruRatings) {
+    ratingMap.set(g.guruId, Number(g.avgRating ?? 0));
   }
 
+  const highRatedGuruIds = guruRatings
+    .filter((g) => Number(g.avgRating ?? 0) >= 4.0)
+    .map((g) => g.guruId);
+  const lowRatedGuruIds = guruRatings
+    .filter((g) => Number(g.avgRating ?? 0) <= 3.0)
+    .map((g) => g.guruId);
+
+  if (highRatedGuruIds.length === 0 || lowRatedGuruIds.length === 0) {
+    return [];
+  }
+
+  const baseConditions = [
+    eq(telegramConnectionsTable.contributesToWisdom, true),
+    eq(telegramConnectionsTable.status, "active"),
+  ];
+  if (filters.minQuality !== undefined) {
+    baseConditions.push(gte(conversationAnnotationsTable.qualityScore, filters.minQuality));
+  }
+  if (filters.dateFrom) {
+    baseConditions.push(gte(conversationAnnotationsTable.createdAt, new Date(filters.dateFrom)));
+  }
+  if (filters.dateTo) {
+    baseConditions.push(lte(conversationAnnotationsTable.createdAt, new Date(filters.dateTo)));
+  }
+
+  const highAnnotations = await db
+    .select({
+      messageId: conversationAnnotationsTable.messageId,
+      conversationId: conversationAnnotationsTable.conversationId,
+      guruId: conversationAnnotationsTable.guruId,
+      qualityScore: conversationAnnotationsTable.qualityScore,
+      topicTags: conversationAnnotationsTable.topicTags,
+    })
+    .from(conversationAnnotationsTable)
+    .innerJoin(conversationsTable, eq(conversationAnnotationsTable.conversationId, conversationsTable.id))
+    .innerJoin(
+      telegramConnectionsTable,
+      and(
+        eq(telegramConnectionsTable.userId, conversationsTable.userId),
+        eq(telegramConnectionsTable.guruId, conversationsTable.guruId),
+      ),
+    )
+    .where(and(...baseConditions, inArray(conversationAnnotationsTable.guruId, highRatedGuruIds)))
+    .orderBy(desc(conversationAnnotationsTable.qualityScore))
+    .limit(5000);
+
+  const lowAnnotations = await db
+    .select({
+      messageId: conversationAnnotationsTable.messageId,
+      conversationId: conversationAnnotationsTable.conversationId,
+      guruId: conversationAnnotationsTable.guruId,
+      qualityScore: conversationAnnotationsTable.qualityScore,
+      topicTags: conversationAnnotationsTable.topicTags,
+    })
+    .from(conversationAnnotationsTable)
+    .innerJoin(conversationsTable, eq(conversationAnnotationsTable.conversationId, conversationsTable.id))
+    .innerJoin(
+      telegramConnectionsTable,
+      and(
+        eq(telegramConnectionsTable.userId, conversationsTable.userId),
+        eq(telegramConnectionsTable.guruId, conversationsTable.guruId),
+      ),
+    )
+    .where(and(...baseConditions, inArray(conversationAnnotationsTable.guruId, lowRatedGuruIds)))
+    .orderBy(conversationAnnotationsTable.qualityScore)
+    .limit(5000);
+
   const pairs: PreferencePair[] = [];
+  const pairCount = Math.min(highAnnotations.length, lowAnnotations.length);
 
-  for (const [, convAnnotations] of byConversation) {
-    if (convAnnotations.length < 2) continue;
-
-    const sorted = [...convAnnotations].sort((a, b) => b.qualityScore - a.qualityScore);
-    const high = sorted[0];
-    const low = sorted[sorted.length - 1];
-
-    if (high.qualityScore - low.qualityScore < 0.3) continue;
+  for (let i = 0; i < pairCount; i++) {
+    const high = highAnnotations[i];
+    const low = lowAnnotations[i];
 
     const [chosenMsg] = await db
       .select({ content: messagesTable.content })
@@ -277,7 +346,35 @@ async function buildPreferencePairs(filters: ExportFilters): Promise<PreferenceP
 }
 
 async function buildKnowledgeDistillation(filters: ExportFilters): Promise<KnowledgeDistillation[]> {
-  const conditions = [];
+  const optedInPatternIds = await db
+    .selectDistinct({ patternId: dataCorrelationsTable.targetId })
+    .from(dataCorrelationsTable)
+    .innerJoin(
+      conversationAnnotationsTable,
+      and(
+        eq(dataCorrelationsTable.sourceType, "message"),
+        eq(dataCorrelationsTable.targetType, "pattern"),
+        eq(dataCorrelationsTable.sourceId, conversationAnnotationsTable.messageId),
+      ),
+    )
+    .innerJoin(
+      conversationsTable,
+      eq(conversationAnnotationsTable.conversationId, conversationsTable.id),
+    )
+    .innerJoin(
+      telegramConnectionsTable,
+      and(
+        eq(telegramConnectionsTable.userId, conversationsTable.userId),
+        eq(telegramConnectionsTable.guruId, conversationsTable.guruId),
+        eq(telegramConnectionsTable.contributesToWisdom, true),
+        eq(telegramConnectionsTable.status, "active"),
+      ),
+    );
+
+  const eligibleIds = optedInPatternIds.map((r) => r.patternId);
+  if (eligibleIds.length === 0) return [];
+
+  const conditions = [inArray(collectivePatternsTable.id, eligibleIds)];
   if (filters.guruId) {
     conditions.push(eq(collectivePatternsTable.guruId, filters.guruId));
   }
@@ -306,7 +403,7 @@ async function buildKnowledgeDistillation(filters: ExportFilters): Promise<Knowl
     })
     .from(collectivePatternsTable)
     .innerJoin(gurusTable, eq(collectivePatternsTable.guruId, gurusTable.id))
-    .where(conditions.length > 0 ? and(...conditions) : undefined)
+    .where(and(...conditions))
     .orderBy(desc(collectivePatternsTable.confidence));
 
   return patterns.map((p) => ({
