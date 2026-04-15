@@ -521,7 +521,7 @@ export async function handleTelegramMessage(
     latencyMs: convLatency,
   });
 
-  await db.insert(messagesTable).values([
+  const insertedMessages = await db.insert(messagesTable).values([
     {
       conversationId: conversation.id,
       role: "user",
@@ -535,7 +535,10 @@ export async function handleTelegramMessage(
       completionTokens,
       totalTokens,
     },
-  ]);
+  ]).returning({ id: messagesTable.id });
+
+  const userMessageId = insertedMessages[0]?.id;
+  const assistantMessageId = insertedMessages[1]?.id;
 
   await db
     .update(conversationsTable)
@@ -548,11 +551,14 @@ export async function handleTelegramMessage(
         guruId,
         userId: connection.userId,
         conversationId: conversation.id,
+        userMessageId,
+        assistantMessageId,
         modelTier: guru.modelTier,
         userMessage: text,
         assistantResponse: assistantContent,
         personalMemoryEnabled: memoryFlags.personalMemory,
         sharedLearningEnabled: memoryFlags.sharedLearning,
+        guruTopics: guru.topics,
       });
       await maybeRecalculateScores(guruId);
     } catch (err) {

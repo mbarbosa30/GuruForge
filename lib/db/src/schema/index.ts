@@ -12,3 +12,7 @@ export * from "./collective-patterns";
 export * from "./contribution-scores";
 export * from "./usage-logs";
 export * from "./feedback";
+export * from "./conversation-annotations";
+export * from "./data-correlations";
+export * from "./knowledge-snapshots";
+export * from "./training-exports";

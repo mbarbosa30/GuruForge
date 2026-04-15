@@ -16,6 +16,7 @@ import WisdomFeed from "@/pages/wisdom-feed";
 import GuruJournal from "@/pages/guru-journal";
 import GlobalFeed from "@/pages/global-feed";
 import NotFound from "@/pages/not-found";
+import AdminTraining from "@/pages/admin-training";
 
 const privyAppId = import.meta.env.VITE_PRIVY_APP_ID;
 const basePath = import.meta.env.BASE_URL.replace(/\/$/, "");
@@ -64,6 +65,10 @@ function LayoutGlobalFeed() {
   return <Layout><GlobalFeed /></Layout>;
 }
 
+function LayoutAdminTraining() {
+  return <Layout><AdminTraining /></Layout>;
+}
+
 function Router() {
   return (
     <Switch>
@@ -75,6 +80,7 @@ function Router() {
       <Route path="/guru/:slug" component={LayoutGuruProfile} />
       <Route path="/create" component={CreateGuru} />
       <Route path="/dashboard" component={LayoutDashboard} />
+      <Route path="/admin/training" component={LayoutAdminTraining} />
       <Route component={NotFound} />
     </Switch>
   );

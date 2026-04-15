@@ -4,6 +4,8 @@ import {
   telegramConnectionsTable,
   collectivePatternsTable,
   userMemoriesTable,
+  conversationAnnotationsTable,
+  dataCorrelationsTable,
 } from "@workspace/db/schema";
 import { eq, and, desc, sql } from "drizzle-orm";
 import { getModelConfig } from "./modelConfig";
@@ -14,21 +16,29 @@ interface CalibrationInput {
   guruId: number;
   userId: number;
   conversationId: number;
+  userMessageId?: number;
+  assistantMessageId?: number;
   modelTier: string | null;
   userMessage: string;
   assistantResponse: string;
   personalMemoryEnabled: boolean;
   sharedLearningEnabled: boolean;
+  guruTopics?: string[] | null;
 }
 
 export async function runCalibration(input: CalibrationInput): Promise<void> {
   try {
     const { fastModel, client } = getModelConfig(input.modelTier);
 
+    const guruTopicsList = input.guruTopics?.length ? input.guruTopics.join(", ") : "";
+
     const prompt = `Analyze this conversation turn and extract learning. Return a JSON object with:
 - "personalMemories": array of objects with "category" (goals/preferences/history/decisions/context), "summary" (concise one-sentence), "displayTitle" (short 3-8 word title for display), "topic" (a short topic tag like "career", "investing", "health", "productivity"), "importance" (0.0-1.0). Only include genuinely useful memories.
 - "collectiveInsights": array of objects with "patternType" (common_questions/successful_strategies/pitfalls/trends), "summary" (anonymized pattern description), "publishTitle" (compelling 5-12 word title for public display, like a blog headline), "confidence" (0.0-1.0). Only if the exchange reveals patterns useful for other users.
 - "contributionQuality": number 0.0-1.0 rating how much this turn contributes to the guru's collective wisdom (0=trivial greeting, 1=highly novel insight)
+- "topicTags": array of 1-3 short topic tags describing this turn (e.g., "budgeting", "career-change", "meal-prep")
+- "domainRelevance": number 0.0-1.0 how relevant this turn is to the guru's domain${guruTopicsList ? ` (${guruTopicsList})` : ""}
+- "overallQuality": number 0.0-1.0 overall quality of this exchange as training data (considers depth, specificity, and instructional value)
 
 User message: ${input.userMessage}
 Assistant response: ${input.assistantResponse}
@@ -61,6 +71,9 @@ Respond ONLY with valid JSON, no other text.`;
       personalMemories?: Array<{ category: string; summary: string; displayTitle?: string; topic?: string; importance: number }>;
       collectiveInsights?: Array<{ patternType: string; summary: string; publishTitle?: string; confidence: number }>;
       contributionQuality?: number;
+      topicTags?: string[];
+      domainRelevance?: number;
+      overallQuality?: number;
     };
     try {
       const cleaned = content.replace(/```json\n?/g, "").replace(/```\n?/g, "");
@@ -69,8 +82,10 @@ Respond ONLY with valid JSON, no other text.`;
       return;
     }
 
+    const memoriesExtracted: number[] = [];
     if (input.personalMemoryEnabled && Array.isArray(parsed.personalMemories)) {
-      await upsertPersonalMemories(input.userId, input.guruId, parsed.personalMemories);
+      const ids = await upsertPersonalMemories(input.userId, input.guruId, parsed.personalMemories);
+      memoriesExtracted.push(...ids);
     }
 
     const [conn] = await db
@@ -87,8 +102,10 @@ Respond ONLY with valid JSON, no other text.`;
 
     const userContributes = conn?.contributesToWisdom === true;
 
+    const patternsCreated: number[] = [];
     if (input.sharedLearningEnabled && userContributes && Array.isArray(parsed.collectiveInsights)) {
-      await upsertCollectiveInsights(input.guruId, parsed.collectiveInsights);
+      const ids = await upsertCollectiveInsights(input.guruId, parsed.collectiveInsights);
+      patternsCreated.push(...ids);
     }
 
     const quality = typeof parsed.contributionQuality === "number"
@@ -96,6 +113,53 @@ Respond ONLY with valid JSON, no other text.`;
       : 0;
     if (userContributes) {
       await updateContributionScore(input.userId, input.guruId, quality);
+    }
+
+    const topicTags = Array.isArray(parsed.topicTags) ? parsed.topicTags.slice(0, 5) : [];
+    const domainRelevance = typeof parsed.domainRelevance === "number"
+      ? Math.min(1, Math.max(0, parsed.domainRelevance)) : 0;
+    const overallQuality = typeof parsed.overallQuality === "number"
+      ? Math.min(1, Math.max(0, parsed.overallQuality)) : quality;
+
+    if (input.assistantMessageId) {
+      try {
+        await db.insert(conversationAnnotationsTable).values({
+          messageId: input.assistantMessageId,
+          conversationId: input.conversationId,
+          guruId: input.guruId,
+          topicTags,
+          qualityScore: overallQuality,
+          memoryExtractionSuccess: memoriesExtracted.length > 0,
+          memoriesExtractedCount: memoriesExtracted.length,
+          contributionQuality: quality,
+          domainRelevance,
+          tokenCount: completion.usage?.total_tokens ?? 0,
+        });
+
+        for (const memId of memoriesExtracted) {
+          await db.insert(dataCorrelationsTable).values({
+            guruId: input.guruId,
+            sourceType: "message",
+            sourceId: input.assistantMessageId,
+            targetType: "memory",
+            targetId: memId,
+            relationshipType: "extracted_from",
+          });
+        }
+
+        for (const patId of patternsCreated) {
+          await db.insert(dataCorrelationsTable).values({
+            guruId: input.guruId,
+            sourceType: "message",
+            sourceId: input.assistantMessageId,
+            targetType: "pattern",
+            targetId: patId,
+            relationshipType: "contributed_to",
+          });
+        }
+      } catch (annErr) {
+        console.error("Annotation/correlation persistence error:", annErr);
+      }
     }
   } catch (err) {
     console.error("Calibration pipeline error:", err);
@@ -106,8 +170,9 @@ async function upsertPersonalMemories(
   userId: number,
   guruId: number,
   memories: Array<{ category: string; summary: string; displayTitle?: string; topic?: string; importance: number }>,
-): Promise<void> {
+): Promise<number[]> {
   const validCategories = ["goals", "preferences", "history", "decisions", "context"];
+  const ids: number[] = [];
 
   for (const mem of memories.slice(0, 5)) {
     if (!mem.summary || !mem.category) continue;
@@ -146,8 +211,9 @@ async function upsertPersonalMemories(
           updatedAt: new Date(),
         })
         .where(eq(userMemoriesTable.id, duplicate.id));
+      ids.push(duplicate.id);
     } else {
-      await db.insert(userMemoriesTable).values({
+      const [inserted] = await db.insert(userMemoriesTable).values({
         userId,
         guruId,
         category: mem.category,
@@ -155,16 +221,19 @@ async function upsertPersonalMemories(
         displayTitle: mem.displayTitle || null,
         topic: mem.topic || null,
         importance,
-      });
+      }).returning({ id: userMemoriesTable.id });
+      if (inserted) ids.push(inserted.id);
     }
   }
+  return ids;
 }
 
 async function upsertCollectiveInsights(
   guruId: number,
   insights: Array<{ patternType: string; summary: string; publishTitle?: string; confidence: number }>,
-): Promise<void> {
+): Promise<number[]> {
   const validTypes = ["common_questions", "successful_strategies", "pitfalls", "trends"];
+  const ids: number[] = [];
 
   for (const p of insights.slice(0, 5)) {
     if (!p.summary || !p.patternType) continue;
@@ -219,8 +288,9 @@ async function upsertCollectiveInsights(
           updatedAt: new Date(),
         })
         .where(eq(collectivePatternsTable.id, duplicate.id));
+      ids.push(duplicate.id);
     } else {
-      await db.insert(collectivePatternsTable).values({
+      const [inserted] = await db.insert(collectivePatternsTable).values({
         guruId,
         patternType: p.patternType,
         summary: redactionResult.redacted,
@@ -228,9 +298,11 @@ async function upsertCollectiveInsights(
         publishTitle: p.publishTitle || null,
         confidence,
         sourceCount: 1,
-      });
+      }).returning({ id: collectivePatternsTable.id });
+      if (inserted) ids.push(inserted.id);
     }
   }
+  return ids;
 }
 
 async function updateContributionScore(

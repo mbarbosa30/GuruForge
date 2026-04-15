@@ -50,6 +50,10 @@ pnpm workspace monorepo using TypeScript. Each package manages its own dependenc
 - `feedback` — id, user_id, target_type (memory/pattern), target_id, vote (up/down), created_at, updated_at
 - `contribution_scores` — id, user_id, guru_id, score, turn_count, patterns_contributed, last_updated_at (unique per user+guru)
 - `usage_logs` — id, guru_id, user_id, conversation_id, call_type (triage/conversation/calibration/memory_extraction), model, prompt_tokens, completion_tokens, total_tokens, estimated_cost_cents, created_at
+- `conversation_annotations` — id, message_id (FK messages, unique), conversation_id, guru_id, topic_tags (jsonb string[]), quality_score (0-1), memory_extraction_success, memories_extracted_count, contribution_quality (0-1), domain_relevance (0-1), pii_detected, token_count, created_at
+- `data_correlations` — id, guru_id, source_type, source_id, target_type, target_id, relationship_type, created_at (tracks message→memory and message→pattern relationships)
+- `knowledge_snapshots` — id, guru_id, snapshot_data (jsonb: patternCounts, memoryDistribution, avgQualityScore, totalAnnotatedTurns, totalConversations, totalUsers, topTopics, confidenceDistribution), total_patterns, total_memories, avg_confidence, created_at
+- `training_exports` — id, format, status, filters (jsonb), row_count, file_path, file_size, export_content (text), exported_by, error_message, started_at, completed_at, created_at
 
 ### API Endpoints (under `/api`)
 - `GET /api/healthz` — Health check
@@ -79,6 +83,9 @@ pnpm workspace monorepo using TypeScript. Each package manages its own dependenc
 - `GET /api/gurus/:guruId/journal/my-votes` — Get user's votes on journal entries (auth required)
 - `POST /api/feedback` — Submit thumbs up/down on memory or pattern (auth required, toggles)
 - `GET /api/feed` — Global wisdom feed across all Gurus (public, pagination, pattern type filter, composite ranking by confidence × votes × recency)
+- `POST /api/admin/training-export` — Start training data export (admin only; formats: instruction_pairs, preference_pairs, knowledge_distillation)
+- `GET /api/admin/training-stats` — Get training dataset statistics (admin only; optional guruId filter)
+- `GET /api/admin/training-export/:id/download` — Download export as JSONL (admin only)
 
 ### Auth
 - Privy.io for authentication (replaced Clerk)
@@ -100,6 +107,7 @@ pnpm workspace monorepo using TypeScript. Each package manages its own dependenc
 - `/guru/:slug/wisdom` — Personal Wisdom Feed page for a subscribed guru (auth required, search, category filter, thumbs up/down)
 - `/guru/:slug/journal` — Public Guru Journal page showing collective patterns (public, pattern type filter, thumbs up/down for auth users)
 - `/feed` — Global Wisdom Feed page aggregating top collective insights from all Gurus (public, pattern type filter tabs, voting for auth users, Load more pagination, Guru attribution links)
+- `/admin/training` — Admin training data statistics page (annotated turns, quality distribution, domain coverage, export controls, export history)
 
 ### Payments (Stripe)
 - **Integration**: Replit Stripe connector (`stripe-replit-sync` + `stripe` packages at workspace root)
@@ -114,7 +122,9 @@ pnpm workspace monorepo using TypeScript. Each package manages its own dependenc
 - **Bot manager**: `artifacts/api-server/src/lib/botManager.ts` — manages per-guru bot instances, webhook setup
 - **Conversation engine**: `artifacts/api-server/src/lib/conversationEngine.ts` — handles message processing with triage→response→calibration pipeline, OpenAI calls, token tracking
 - **Triage pipeline**: `artifacts/api-server/src/lib/triagePipeline.ts` — fast LLM pre-response classification (intent, urgency, memory tier selection, out-of-domain detection)
-- **Calibration pipeline**: `artifacts/api-server/src/lib/calibrationPipeline.ts` — async post-response extraction (personal memories, collective insights, contribution scoring)
+- **Calibration pipeline**: `artifacts/api-server/src/lib/calibrationPipeline.ts` — async post-response extraction (personal memories, collective insights, contribution scoring, conversation annotations, data correlations)
+- **Knowledge snapshot scheduler**: `artifacts/api-server/src/lib/knowledgeSnapshotScheduler.ts` — daily per-guru snapshots aggregating pattern counts, memory distribution, avg quality, topic coverage, confidence distribution
+- **Training exporter**: `artifacts/api-server/src/lib/trainingExporter.ts` — exports training data in 3 formats (instruction pairs, preference pairs, knowledge distillation) with PII redaction; stores JSONL content in DB
 - **Score calculator**: `artifacts/api-server/src/lib/scoreCalculator.ts` — dynamically recalculates wisdom/satisfaction/userCount on gurus table every 5 calibration cycles
 - **Usage logger**: `artifacts/api-server/src/lib/usageLogger.ts` — logs all LLM calls (triage, conversation, calibration) with token counts and estimated costs
 - **Model config**: `artifacts/api-server/src/lib/modelConfig.ts` — `getModelConfig(modelTier)` returns `{ provider, conversationModel, fastModel, client }`. Two branded options: `gpt` (GPT-5.4 / GPT-5-mini) and `grok` (Grok-3 / Grok-3-mini). Throws clear error if Grok selected but XAI_API_KEY not set; conversation engine catches this and returns user-friendly unavailability message.

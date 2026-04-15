@@ -4,6 +4,7 @@ import app from "./app";
 import { logger } from "./lib/logger";
 import { startAllPublishedBots } from "./lib/botManager";
 import { startProactiveScheduler } from "./lib/proactiveEngine";
+import { startSnapshotScheduler } from "./lib/knowledgeSnapshotScheduler";
 
 process.on("unhandledRejection", (reason) => {
   logger.error({ err: reason }, "Unhandled rejection");
@@ -67,6 +68,7 @@ app.listen(port, (err) => {
     .then(() => {
       logger.info("Telegram bots initialized");
       startProactiveScheduler();
+      startSnapshotScheduler();
     })
     .catch((err: unknown) => logger.error({ err }, "Failed to start Telegram bots"));
 });
