@@ -4,8 +4,11 @@ import { usePrivy } from "@privy-io/react-auth";
 import {
   useListMySubscriptions,
   useCreatePortalSession,
+  useGetMe,
+  useGetPortfolio,
   getListMySubscriptionsQueryOptions,
 } from "@workspace/api-client-react";
+import type { PortfolioToken } from "@workspace/api-client-react";
 import TelegramStatusBadge from "@/components/telegram-status-badge";
 
 function formatPrice(cents: number, interval: string) {
@@ -29,6 +32,10 @@ function DashboardContent() {
   });
 
   const portalMutation = useCreatePortalSession();
+
+  const { data: me } = useGetMe({ query: { enabled: true } });
+  const isCreatorOrAdmin = me?.role === "creator" || me?.role === "admin";
+  const { data: portfolio } = useGetPortfolio({ query: { enabled: isCreatorOrAdmin } });
 
   async function handleManageBilling() {
     setPortalLoading(true);
@@ -146,6 +153,31 @@ function DashboardContent() {
               </div>
             </div>
           ))}
+        </div>
+      )}
+
+      {isCreatorOrAdmin && portfolio && portfolio.tokens.length > 0 && (
+        <div className="mt-12">
+          <p className="text-[11px] font-medium tracking-[0.12em] uppercase text-[#888] mb-4">Platform wallet</p>
+          <div className="border border-[#e0e0e0]">
+            <div className="grid grid-cols-[1fr_100px_100px_80px] bg-[#fafafa] px-4 py-2 border-b border-[#e0e0e0]">
+              <span className="text-[10px] font-medium tracking-[0.08em] uppercase text-[#aaa]">Token</span>
+              <span className="text-[10px] font-medium tracking-[0.08em] uppercase text-[#aaa] text-right">Symbol</span>
+              <span className="text-[10px] font-medium tracking-[0.08em] uppercase text-[#aaa] text-right">Balance</span>
+              <span className="text-[10px] font-medium tracking-[0.08em] uppercase text-[#aaa] text-right">Chain</span>
+            </div>
+            {portfolio.tokens.map((t: PortfolioToken) => (
+              <div key={t.tokenAddress} className="grid grid-cols-[1fr_100px_100px_80px] px-4 py-3 border-b border-[#f0f0f0] last:border-0">
+                <div>
+                  <span className="text-[13px] text-[#333] font-medium block">{t.name}</span>
+                  <span className="text-[11px] text-[#999] font-mono">{t.tokenAddress.slice(0, 8)}...{t.tokenAddress.slice(-6)}</span>
+                </div>
+                <span className="text-[13px] text-[#555] text-right self-center">${t.symbol}</span>
+                <span className="text-[13px] text-[#333] text-right font-medium self-center">{t.balance}</span>
+                <span className="text-[11px] text-[#888] text-right uppercase self-center">{t.chain}</span>
+              </div>
+            ))}
+          </div>
         </div>
       )}
     </div>

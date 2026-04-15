@@ -16,12 +16,16 @@ import {
   useLaunchToken,
   useDistributeRewards,
   useGetRewardHistory,
+  useGetRewardReadiness,
   getGetGuruQueryOptions,
+  getGetGuruQueryKey,
+  getGetRewardHistoryQueryKey,
+  getGetRewardReadinessQueryKey,
   getListGuruRatingsQueryOptions,
   getCheckSubscriptionQueryOptions,
   getGetTelegramStatusQueryOptions,
 } from "@workspace/api-client-react";
-import type { Rating, LeaderboardContributor, CreatorContributor, RewardDistributionItem } from "@workspace/api-client-react";
+import type { Rating, LeaderboardContributor, CreatorContributor, RewardDistributionItem, RewardRecipient } from "@workspace/api-client-react";
 import TelegramConnectModal from "@/components/telegram-connect-modal";
 
 function formatMemoryPolicy(policy: string | null | undefined): string {
@@ -156,7 +160,12 @@ export default function GuruProfile() {
   const [distributing, setDistributing] = useState(false);
   const [distributeError, setDistributeError] = useState<string | null>(null);
   const [distributeSuccess, setDistributeSuccess] = useState<string | null>(null);
+  const [showDistributePreview, setShowDistributePreview] = useState(false);
   const distributeRewardsMutation = useDistributeRewards();
+
+  const { data: rewardReadiness } = useGetRewardReadiness(guruId, {
+    query: { enabled: !!guru?.id && !!authenticated && !!guru?.isCreator && !!guru?.tokenAddress },
+  });
 
   const { data: rewardHistory } = useGetRewardHistory(guruId, {
     query: { enabled: !!guru?.id && !!authenticated && !!guru?.isCreator },
@@ -183,7 +192,7 @@ export default function GuruProfile() {
       setTokenSuccess(`Token $${result.tokenSymbol} launched at ${result.tokenAddress}`);
       setTokenName("");
       setTokenSymbol("");
-      queryClient.invalidateQueries({ queryKey: ["getGuru"] });
+      queryClient.invalidateQueries({ queryKey: getGetGuruQueryKey(slug) });
     } catch (err: unknown) {
       setTokenError(err instanceof Error ? err.message : "Failed to launch token");
     } finally {
@@ -191,7 +200,16 @@ export default function GuruProfile() {
     }
   }
 
-  async function handleDistribute() {
+  function handleShowPreview() {
+    if (!distributeAmount.trim() || isNaN(Number(distributeAmount)) || Number(distributeAmount) <= 0) {
+      setDistributeError("Enter a positive amount");
+      return;
+    }
+    setDistributeError(null);
+    setShowDistributePreview(true);
+  }
+
+  async function handleConfirmDistribute() {
     if (!guru?.id || !distributeAmount.trim()) return;
     setDistributing(true);
     setDistributeError(null);
@@ -203,7 +221,9 @@ export default function GuruProfile() {
       });
       setDistributeSuccess(`Distributed ${result.totalAmount} ${guru.tokenSymbol} to ${result.recipientCount} contributors`);
       setDistributeAmount("");
-      queryClient.invalidateQueries({ queryKey: ["getRewardHistory"] });
+      setShowDistributePreview(false);
+      queryClient.invalidateQueries({ queryKey: getGetRewardHistoryQueryKey(guruId) });
+      queryClient.invalidateQueries({ queryKey: getGetRewardReadinessQueryKey(guruId) });
     } catch (err: unknown) {
       setDistributeError(err instanceof Error ? err.message : "Failed to distribute rewards");
     } finally {
@@ -468,41 +488,99 @@ export default function GuruProfile() {
         </section>
       )}
 
+      {guru.tokenAddress && (
+        <section className="mb-10">
+          <p className="text-[11px] font-medium tracking-[0.12em] uppercase text-[#888] mb-4">Token</p>
+          <div className="border border-[#e0e0e0] px-5 py-4">
+            <div className="flex items-center gap-3 flex-wrap">
+              <span className="text-[16px] font-medium text-[#111]">${guru.tokenSymbol}</span>
+              <span className="text-[12px] text-[#999] font-mono">{guru.tokenAddress}</span>
+              <span className="text-[10px] font-medium tracking-[0.06em] uppercase text-[#888] border border-[#e0e0e0] px-2 py-0.5">{guru.tokenChain || "base"}</span>
+            </div>
+          </div>
+        </section>
+      )}
+
       {guru.isCreator && (
         <section className="mb-10">
           <p className="text-[11px] font-medium tracking-[0.12em] uppercase text-[#888] mb-4">Token & rewards</p>
 
           {guru.tokenAddress ? (
             <div className="border border-[#e0e0e0] mb-4">
-              <div className="px-5 py-4">
-                <span className="text-[11px] font-medium tracking-[0.04em] uppercase text-[#888] block mb-2">Token launched</span>
-                <div className="flex items-center gap-3">
-                  <span className="text-[16px] font-medium text-[#111]">${guru.tokenSymbol}</span>
-                  <span className="text-[12px] text-[#999] font-mono">{guru.tokenAddress}</span>
-                  <span className="text-[10px] font-medium tracking-[0.06em] uppercase text-[#888] border border-[#e0e0e0] px-2 py-0.5">{guru.tokenChain || "base"}</span>
-                </div>
-              </div>
-              <div className="border-t border-[#e0e0e0] px-5 py-4">
+              <div className="border-b border-[#e0e0e0] px-5 py-4">
                 <span className="text-[11px] font-medium tracking-[0.04em] uppercase text-[#888] block mb-3">Distribute rewards</span>
-                <div className="flex gap-2 items-end">
-                  <div className="flex-1">
-                    <label className="text-[11px] text-[#aaa] block mb-1">Amount to distribute</label>
-                    <input
-                      type="text"
-                      value={distributeAmount}
-                      onChange={(e) => setDistributeAmount(e.target.value)}
-                      placeholder="e.g. 1000"
-                      className="w-full text-[14px] px-3 py-2 border border-[#ddd] bg-white text-[#333] focus:outline-none focus:border-[#999]"
-                    />
-                  </div>
-                  <button
-                    onClick={handleDistribute}
-                    disabled={distributing || !distributeAmount.trim()}
-                    className="text-[12px] font-medium tracking-[0.04em] uppercase text-white bg-[#111] px-5 py-2.5 border border-[#111] hover:bg-[#333] transition-colors cursor-pointer disabled:opacity-50 disabled:cursor-not-allowed whitespace-nowrap"
-                  >
-                    {distributing ? "Distributing..." : "Distribute"}
-                  </button>
-                </div>
+                {!showDistributePreview ? (
+                  <>
+                    <div className="flex gap-2 items-end">
+                      <div className="flex-1">
+                        <label className="text-[11px] text-[#aaa] block mb-1">Amount of ${guru.tokenSymbol} to distribute</label>
+                        <input
+                          type="text"
+                          value={distributeAmount}
+                          onChange={(e) => setDistributeAmount(e.target.value)}
+                          placeholder="e.g. 1000"
+                          className="w-full text-[14px] px-3 py-2 border border-[#ddd] bg-white text-[#333] focus:outline-none focus:border-[#999]"
+                        />
+                      </div>
+                      <button
+                        onClick={handleShowPreview}
+                        disabled={!distributeAmount.trim() || !rewardReadiness || rewardReadiness.totalContributors === 0}
+                        className="text-[12px] font-medium tracking-[0.04em] uppercase text-white bg-[#111] px-5 py-2.5 border border-[#111] hover:bg-[#333] transition-colors cursor-pointer disabled:opacity-50 disabled:cursor-not-allowed whitespace-nowrap"
+                      >
+                        Preview
+                      </button>
+                    </div>
+                    {rewardReadiness && rewardReadiness.totalContributors === 0 && (
+                      <p className="text-[12px] text-[#aaa] mt-2">No eligible contributors with wallet addresses yet.</p>
+                    )}
+                  </>
+                ) : (
+                  <>
+                    <p className="text-[13px] text-[#555] mb-3">
+                      Distributing <span className="font-medium text-[#111]">{distributeAmount} ${guru.tokenSymbol}</span> to {rewardReadiness?.totalContributors} contributors proportionally by score:
+                    </p>
+                    {rewardReadiness && rewardReadiness.recipients.length > 0 && (
+                      <div className="border border-[#e0e0e0] mb-3">
+                        <div className="grid grid-cols-[1fr_80px_80px] bg-[#fafafa] px-3 py-1.5 border-b border-[#e0e0e0]">
+                          <span className="text-[10px] font-medium tracking-[0.08em] uppercase text-[#aaa]">Wallet</span>
+                          <span className="text-[10px] font-medium tracking-[0.08em] uppercase text-[#aaa] text-right">Share</span>
+                          <span className="text-[10px] font-medium tracking-[0.08em] uppercase text-[#aaa] text-right">Amount</span>
+                        </div>
+                        {rewardReadiness.recipients.slice(0, 20).map((r: RewardRecipient) => {
+                          const amount = ((r.sharePercent / 100) * Number(distributeAmount)).toFixed(4);
+                          return (
+                            <div key={r.walletAddress} className="grid grid-cols-[1fr_80px_80px] px-3 py-2 border-b border-[#f0f0f0] last:border-0">
+                              <span className="text-[12px] text-[#555] font-mono truncate">{r.walletAddress.slice(0, 8)}...{r.walletAddress.slice(-6)}</span>
+                              <span className="text-[12px] text-[#888] text-right">{r.sharePercent}%</span>
+                              <span className="text-[12px] text-[#333] text-right font-medium">{amount}</span>
+                            </div>
+                          );
+                        })}
+                        {rewardReadiness.recipients.length > 20 && (
+                          <div className="px-3 py-1.5 bg-[#fafafa]">
+                            <span className="text-[11px] text-[#aaa]">+{rewardReadiness.recipients.length - 20} more</span>
+                          </div>
+                        )}
+                      </div>
+                    )}
+                    <div className="flex gap-2">
+                      <button
+                        onClick={handleConfirmDistribute}
+                        disabled={distributing}
+                        className="text-[12px] font-medium tracking-[0.04em] uppercase text-white bg-[#111] px-5 py-2.5 border border-[#111] hover:bg-[#333] transition-colors cursor-pointer disabled:opacity-50 disabled:cursor-not-allowed"
+                      >
+                        {distributing ? "Distributing..." : "Confirm & distribute"}
+                      </button>
+                      <button
+                        onClick={() => setShowDistributePreview(false)}
+                        disabled={distributing}
+                        className="text-[12px] font-medium tracking-[0.04em] uppercase text-[#555] bg-white px-5 py-2.5 border border-[#ddd] hover:border-[#999] transition-colors cursor-pointer disabled:opacity-50"
+                      >
+                        Cancel
+                      </button>
+                    </div>
+                  </>
+                )}
                 {distributeError && <p className="text-[12px] text-[#c44] mt-2">{distributeError}</p>}
                 {distributeSuccess && <p className="text-[12px] text-[#2a7a2a] mt-2">{distributeSuccess}</p>}
               </div>
