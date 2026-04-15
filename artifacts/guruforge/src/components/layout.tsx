@@ -25,10 +25,11 @@ export default function Layout({ children }: { children: React.ReactNode }) {
         <div className="flex items-center gap-8">
           <Link
             href="/"
-            className="text-sm font-semibold tracking-[0.08em] uppercase text-[#111] no-underline"
+            className="flex items-center gap-2 no-underline"
             data-testid="link-logo"
           >
-            GuruForge
+            <img src={`${import.meta.env.BASE_URL}logo-48.png`} alt="" className="h-6 w-auto" />
+            <span className="text-sm font-semibold tracking-[0.08em] uppercase text-[#111]">GuruForge</span>
           </Link>
           <nav className="hidden sm:flex items-center gap-5">
             <Link href="/marketplace" className={linkClass("/marketplace")} data-testid="link-marketplace">
